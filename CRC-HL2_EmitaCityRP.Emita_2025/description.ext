@@ -1,0 +1,54 @@
+class CfgSounds
+{
+ tracks[]={};
+ class Apply
+ {
+  name = "(CRC)Sector5revolt";
+  sound[] = {"\sector5revolt.ogg", 100, 1, 1};
+  titles[] = {};
+ };
+ class Caralarm
+ {
+  name = "(CRC)Caralarm";
+  sound[] = {"\caralarm.ogg", 100, 1, 1};
+  titles[] = {};
+ };
+ class Siren
+ {
+  name = "(CRC)Siren";
+  sound[] = {"\Siren.ogg", 100, 1, 1};
+  titles[] = {};
+ };
+ class BreenCastC18
+ {
+  name = "(CRC)BreenCastC18";
+  sound[] = {"\breencastc18.ogg", 100, 1, 1};
+  titles[] = {};
+ };
+};
+
+class CfgSFX
+{
+	class CRCcity5revolt
+	{
+		name="(CRC)Sector5revolt";
+		sounds[]= {"sfxsound"};
+		sfxsound[] = { "\sector5revolt.ogg", 800, 1, 6000, 1, 120, 300, 900};
+		empty[] = {"", 0, 0, 0, 0, 0, 0, 0,};
+	};
+	class Xentele
+	{
+		name="XenTeleport";
+		sounds[]= {"sfxsound"};
+		sfxsound[] = { "\Xentele.ogg", 10, 1, 500, 1, 1, 2, 3};
+		empty[] = {"", 0, 0, 0, 0, 0, 0, 0,};
+	};
+};
+
+class CfgVehicles
+{
+	class XenTele
+	{
+		sound = "XenTele";
+	};
+};
