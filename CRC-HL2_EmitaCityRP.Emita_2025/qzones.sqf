@@ -12,12 +12,28 @@
                 for "_i" from 1 to (5 + floor random 5) do {
                     private _unit = _grp createUnit [selectRandom _types, _spawnPos, [], 5, "FORM"];
                     _unit doMove getPos _target;
+					_unit addEventHandler ["Killed", {
+						params ["_dead", "_killer"];
+						private _meatCount = selectRandom [0,0,1,1];
+						for "_i" from 1 to _meatCount do {
+							private _item = createVehicle ["GroundWeaponHolder", getPosATL _dead, [], 0, "NONE"];
+							_item addItemCargoGlobal ["VRP_StrangeMeat", 1];
+					};
+				}];					
                 };
 
                 if (random 1 < 0.2) then {
                     private _rareType = selectRandom ["WBK_Bullsquid_1", "WBK_Houndeye_1"];
                     private _rare = _grp createUnit [_rareType, _spawnPos, [], 5, "FORM"];
                     _rare doMove getPos _target;
+					_rare addEventHandler ["Killed", {
+						params ["_dead", "_killer"];
+						private _meatCount = selectRandom [0,1,1,2];
+						for "_i" from 1 to _meatCount do {
+							private _item = createVehicle ["GroundWeaponHolder", getPosATL _dead, [], 0, "NONE"];
+							_item addItemCargoGlobal ["VRP_StrangeMeat", 1];
+					};
+				}];
                 };
             };
 			private _delay = 100 + random 100;
@@ -37,11 +53,28 @@
                 for "_i" from 1 to (4 + floor random 5) do {
                     private _unit = _grp createUnit ["WBK_Antlion_1", _spawnPos, [], 5, "FORM"];
                     _unit doMove getPos _target;
+					_unit addEventHandler ["Killed", {
+						params ["_dead", "_killer"];
+						private _meatCount = selectRandom [0,1,1,2];
+						for "_i" from 1 to _meatCount do {
+							private _item = createVehicle ["GroundWeaponHolder", getPosATL _dead, [], 0, "NONE"];
+							_item addItemCargoGlobal ["VRP_AntlionMeat", 1];
+					};
+				}];	
                 };
 
                 if (random 1 < 0.15) then {
                     private _guardian = _grp createUnit ["WBK_AntlionGuardian_1", _spawnPos, [], 5, "FORM"];
                     _guardian doMove getPos _target;
+					_guardian addEventHandler ["Killed", {
+						params ["_dead", "_killer"];
+						private _meatCount = selectRandom [5,7,7,9];
+						for "_i" from 1 to _meatCount do {
+							private _item = createVehicle ["GroundWeaponHolder", getPosATL _dead, [], 0, "NONE"];
+							_item addItemCargoGlobal ["VRP_AntlionMeat", 1];
+					};
+				}];						
+					
                 };
             };
 			private _delay = 100 + random 100;
@@ -81,6 +114,14 @@
                 for "_i" from 1 to (4 + floor random 3) do {
                     private _unit = _grp createUnit [selectRandom _types, _spawnPos, [], 5, "FORM"];
                     _unit doMove getPos _target;
+					_unit addEventHandler ["Killed", {
+						params ["_dead", "_killer"];
+						private _meatCount = selectRandom [0,1,1,2];
+						for "_i" from 1 to _meatCount do {
+							private _item = createVehicle ["GroundWeaponHolder", getPosATL _dead, [], 0, "NONE"];
+							_item addItemCargoGlobal ["VRP_StrangeMeat", 1];
+					};
+				}];	
                 };
             };
 			private _delay = 100 + random 100;

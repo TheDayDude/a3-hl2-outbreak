@@ -60,11 +60,11 @@
             switch (_side) do {
                 case opfor: {
                     private _roll = random 1;
-                    if (_roll < 0.1) then {
+                    if (_roll < 0.2) then {
                         _group = createGroup west;
                         for "_i" from 1 to 5 do { _group createUnit [selectRandom _combineInfantry, _spawnPos, [], 0, "FORM"]; };
                     } else {
-                        if (_roll < 0.2) then {
+                        if (_roll < 0.3) then {
                             _group = createGroup west;
                             for "_i" from 1 to 3 do { _group createUnit [selectRandom _combineSpecial, _spawnPos, [], 0, "FORM"]; };
                         } else {
