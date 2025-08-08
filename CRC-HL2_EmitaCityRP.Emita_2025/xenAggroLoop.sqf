@@ -1,31 +1,44 @@
 while {true} do {
+    // Get all Xenian units (resistance side)
+    private _xenians = allUnits select {
+        side _x == resistance && alive _x
+    };
+
+    // Get all valid civilian players
+    private _civilians = allUnits select {
+        side _x == civilian && alive _x && damage _x < 0.9
+    };
+
     {
-        if (side _x == resistance && alive _x) then {
-            private _xen = _x;
-            private _xenPos = getPos _xen;
+        private _xen = _x;
+        private _xenPos = getPos _xen;
 
-            {
-                if (side _x == civilian && alive _x) then {
-                    private _dist = _xen distance _x;
-                    
-                    if (_dist < 10) then {
-                        if (!(_x getVariable ["isXenHostile", false])) then {
-                            _x addRating -10000;
-                            _x setVariable ["isXenHostile", true, false];
-							_x forceSpeed 4;
-							_x doMove (position _xen vectorAdd [(random 30) - 15, (random 30) - 15, 0]);
+        {
+            private _civ = _x;
+            private _dist = _xen distance _civ;
 
-                        };
-                    } else {
-                        if (_x getVariable ["isXenHostile", false]) then {
-                            _x addRating 10000;
-                            _x setVariable ["isXenHostile", false, false];
-                        };
-                    };
+            if (_dist < 8) then {
+                if (!(_civ getVariable ["isXenHostile", false])) then {
+                    _civ addRating -10000;  // Civ becomes hostile to Resistance
+                    _civ setVariable ["isXenHostile", true, false];
                 };
-            } forEach allUnits;
-        };
-    } forEach allUnits;
+            } else {
+                // Random chance to stalk within 30m
+                if (_dist < 50 && random 1 < 0.8) then {
+                    _xen doMove getPos _civ;
+					_xen doTarget _civ;
+					_xen doFire _civ;
+                };
 
-    sleep 5;
+                if (_civ getVariable ["isXenHostile", false] && _dist > 10) then {
+                    _civ addRating 10000;  // Restore rating when far
+                    _civ setVariable ["isXenHostile", false, false];
+                };
+            };
+
+        } forEach _civilians;
+
+    } forEach _xenians;
+
+    sleep 3;
 };

@@ -17,20 +17,18 @@
     while {true} do {
         sleep (2000 + random 4000);
 
-		["Flocalunrestspkr"] remoteExec ["playSound", 0];  // playSound must be run on clients
+        ["Flocalunrestspkr"] remoteExec ["playSound", 0];
+
         private _battleCenter = getPos (selectRandom allPlayers);
         private _offset = [300, 400] call BIS_fnc_randomNum;
         private _rebelSpawn = _battleCenter vectorAdd [_offset, _offset, 0];
         private _combineSpawn = _battleCenter vectorAdd [-_offset, -_offset, 0];
-		
-		private _taskID = format ["task_rebelIncursion_%1", diag_tickTime];
-		private _taskDesc = "Eliminate the Anticitizens located in this area.";
-		private _taskTitle = "Anticitizen Incursion";
 
-		[west, _taskID, ["Eliminate the anticitizens in the area.", "Anticitizen Incursion", ""], _battleCenter, true] call BIS_fnc_taskCreate;
-		[east, _taskID + "_opf", ["Reinforce your comrades against the incoming attack.", "Reinforce Rebels", ""], _battleCenter, true] call BIS_fnc_taskCreate;
+        private _taskID = format ["task_rebelIncursion_%1", diag_tickTime];
+        [west, _taskID, ["Eliminate the anticitizens in the area.", "Anticitizen Incursion", ""], _battleCenter, true] call BIS_fnc_taskCreate;
+        [east, _taskID + "_opf", ["Reinforce your comrades against the incoming attack.", "Reinforce Rebels", ""], _battleCenter, true] call BIS_fnc_taskCreate;
 
-        // Spawn rebels
+        // === Rebel Squad ===
         private _rebelGrp = createGroup east;
         for "_i" from 1 to 5 do {
             _rebelGrp createUnit [selectRandom _rebelUnits, _rebelSpawn, [], 0, "FORM"];
@@ -38,65 +36,57 @@
         _rebelGrp setBehaviour "AWARE";
         _rebelGrp setCombatMode "RED";
         _rebelGrp addWaypoint [_battleCenter, 0];
-		
-		// Create Rebel transport vehicle
-		private _rebelVehicle = createVehicle ["cytech_rt_agrale", _rebelSpawn, [], 0, "NONE"];
-		_rebelVehicle setDir random 360;
-		_rebelVehicle lock false;
 
-		// Create new rebel group for vehicle (optional for independence, or use same _rebelGrp)
-		private _rebelTransportGrp = createGroup east;
+        // === Rebel Transport ===
+        private _rebelVehicle = createVehicle ["cytech_rt_agrale", _rebelSpawn, [], 0, "NONE"];
+        _rebelVehicle setDir random 360;
+        _rebelVehicle lock false;
 
-		// Add driver
-		private _rebelDriver = _rebelTransportGrp createUnit [selectRandom _rebelUnits, _rebelSpawn, [], 0, "NONE"];
-		_rebelDriver moveInDriver _rebelVehicle;
+        private _rebelTransportGrp = createGroup east;
+        private _rebelDriver = _rebelTransportGrp createUnit [selectRandom _rebelUnits, _rebelSpawn, [], 0, "NONE"];
+        _rebelDriver moveInDriver _rebelVehicle;
 
-		// Add passengers
-		for "_i" from 1 to 5 do {
-			private _unit = _rebelTransportGrp createUnit [selectRandom _rebelUnits, _rebelSpawn, [], 0, "NONE"];
-			_unit moveInCargo _rebelVehicle;
-		};
+        // Ensure driver assigned
+        if (isNull driver _rebelVehicle) then {
+            _rebelDriver assignAsDriver _rebelVehicle;
+            _rebelDriver moveInDriver _rebelVehicle;
+        };
 
-		// Waypoints for Rebel vehicle
-		_rebelTransportGrp setBehaviour "AWARE";
-		_rebelTransportGrp setCombatMode "RED";
-		private _rwp1 = _rebelTransportGrp addWaypoint [_battleCenter vectorAdd [15, -15, 0], 0];
-		_rwp1 setWaypointType "MOVE";
-		_rwp1 setWaypointSpeed "FULL";
+        for "_i" from 1 to 5 do {
+            private _unit = _rebelTransportGrp createUnit [selectRandom _rebelUnits, _rebelSpawn, [], 0, "NONE"];
+            _unit moveInCargo _rebelVehicle;
+        };
 
-		private _rwp2 = _rebelTransportGrp addWaypoint [_battleCenter, 0];
-		_rwp2 setWaypointType "GETOUT";
+        _rebelTransportGrp setBehaviour "AWARE";
+        _rebelTransportGrp setCombatMode "RED";
+        _rebelTransportGrp addWaypoint [_battleCenter vectorAdd [15, -15, 0], 0] setWaypointType "MOVE";
+        _rebelTransportGrp addWaypoint [_battleCenter, 0] setWaypointType "GETOUT";
 
+        // === Combine APC ===
+        private _apc = createVehicle ["cytech_rt_amv_black", _combineSpawn, [], 0, "NONE"];
+        _apc setDir random 360;
+        _apc lock false;
 
-		// Create Combine APC
-		private _apc = createVehicle ["cytech_rt_amv_black", _combineSpawn, [], 0, "NONE"];
-		_apc setDir random 360;
-		_apc lock false;
+        private _combineGrp = createGroup west;
+        private _driver = _combineGrp createUnit [selectRandom _combineUnits, _combineSpawn, [], 0, "NONE"];
+        _driver moveInDriver _apc;
 
-		// Create Combine group
-		private _combineGrp = createGroup west;
+        if (isNull driver _apc) then {
+            _driver assignAsDriver _apc;
+            _driver moveInDriver _apc;
+        };
 
-		// Add driver
-		private _driver = _combineGrp createUnit [selectRandom _combineUnits, _combineSpawn, [], 0, "NONE"];
-		_driver moveInDriver _apc;
+        for "_i" from 1 to 7 do {
+            private _unit = _combineGrp createUnit [selectRandom _combineUnits, _combineSpawn, [], 0, "NONE"];
+            _unit moveInCargo _apc;
+        };
 
-		// Add cargo units
-		for "_i" from 1 to 7 do {
-			private _unit = _combineGrp createUnit [selectRandom _combineUnits, _combineSpawn, [], 0, "NONE"];
-			_unit moveInCargo _apc;
-		};
+        _combineGrp setBehaviour "AWARE";
+        _combineGrp setCombatMode "RED";
+        _combineGrp addWaypoint [_battleCenter, 0] setWaypointType "MOVE";
+        _combineGrp addWaypoint [_battleCenter vectorAdd [20,20,0], 0] setWaypointType "GETOUT";
 
-		// Waypoints for APC
-		_combineGrp setBehaviour "AWARE";
-		_combineGrp setCombatMode "RED";
-		private _wp1 = _combineGrp addWaypoint [_battleCenter, 0];
-		_wp1 setWaypointType "MOVE";
-		_wp1 setWaypointSpeed "FULL";
-		_wp1 setWaypointCompletionRadius 20;
-
-		private _wp2 = _combineGrp addWaypoint [_battleCenter vectorAdd [20,20,0], 0];
-		_wp2 setWaypointType "GETOUT";
-
+        // === Task Monitor ===
         [
             _taskID,
             _rebelGrp,
@@ -124,37 +114,28 @@
             [_taskID + "_opf"] call BIS_fnc_deleteTask;
         };
 
-
         systemChat "Alert: Community Ground Protection units: Local unrest structure detected. Assemble, administer, pacify.";
-		["Alert: Community Ground Protection units: Local unrest structure detected. Assemble, administer, pacify."] remoteExec ["systemChat", 0];
-		private _grid = mapGridPosition _battleCenter;
-		{
-			_x sideChat format ["Anticitizen incursion detected at grid %1. Deploying intercept force.", _grid];
-		} forEach allPlayers select {side _x == west};
-		
-		[
-			_rebelGrp,
-			_combineGrp,
-			_rebelVehicle,
-			_apc
-		] spawn {
-			params ["_rebelGrp", "_combineGrp", "_rebelVehicle", "_apc"];
+        ["Alert: Community Ground Protection units: Local unrest structure detected. Assemble, administer, pacify."] remoteExec ["systemChat", 0];
+        private _grid = mapGridPosition _battleCenter;
+        {
+            _x sideChat format ["Anticitizen incursion detected at grid %1. Deploying intercept force.", _grid];
+        } forEach allPlayers select {side _x == west};
 
-			waitUntil {
-				sleep 500;
+        // === Cleanup Logic ===
+        [
+            _rebelGrp,
+            _combineGrp,
+            _rebelVehicle,
+            _apc
+        ] spawn {
+            params ["_rebelGrp", "_combineGrp", "_rebelVehicle", "_apc"];
 
-				private _allUnits = (units _rebelGrp) + (units _combineGrp);
-				private _playersNearby = allPlayers select {
-					private _p = _x;
-					{_p distance2D _x < 500} count _allUnits > 0
-				};
+            // Wait 3000 seconds then cleanup as fallback
+            sleep 3000;
 
-				count _playersNearby == 0 || ({alive _x} count _allUnits == 0)
-			};
-
-			{
-				deleteVehicle _x;
-			} forEach ((units _rebelGrp) + (units _combineGrp) + [_rebelVehicle, _apc]);
-		};
+            {
+                deleteVehicle _x;
+            } forEach ((units _rebelGrp) + (units _combineGrp) + [_rebelVehicle, _apc]);
+        };
     };
 };

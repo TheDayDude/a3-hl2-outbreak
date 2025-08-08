@@ -5,7 +5,7 @@ while {true} do {
             {
                 private _unit = _x;
                 if (alive _unit) then {
-                    private _nearbyPlayers = allPlayers select { alive _x && (_x distance _unit) < 500 };
+                    private _nearbyPlayers = allPlayers select { alive _x && (_x distance _unit) < 300 };
                     if (_nearbyPlayers isEqualTo []) then {
                         deleteVehicle _unit;
                     };
