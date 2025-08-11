@@ -15,7 +15,7 @@
     waitUntil { sleep 30; (count allPlayers) > 0 };
 
     while {true} do {
-        sleep (2000 + random 4000);
+        sleep (3000 + random 6000);
 
         ["Flocalunrestspkr"] remoteExec ["playSound", 0];
 
@@ -102,11 +102,35 @@
             if ({alive _x} count units _rebelGrp == 0) then {
                 [_taskID, "SUCCEEDED", true] call BIS_fnc_taskSetState;
                 [_taskID + "_opf", "FAILED", true] call BIS_fnc_taskSetState;
-                ["Anticitizens pacified."] remoteExec ["hint", west];
+				if (isServer) then {
+					private _amount = 5 + floor random 6; // 5–10 tokens
+					private _targets = allPlayers select { side _x == west && alive _x };
+
+					{
+						for "_i" from 1 to _amount do {
+							_x addItem "VRP_HL_Token_Item";
+						};
+					} forEach _targets;
+
+					[format ["Objective complete!You received %1 token(s) for your efforts.", _amount]] 
+					remoteExec ["hintSilent", _targets apply { owner _x }];
+				};
             } else {
                 [_taskID, "FAILED", true] call BIS_fnc_taskSetState;
                 [_taskID + "_opf", "SUCCEEDED", true] call BIS_fnc_taskSetState;
-                ["Overwatch units neutralized. Protection Team: report for offworld reassignment."] remoteExec ["hint", west];
+				if (isServer) then {
+					private _amount = 5 + floor random 6; // 5–10 tokens
+					private _targets = allPlayers select { side _x == east && alive _x };
+
+					{
+						for "_i" from 1 to _amount do {
+							_x addItem "VRP_HL_Token_Item";
+						};
+					} forEach _targets;
+
+					[format ["Objective complete! You received %1 token(s) for your efforts.", _amount]] 
+					remoteExec ["hintSilent", _targets apply { owner _x }];
+				};
             };
 
             sleep 10;
@@ -130,8 +154,8 @@
         ] spawn {
             params ["_rebelGrp", "_combineGrp", "_rebelVehicle", "_apc"];
 
-            // Wait 3000 seconds then cleanup as fallback
-            sleep 3000;
+            // Wait 2000 seconds then cleanup as fallback
+            sleep 2000;
 
             {
                 deleteVehicle _x;

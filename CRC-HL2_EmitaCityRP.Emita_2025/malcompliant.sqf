@@ -155,21 +155,35 @@
                 damage _civ < 0.9 // Skip downed/incapacitated units
             ) then {
 
-                // 1. Weapon brandishing near Combine
-                if (currentWeapon _civ != "") then {
-                    private _combineNearby = allUnits select {
-                        side _x == west &&
-                        alive _x &&
-                        (_x distance _civ) < 30
-                    };
+			// 1) Weapon brandishing near Combine (ignore ACE carry/drag & non-threat tools)
+			private _cw           = currentWeapon _civ;
+			private _isAceCarry   = (_civ getVariable ["ACE_isDragging", false]) || (_civ getVariable ["ACE_isCarrying", false]);
+			private _nonThreatWpn = [
+				"ToolKit","Binocular","Rangefinder",
+				"Laserdesignator","Laserdesignator_02","Laserdesignator_03"
+			];
 
-                    if (count _combineNearby > 0) then {
-                        [_civ] joinSilent createGroup east;
-                        hint format ["%1 is now malcompliant. Reason: Socio-Endangerment.", name _civ];
-						["Individual: you are charged with Socio-endagerment, level1. Protection Units: prosecution code: duty, sword, midnight."] remoteExec ["systemChat", 0];
-						["Fsociolevel14spkr"] remoteExec ["playSound", 0];
-                    };
-                };
+			// Treat as non-threat if: empty weapon, a listed tool, any ACE “fake”/utility weapon, or weapon lowered
+			private _isNonThreat =
+				(_cw == "") ||
+				{_cw in _nonThreatWpn} ||
+				{toLower _cw find "ace_" == 0} ||          // catches ACE placeholders like “ace_…”
+				{weaponLowered _civ};
+
+			if (!(_isAceCarry) && !(_isNonThreat)) then {
+				private _combineNearby = allUnits select {
+					side _x == west && alive _x && (_x distance _civ) < 30
+				};
+
+				if (count _combineNearby > 0) then {
+					[_civ] joinSilent createGroup east;
+					hint format ["%1 is now malcompliant. Reason: Socio-Endangerment.", name _civ];
+					["Individual: you are charged with Socio-endagerment, level1. Protection Units: prosecution code: duty, sword, midnight."] remoteExec ["systemChat", 0];
+					["Fsociolevel14spkr"] remoteExec ["playSound", 0];
+				};
+			};
+
+
 
 				// 2. Has damaged a Combine unit
 				{
