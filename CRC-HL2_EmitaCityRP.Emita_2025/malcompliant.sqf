@@ -159,7 +159,7 @@
 			private _cw           = currentWeapon _civ;
 			private _isAceCarry   = (_civ getVariable ["ACE_isDragging", false]) || (_civ getVariable ["ACE_isCarrying", false]);
 			private _nonThreatWpn = [
-				"ToolKit","Binocular","Rangefinder",
+				"ToolKit","Binocular","Rangefinder", "rds_weap_latarka_janta",
 				"Laserdesignator","Laserdesignator_02","Laserdesignator_03"
 			];
 

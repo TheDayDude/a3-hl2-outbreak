@@ -140,10 +140,76 @@ case 1: {
     };
 };
 
-
 // === Case 2: Treat CPF Officers (Civilians w/ medical item) ===
 case 2: {
     if (!isServer) exitWith {};
+	
+	// Runs on CLIENT: attach the Treat action to a given unit
+	if (isNil "CIV_fnc_addTreatAction") then {
+		CIV_fnc_addTreatAction = {
+			params ["_u"];
+			if (isNull _u) exitWith {};
+
+			_u addAction [
+				"<t color='#80FF80'>Treat Officer (uses 1 medical item)</t>",
+				{
+					params ["_target", "_caller"];
+
+					if (side _caller != civilian) exitWith { hint "Civilians only."; };
+					if (_target getVariable ["treated", false]) exitWith { hint "Already treated."; };
+
+					private _items      = items _caller;
+					private _fakClasses = ["FirstAidKit","rds_car_FirstAidKit"];
+					private _hasMedKit  = ("Medikit" in _items) || ("Medikit_Civilian_01" in _items);
+					private _hasFAK     = (_items findIf { _x in _fakClasses }) > -1;
+					private _hasStim    = "WBK_Health_Syringe" in _items;
+
+					if (!(_hasMedKit || _hasFAK || _hasStim)) exitWith {
+						hint "You need a Medikit, First Aid Kit (vanilla or RDS), or Stim.";
+					};
+
+					// Local treat animation on caller
+					_caller playMoveNow "AinvPknlMstpSnonWnonDnon_medic_1";
+					uiSleep 8;
+					_caller switchMove "";
+					sleep 2;
+
+					// Consume: FAK > Stim; Medikit reusable
+					if (_hasFAK) then {
+						private _fakToUse = (_items select { _x in _fakClasses }) param [0, ""];
+						if (_fakToUse != "") then { _caller removeItem _fakToUse; };
+					} else {
+						if (_hasStim) then { _caller removeItem "WBK_Health_Syringe"; };
+					};
+
+					// Do the revive on the server
+					[_target] remoteExec ["CIV_fnc_treatServer", 2];
+
+					hint "Officer treated.";
+				},
+				nil, 1.5, true, true, "",
+				// condition runs client-side; _this is player, _target is officer
+				"side _this == civilian && !(_target getVariable ['treated', false])"
+			];
+		};
+		publicVariable "CIV_fnc_addTreatAction";
+	};
+	
+	// Runs on SERVER: actually “revive” the target
+	if (isNil "CIV_fnc_treatServer") then {
+		CIV_fnc_treatServer = {
+			params ["_t"];
+			if (isNull _t) exitWith {};
+			_t setDamage 0.2;
+			_t enableAI "MOVE";
+			_t enableAI "TARGET";
+			_t enableAI "AUTOTARGET";
+			_t switchMove "";
+			_t setVariable ["treated", true, true];
+			_t doMove (_t getPos [5 + random 5, random 360]);
+		};
+		publicVariable "CIV_fnc_treatServer";
+	};
 
     private _ptMarkers = allMapMarkers select { toLower _x find "patient_" == 0 };
     if (_ptMarkers isEqualTo []) exitWith {
@@ -162,12 +228,11 @@ case 2: {
         _taskPos, true
     ] call BIS_fnc_taskCreate;
 
-    private _cpTypes   = ["WBK_Combine_CP_P","WBK_Combine_CP_SMG"];
-    private _medItems  = ["Medikit","FirstAidKit","WBK_Health_Syringe", "Medikit_Civilian_01", "rds_car_FirstAidKit"];  // any one of these works
+    private _cpTypes = ["WBK_Combine_CP_P","WBK_Combine_CP_SMG"];
 
     private _grp       = createGroup west;
     private _patients  = [];
-    private _deadCount = 0;
+    missionNamespace setVariable ["CIV_PATIENTS_DEAD", 0, true];
 
     {
         private _mPos   = getMarkerPos _x;
@@ -185,68 +250,11 @@ case 2: {
         _u switchMove "AinjPpneMstpSnonWnonDnon";
         _u setVariable ["treated", false, true];
 
-_u addAction [
-    "<t color='#80FF80'>Treat Officer (uses 1 medical item)</t>",
-    {
-        params ["_target", "_caller"];
-
-        if (side _caller != civilian) exitWith { hint "Civilians only."; };
-        if (_target getVariable ["treated", false]) exitWith { hint "Already treated."; };
-
-		private _items     = items _caller;
-		private _fakClasses = ["FirstAidKit","rds_car_FirstAidKit"];
-		private _hasMedKit = ("Medikit" in _items) || ("Medikit_Civilian_01" in _items);
-		private _hasFAK    = (_items findIf { _x in _fakClasses }) > -1;
-		private _hasStim   = "WBK_Health_Syringe" in _items;
-
-		if (!(_hasMedKit || _hasFAK || _hasStim)) exitWith {
-			hint "You need a Medikit, First Aid Kit (vanilla or RDS), or Stim.";
-		};
-
-		// Consume priority: FAK > Stim; Medikit is reusable
-		private _consumed = "";
-		if (_hasFAK) then {
-			private _fakToUse = (_items select { _x in _fakClasses }) param [0, ""];
-			if (_fakToUse != "") then { _caller removeItem _fakToUse; _consumed = _fakToUse; };
-		} else {
-			if (_hasStim) then {
-				_caller removeItem "WBK_Health_Syringe";
-				_consumed = "Stim Dose";
-			} else {
-				_consumed = "Medikit (reusable)";
-			};
-		};
-
-			// “Heal” and revive
-			// Play a short vanilla treat animation on the caller (client-local)
-			[_caller, "AinvPknlMstpSnonWnonDnon_medic_1"] remoteExec ["playMoveNow", _caller];
-			uiSleep 8;  // duration of the anim
-			[_caller, ""] remoteExec ["switchMove", _caller];
-			sleep 2;
-			
-			_target setDamage 0.2;
-			_target enableAI "MOVE";
-			_target enableAI "TARGET";
-			_target enableAI "AUTOTARGET";
-			_target switchMove "";
-			_target setVariable ["treated", true, true];
-
-			// Step off the stretcher a bit
-			_target doMove (_target getPos [5 + random 5, random 360]);
-
-			hint format ["Officer treated. Used: %1", _consumed];
-		},
-		nil,
-		1.5,
-		true,
-		true,
-		"",
-		// Show only to civilians and when not already treated
-		"side _this == civilian && !(_target getVariable ['treated', false])"
-	];
+		// Add the action on all clients (JIP-safe)
+		[_u] remoteExec ["CIV_fnc_addTreatAction", 0, true];
 
 
-        // Deaths count toward failure
+        // Deaths count toward failure (server-local object, fine here)
         _u addEventHandler ["Killed", {
             missionNamespace setVariable [
                 "CIV_PATIENTS_DEAD",
@@ -258,7 +266,7 @@ _u addAction [
         _patients pushBack _u;
     } forEach _chosen;
 
-    // Monitor success/fail (no CBA dependency)
+    // Monitor success/fail and clean up
     [_taskId,_patients,_grp] spawn {
         params ["_taskId","_patients","_grp"];
         private _deadline = time + 3600; // 1 hour
@@ -287,8 +295,8 @@ _u addAction [
             if (_dead >= 2 || time > _deadline) exitWith {
                 [_taskId, "FAILED", true] call BIS_fnc_taskSetState;
                 ["Medical response failed — insufficient successful treatments."] remoteExec ["systemChat", 0];
-				["Attention occupants: your block is now charged with permissive inaction coercion. 5 ration units deducted."] remoteExec ["systemChat", 0];
-				["Frationunitsdeduct3spkr"] remoteExec ["playSound", 0];
+                ["Attention occupants: your block is now charged with permissive inaction coercion. 5 ration units deducted."] remoteExec ["systemChat", 0];
+                ["Frationunitsdeduct3spkr"] remoteExec ["playSound", 0];
                 true
             };
 
@@ -302,19 +310,17 @@ _u addAction [
 
         sleep 5;
         [_taskId] call BIS_fnc_deleteTask;
-
         missionNamespace setVariable ["CIV_PATIENTS_DEAD", 0, true];
     };
 };
-
 
 // === Case 3: Cleanup Detail 
 case 3: {
     if (!isServer) exitWith {};
 
-    // Helpers (define once)
-    if (isNil "fnc_addCleanupBagActions") then {
-        fnc_addCleanupBagActions = {
+    // ----- Helpers (client addAction + server corpse->bag) -----
+    if (isNil "CIV_fnc_addCleanupBagAction") then {
+        CIV_fnc_addCleanupBagAction = {
             params ["_corpse"];
             if (isNull _corpse || alive _corpse) exitWith {};
             if (_corpse getVariable ["hasCleanupBagActions", false]) exitWith {};
@@ -326,20 +332,40 @@ case 3: {
                     params ["_corpse","_caller"];
                     if (isNull _corpse || alive _corpse) exitWith {};
 
-                    private _bag = createVehicle ["CBRN_Bodybag_Closed", getPosATL _corpse, [], 0, "NONE"];
-                    _bag setDir (getDir _corpse);
+                    // small “work” animation on the caller (client-local)
+                    _caller playMoveNow "AinvPknlMstpSnonWnonDnon_medic_1";
+                    uiSleep 3.5;
+                    _caller switchMove "";
 
-                    // ACE friendliness if available
-                    if !(isNil "ACE_dragging_fnc_setDraggable") then { [_bag, true] call ACE_dragging_fnc_setDraggable; };
-                    if !(isNil "ACE_dragging_fnc_setCarryable") then { [_bag, true] call ACE_dragging_fnc_setCarryable; };
-                    if !(isNil "ACE_cargo_fnc_setSize")        then { [_bag, 1]   call ACE_cargo_fnc_setSize; };
-
-                    hideBody _corpse; deleteVehicle _corpse;
+                    // do the actual spawn/delete on the server
+                    [_corpse] remoteExec ["CIV_fnc_bagCorpseServer", 2];
                 },
-                nil, 1.5, true, true, "", "!(alive _target)"
+                nil, 1.5, true, true, "",
+                "!(alive _target)"   // condition runs client-side
             ];
         };
+        publicVariable "CIV_fnc_addCleanupBagAction";
     };
+
+    if (isNil "CIV_fnc_bagCorpseServer") then {
+        CIV_fnc_bagCorpseServer = {
+            params ["_c"];
+            if (isNull _c) exitWith {};
+            private _pos = getPosATL _c;
+            private _dir = getDir _c;
+
+            private _bag = createVehicle ["CBRN_Bodybag_Closed", _pos, [], 0, "NONE"];
+            _bag setDir _dir;
+
+            // ACE friendliness if available
+			[_bag, true] remoteExecCall ["ACE_dragging_fnc_setDraggable", 0, _bag];
+			[_bag, 1]    remoteExecCall ["ACE_cargo_fnc_setSize",        0, _bag];
+
+            hideBody _c; deleteVehicle _c;
+        };
+        publicVariable "CIV_fnc_bagCorpseServer";
+    };
+    // -----------------------------------------------------------
 
     // Pick a city_ marker and center the job nearby (tight cluster)
     private _cityMarkers = allMapMarkers select { toLower _x find "city_" == 0 };
@@ -359,9 +385,9 @@ case 3: {
     ] call BIS_fnc_taskCreate;
 
     // Spawn corpses + a few props close to center
-    private _toSpawn = 7 + floor random 6; // 7–12
+    private _toSpawn = 8 + floor random 6; // 8–12
     private _classes = [
-        "cmb_worker","cmb_hz_worker","Civilian_Jumpsuit_Unit_4","HL_CIV_Man_01","HL_CIV_Man_2",
+        "cmb_worker","cmb_hz_worker","Civilian_Jumpsuit_Unit_4","HL_CIV_Man_01","HL_CIV_Man_02",
         "WBK_Rebel_SMG_1","WBK_HECU_Hazmat_2","WBK_Rebel_HL2_Refugee_4","WBK_HL_Conscript_6",
         "WBK_ClassicZombie_HLA_1","WBK_ClassicZombie_HLA_2","WBK_ClassicZombie_HLA_3",
         "WBK_ClassicZombie_HLA_4","WBK_ClassicZombie_HLA_5","WBK_ClassicZombie_HLA_6",
@@ -381,47 +407,40 @@ case 3: {
         private _pos = [_center, 5, 30, 1, 0, 20, 0] call BIS_fnc_findSafePos;
         private _grp = createGroup civilian;
         private _u   = _grp createUnit [selectRandom _classes, _pos, [], 0, "NONE"];
-		sleep 0.1;
+        uiSleep 0.1;
         _u setDamage 1;
 
-        // Remove weapons/items most of the time
         if (random 1 < 0.9) then {
             removeAllWeapons _u;
             removeAllItems _u;
             removeAllAssignedItems _u;
         };
 
-		if (typeOf _u == "cmb_hz_worker") then {
-			_u forceAddUniform "CombainCIV_Uniform_2";
-		};
-		if (typeOf _u == "cmb_worker") then {
-			_u forceAddUniform "CombainCIV_Uniform_1";
-		};
+        if (typeOf _u == "cmb_hz_worker") then { _u forceAddUniform "CombainCIV_Uniform_2"; };
+        if (typeOf _u == "cmb_worker")     then { _u forceAddUniform "CombainCIV_Uniform_1"; };
 
         _corpses pushBack _u;
 
-        // Add the bag action where the corpse is local (server)
-        [_u] call fnc_addCleanupBagActions;
+        // Add the action on all clients (JIP-safe)
+        [_u] remoteExec ["CIV_fnc_addCleanupBagAction", 0, true];
     };
 	
-	// === Optional Strange Meat drops near the cleanup center ===
-	private _meatDrops = [];
-	if (random 1 < 0.95) then {               // ~65% chance to spawn meat at this site
-		private _count = 0 + floor random 6;  // 0–5 holders
-		for "_i" from 1 to _count do {
-			// Safe-ish placement 3–12m from the center, avoiding water/steep
-			private _mPos = [_center, 3, 12, 1, 0, 20, 0] call BIS_fnc_findSafePos;
+	private _required = ((count _corpses) - 1) max 1;  // need one fewer than spawned, but at least 1
 
-			// Use scripted holder so it won’t despawn from sim quirks
-			private _holder = createVehicle ["GroundWeaponHolder_Scripted", _mPos, [], 0, "CAN_COLLIDE"];
-			_holder addItemCargoGlobal ["VRP_StrangeMeat", 1 + floor random 2]; // 1–2 per pile
-			_meatDrops pushBack _holder;
-		};
-	};
+    // Optional Strange Meat drops near the cleanup center
+    private _meatDrops = [];
+    if (random 1 < 0.80) then {
+        private _count = 0 + floor random 5;  // 0–5 holders
+        for "_i" from 1 to _count do {
+            private _mPos = [_center, 3, 12, 1, 0, 20, 0] call BIS_fnc_findSafePos;
+            private _holder = createVehicle ["GroundWeaponHolder_Scripted", _mPos, [], 0, "CAN_COLLIDE"];
+            _holder addItemCargoGlobal ["VRP_StrangeMeat", 1 + floor random 2];
+            _meatDrops pushBack _holder;
+        };
+    };
 
-
-    // Progress: count actual body bag props in furnace, regardless of how they got there
-    private _counted = [];  // bags we’ve already credited
+    // Progress: count actual body bag props in furnace
+    private _counted = [];
     private _delivered = 0;
     private _deadline  = time + 3600;
     private _lastTick  = -1;
@@ -432,32 +451,29 @@ case 3: {
         };
     } forEach allPlayers;
 
-    while { _delivered < _toSpawn && time < _deadline } do {
+    while { _delivered < _required && time < _deadline } do {
         sleep 2;
-
-        // Scan all body bag props and credit those in furnace that we haven't counted yet
         private _bags = allMissionObjects "CBRN_Bodybag_Closed";
         {
             if (!isNull _x && {_x inArea furnace} && {!(_x in _counted)}) then {
                 _counted pushBack _x;
                 _delivered = _delivered + 1;
-                // delete after a short delay to prevent double counting / clutter
                 [_x] spawn { params["_b"]; uiSleep 3; if (!isNull _b) then { deleteVehicle _b; }; };
             };
         } forEach _bags;
 
         if (time > _lastTick + 10) then {
-            [format ["Cleanup progress: %1 / %2 bags delivered.", _delivered, _toSpawn]]
+            [format ["Cleanup progress: %1 / %2 bodies delivered.", _delivered, _required]]
                 remoteExec ["hintSilent", (allPlayers select { side _x == civilian }) apply { owner _x }];
             _lastTick = time;
         };
     };
 
     // Outcome
-    if (_delivered >= _toSpawn) then {
+    if (_delivered >= _required) then {
         [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
 
-        private _amt = _toSpawn;
+        private _amt = _required;
         {
             if (side _x == civilian && alive _x) then {
                 for "_i" from 1 to _amt do { _x addItem "VRP_HL_Token_Item"; };
@@ -472,14 +488,12 @@ case 3: {
             remoteExec ["systemChat", (allPlayers select { side _x == civilian }) apply { owner _x }];
     };
 
-    // Cleanup spawned props (bags already removed when delivered)
+    // Cleanup spawned props (bags are removed when delivered)
     { if (!isNull _x) then { deleteVehicle _x }; } forEach _props;
 
     sleep 5;
     [_taskId] call BIS_fnc_deleteTask;
 };
-
-
 
 
 };

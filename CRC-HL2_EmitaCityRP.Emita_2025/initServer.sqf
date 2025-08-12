@@ -170,71 +170,6 @@ TAG_fnc_requestCombineMission = {
 
 
 
-// === Bagging & tracking helpers (vanilla body bag; ACE cargo-friendly) ===
-if (isNil "fnc_addCleanupBagActions") then {
-  fnc_registerBag = {
-    params ["_bag","_tag"];
-    if (isNull _bag) exitWith {};
-    _bag setVariable ["cleanupTag", _tag, true];
-    private _key = format ["CLEANUP_BAGS_%1", _tag];
-    private _arr = missionNamespace getVariable [_key, []];
-    _arr pushBackUnique _bag;
-    missionNamespace setVariable [_key, _arr, true];
-  };
-
-  fnc_addCleanupBagActions = {
-    params ["_corpse","_tag"];
-    if (isNull _corpse || alive _corpse) exitWith {};
-    if (_corpse getVariable ["hasCleanupBagActions", false]) exitWith {};
-    _corpse setVariable ["hasCleanupBagActions", true, true];
-
-    // Action: Bag body (turn into body bag prop and register it)
-    _corpse addAction [
-      "<t color='#FFD700'>Bag body</t>",
-      {
-        params ["_corpse","_caller","_args"]; private _tag = _args;
-		_caller lookAt _corpse;
-		[_caller, "AinvPknlMstpSnonWnonDnon_medic_1"] remoteExec ["playMoveNow", _caller];
-		uiSleep 6;  // duration of the anim
-        if (isNull _corpse || alive _corpse) exitWith {};
-        private _bag = createVehicle ["CBRN_Bodybag_Closed", getPosATL _corpse, [], 0, "NONE"];
-        _bag setDir (getDir _corpse);
-
-        // Make ACE-cargoable & small
-        if !(isNil "ACE_cargo_fnc_setSize") then { [_bag, 1] call ACE_cargo_fnc_setSize; };
-		[_bag, true, [0, 2, 0], 180] call ace_dragging_fnc_setDraggable;
-
-        // Hide/delete corpse to avoid dupes
-        hideBody _corpse; deleteVehicle _corpse;
-
-        // Track this bag for the mission
-        [_bag, _tag] call fnc_registerBag;
-
-        // Convenience action: load into nearest vehicle (optional)
-        _bag addAction [
-          "<t color='#90EE90'>Use ACE to load into a vehicle.</t>",
-          {
-            params ["_bag","_caller"];
-            private _veh = objNull;
-            private _cands = nearestObjects [_bag, ["Car","Truck","Tank","Ship_F","Air"], 15];
-            if !(_cands isEqualTo []) then { _veh = _cands select 0; };
-            if (isNull _veh) exitWith { _caller sideChat "No vehicle nearby."; };
-            if !(isNil "ACE_cargo_fnc_loadItem") then {
-              [_veh, _bag] call ACE_cargo_fnc_loadItem;
-            } else {
-              // Fallback: attach (not ideal, but works without ACE Cargo)
-              _bag attachTo [_veh, [0, -1.2, -0.5]];
-            };
-          },
-          nil, 1.5, true, true, "", "true"
-        ];
-      },
-      nil, 1.5, true, true, "", "!(alive _target)", 3
-    ];
-  };
-};
-
-
 // === Dynamic Civ Mission: Assemble & Deliver Rations ===
 // Triggers every 30 sec if RationStock < 5, creates a CIVILIAN task at marker "rfactory".
 // Task completes automatically when RationStock >= 10.
@@ -263,7 +198,7 @@ if (isServer) then {
                 private _taskId = format ["task_civ_rations_%1", diag_tickTime];
 
                 [civilian, _taskId,
-                    ["Attention Citizens: Ration Production is below quota. Report to the Ration Factory in Sector 3 and begin assembling rations. Restock Biomass as needed. Scavenge, if needed. Take the assembled rations and deliver them to the Ration Distribution Center in Sector 1, to the warehouse terminal on the left.",
+                    ["Attention Citizens: Ration Production is below quota. Report to the Ration Factory in District 3 and begin assembling rations. Restock Biomass as needed. Scavenge, if needed. Take the assembled rations and deliver them to the Ration Distribution Center in District 1, to the warehouse terminal on the left.",
                      "Assemble and Deliver Rations", ""],
                     _pos, true
                 ] call BIS_fnc_taskCreate;

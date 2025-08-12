@@ -49,7 +49,7 @@
     private _spawnedUnits = [];
 
     while {true} do {
-        private _players = allPlayers select { alive _x && !(_x inArea City18) };
+        private _players = allPlayers select { alive _x && !(_x inArea City18) && !(_x inArea nexus) };
         if !(_players isEqualTo []) then {
             private _target = selectRandom _players;
             private _side = side _target;

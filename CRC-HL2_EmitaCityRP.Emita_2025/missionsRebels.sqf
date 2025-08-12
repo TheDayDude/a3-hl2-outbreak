@@ -69,7 +69,7 @@ case 1: {
 
     for "_g" from 1 to _numGroups do {
         private _grp   = createGroup west;
-        private _count = 4 + floor random 3; // 4–6 per group
+        private _count = 3 + floor random 3; // 3–5 per group
         for "_i" from 1 to _count do {
             private _pos = [_center, 60 + random 120, random 360] call BIS_fnc_relPos;
             private _u   = _grp createUnit [selectRandom _defClasses, _pos, [], 2, "FORM"];
@@ -89,7 +89,7 @@ case 1: {
     _props pushBack _tower;
 
     // Optional: small chance of an APC patrol
-    if (random 1 < 0.25) then {
+    if (random 1 < 0.15) then {
         private _apcPos = [_center, 120 + random 120, random 360] call BIS_fnc_relPos;
         private _apc    = createVehicle ["HL_CMB_OW_APC", _apcPos, [], 0, "NONE"];
         createVehicleCrew _apc;
@@ -149,19 +149,19 @@ case 1: {
     };
 };
 
-// === Mission 2: Hack Combine Terminal  ===
+// === Mission 2: Hack Combine Terminal (Proximity-based) ===
 case 2: {
     if (!isServer) exitWith {};
 
+    // Pick site
     private _cmbMarkers = allMapMarkers select { toLower _x find "combine_" == 0 };
     if (_cmbMarkers isEqualTo []) exitWith {
         ["[Rebel Mission] No combine_ markers found — mission skipped."] remoteExec ["systemChat", 0];
     };
-
     private _chosenMarker = selectRandom _cmbMarkers;
     private _center       = getMarkerPos _chosenMarker;
 
-    // Track for cleanup
+    // Tracking for cleanup
     private _groups = [];
     private _units  = [];
     private _props  = [];
@@ -170,55 +170,26 @@ case 2: {
     private _terminal = createVehicle ["HL_CMB_Static_interface002", _center, [], 0, "NONE"];
     _terminal setDir random 360;
     _props pushBack _terminal;
-	
-	// Initial Combine guards at the terminal
-	private _guardGrp = createGroup west;
-	for "_i" from 1 to (3 + floor random 3) do { // 3–5 guards
-		private _pos = _center getPos [5 + random 3, random 360]; // 5–8m from terminal
-		private _u = _guardGrp createUnit ["WBK_Combine_HL2_Type", _pos, [], 0, "NONE"];
-		_u setDir ([_u, _terminal] call BIS_fnc_dirTo);
-		_units pushBack _u; // track for cleanup
-	};
-	_guardGrp setBehaviour "AWARE";
-	_guardGrp setCombatMode "RED";
-	_groups pushBack _guardGrp; // track for cleanup
 
-    // EAST task
+    // Initial Combine guards
+    private _guardGrp = createGroup west;
+    for "_i" from 1 to (3 + floor random 3) do {
+        private _pos = _center getPos [5 + random 3, random 360];
+        private _u = _guardGrp createUnit ["WBK_Combine_HL2_Type", _pos, [], 0, "NONE"];
+        _u setDir ([_u, _terminal] call BIS_fnc_dirTo);
+        _units pushBack _u;
+    };
+    _guardGrp setBehaviour "AWARE";
+    _guardGrp setCombatMode "RED";
+    _groups pushBack _guardGrp;
+
+    // Task
     private _taskId  = format ["task_hackTerminal_%1", diag_tickTime];
     [east, _taskId,
-        ["Hack the Combine terminal (5:00). Defend the area and resume the hack when it pauses.",
+        ["Maintain proximity (≤10m) to the terminal until the timer completes. Leaving pauses progress.",
          "Hack Combine Terminal", ""],
         _center, true
     ] call BIS_fnc_taskCreate;
-
-    // Action flags
-    _terminal setVariable ["hackStartRequest", false, true];
-    _terminal setVariable ["hackResumeRequest", false, true];
-
-    // Start action (EAST only)
-    private _startActId = _terminal addAction [
-        "<t color='#00FF88'>Start Hacking</t>",
-        {
-            params ["_t","_c"];
-            if (side _c == east) then { _t setVariable ["hackStartRequest", true, true]; }
-            else { _c sideChat "Only rebels can start the hack."; };
-        },
-        nil, 1.5, true, true, "", "side _this == east"
-    ];
-
-    // Pools
-    private _combInf = [
-        "WBK_Combine_Grunt",
-        "WBK_Combine_Grunt_white",
-        "WBK_Combine_HL2_Type_WastelandPatrol",
-        "WBK_Combine_HL2_Type_WastelandPatrol",
-        "WBK_Combine_HL2_Type",
-        "WBK_Combine_HL2_Type_AR"
-    ];
-    private _combElite = [
-        "WBK_Combine_HL2_Type_Elite","WBK_Combine_ASS_SMG",
-        "WBK_Combine_Ordinal","WBK_Combine_APF"
-    ];
 
     // Helpers
     private _fmtTime = {
@@ -233,243 +204,107 @@ case 2: {
         private _targets = (allPlayers select { side _x == east }) apply { owner _x };
         [_txt] remoteExec ["hintSilent", _targets];
     };
-    private _defendersNear = {
-        params ["_pos"];
-        count (allUnits select { side _x == east && alive _x && _x distance2D _pos < 100 })
+    private _eastInRange = {
+        params ["_pos","_r"];
+        count (allPlayers select { side _x == east && alive _x && (_x distance2D _pos) <= _r })
     };
 
-    // Spawn one ground wave; return the group so caller can track it
+    // Simple ground wave spawner
     private _spawnWave = {
-        params ["_towardPos","_combInf"];
+        params ["_towardPos"];
         private _grp = createGroup west;
-        private _n   = 6 + floor random 5; 
+        private _n   = 6 + floor random 5; // 6–10
         for "_i" from 1 to _n do {
-            private _pos = [_towardPos, 250 + random 100, random 360, 0, 20, 0.3, 0] call BIS_fnc_findSafePos;
-            private _u   = _grp createUnit [selectRandom _combInf, _pos, [], 5, "FORM"];
+            private _pos = [_towardPos, 200 + random 100, random 360, 0, 20, 0.3, 0] call BIS_fnc_findSafePos;
+            private _u   = _grp createUnit [selectRandom [
+                "WBK_Combine_Grunt","WBK_Combine_Grunt_white",
+                "WBK_Combine_HL2_Type_WastelandPatrol",
+                "WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_AR"
+            ], _pos, [], 5, "FORM"];
             _units pushBack _u;
         };
         _grp setBehaviour "AWARE";
         _grp setCombatMode "RED";
         _grp addWaypoint [_towardPos, 0] setWaypointType "SAD";
         _groups pushBack _grp;
-        _grp
     };
 
-    // One-time elite heli fly-by drop (no landing)
-    private _callEliteHelo = {
-        params ["_objPos","_combElite"];
-        private _spawn2D = [_objPos, 1200 + random 600, random 360] call BIS_fnc_relPos;
-        private _spawn3D = _spawn2D vectorAdd [0,0,120];
-
-        private _heli = createVehicle ["B_Heli_Transport_03_unarmed_F", _spawn3D, [], 0, "FLY"];
-        createVehicleCrew _heli;
-        _heli setDir ([_heli, _objPos] call BIS_fnc_dirTo);
-        _heli flyInHeight 100;
-        _heli lock true;
-        _props pushBack _heli;
-        { _units pushBack _x } forEach (crew _heli);
-
-        // Cargo (6–8 elites)
-        private _eliteGrp = createGroup west;
-        for "_i" from 1 to (6 + floor random 3) do {
-            private _u = _eliteGrp createUnit [selectRandom _combElite, _spawn2D, [], 0, "NONE"];
-            _u moveInCargo _heli;
-            _units pushBack _u;
-        };
-        _eliteGrp setBehaviour "COMBAT";
-        _eliteGrp setCombatMode "RED";
-        _groups pushBack _eliteGrp;
-
-        // Pilot route: pass over then exit
-        private _pilotGrp = group driver _heli;
-        _groups pushBack _pilotGrp;
-        (_pilotGrp addWaypoint [_objPos, 0]) setWaypointType "MOVE";
-        private _exit = _objPos getPos [3000 + random 1000, random 360];
-        (_pilotGrp addWaypoint [_exit, 0]) setWaypointType "MOVE";
-
-        // Fly-by eject
-        [_heli, _eliteGrp, _objPos] spawn {
-            params ["_heli","_grp","_objPos"];
-            waitUntil { sleep 0.25; (_heli distance2D _objPos) < 150 };
-            {
-                if (vehicle _x == _heli) then {
-                    unassignVehicle _x; moveOut _x;
-                    _x setUnitPos "MIDDLE"; _x doMove _objPos;
-                };
-            } forEach units _grp;
-
-            // Let the heli leave; mission cleanup will delete it
-        };
-    };
-
-    // === Main mission thread ===
-    [_terminal,_center,_taskId,_combInf,_combElite,_spawnWave,_callEliteHelo,_startActId,_fmtTime,_showUi,_defendersNear,_groups,_units,_props] spawn {
-        params ["_terminal","_center","_taskId","_combInf","_combElite","_spawnWave","_callEliteHelo","_startActId","_fmtTime","_showUi","_defendersNear","_groups","_units","_props"];
+    // Main loop: proximity-based progress
+    [_terminal,_center,_taskId,_groups,_units,_props,_fmtTime,_showUi,_eastInRange,_spawnWave] spawn {
+        params ["_terminal","_center","_taskId","_groups","_units","_props","_fmtTime","_showUi","_eastInRange","_spawnWave"];
         scopeName "HACK_SCOPE";
 
-        private _hackTime    = 300;        // 5 minutes
-        private _deadline    = time + 3600;
-        private _active      = false;
-        private _paused      = false;
-        private _lastWave    = 0;
-        private _waveGap     = 75;
-        private _graceStart  = -1;
-        private _resumeActId = -1;
-        private _nextUiTick  = 0;
-        private _heliCalled  = false;
+        private _need      = 300;            // 5 minutes needed on terminal
+        private _progress  = 0;              // accumulated seconds while in range
+        private _deadline  = time + 3600;    // 1 hour timeout
+        private _lastTick  = time;
+        private _lastWave  = 0;
+        private _waveGap   = 75;
+        private _radius    = 10;             // proximity radius
 
-        while {true} do {
+        ["Approach the terminal (≤10m) to begin. Leaving pauses the hack."] call _showUi;
+
+        while { true } do {
             sleep 1;
 
-            // Start?
-            if (!_active && _terminal getVariable ["hackStartRequest", false]) then {
-                _active = true;
-                _terminal setVariable ["hackStartRequest", false, true];
-                if (_startActId >= 0) then { _terminal removeAction _startActId; };
-                [format ["Hacking. Time Left: %1", [_hackTime] call _fmtTime]] call _showUi;
-                ["Hack started. Hold the area!"] remoteExec ["systemChat", (allPlayers select { side _x == east }) apply { owner _x }];
-				["Attention, ground units - anticitizen reported in this community. Code: lock, cauterize, stabilize."] remoteExec ["systemChat", 0];
-				["Fanticitizenreportspkr"] remoteExec ["playSound", 0];
+            private _now   = time;
+            private _delta = _now - _lastTick;
+            _lastTick = _now;
+
+            // In range?
+            private _num = [_center,_radius] call _eastInRange;
+
+            if (_num > 0) then {
+                _progress = _progress + _delta;
             };
 
-            if (_active) then {
-                // Defender check (30s grace if empty)
-                if ([_center] call _defendersNear == 0) then {
-                    if (_graceStart < 0) then { _graceStart = time };
-                    if ((time - _graceStart) > 30) then {
-                        [_taskId, "FAILED", true] call BIS_fnc_taskSetState;
-                        ["Hack failed — no rebels defending the terminal."] remoteExec ["systemChat", 0];
-                        ["" ] call _showUi;
-						{
-							{ if (!isNull _x) then { deleteVehicle _x }; } forEach units _x;
-							deleteGroup _x;
-						} forEach _groups;
+            // UI every second
+            private _remain = _need - _progress;
+            if (_remain < 0) then { _remain = 0 };
+            private _label  = if (_num > 0) then {"Hacking"} else {"Paused"};
+            [format ["%1 %2 (range: %3m)", _label, [_remain] call _fmtTime, _radius]] call _showUi;
 
-						{ if (!isNull _x) then { deleteVehicle _x }; } forEach _props;
+            // Spawn waves periodically regardless of state (keeps pressure on)
+            if ((time - _lastWave) > _waveGap) then {
+                [_center] call _spawnWave;
+                _lastWave = time;
+            };
 
-						{
-							if (!isNull _x && {!alive _x || {!(_x isKindOf 'Man')}}) then { deleteVehicle _x };
-						} forEach _units;
-
-						// remove the task
-						sleep 10;
-						[_taskId] call BIS_fnc_deleteTask;
-                        breakOut "HACK_SCOPE";
+            // Success?
+            if (_progress >= _need) then {
+                [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
+                private _amt = 6 + floor random 4; // 6–9 tokens
+                {
+                    if (side _x == east && alive _x) then {
+                        for "_i" from 1 to _amt do { _x addItem "VRP_HL_Token_Item"; };
                     };
-                } else { _graceStart = -1; };
-
-                // Random pauses
-                if (!_paused && (random 1) < 0.01) then {
-                    _paused = true;
-                    _resumeActId = _terminal addAction [
-                        "<t color='#FFA500'>Resume Hacking</t>",
-                        { (_this select 0) setVariable ["hackResumeRequest", true, true]; },
-                        nil, 1.5, true, true, "", "side _this == east"
-                    ];
-                    [format ["Hack paused at %1", [_hackTime] call _fmtTime]] call _showUi;
-                    ["Hack paused! Resume at terminal."] remoteExec ["systemChat", (allPlayers select { side _x == east }) apply { owner _x }];
-                };
-
-                // Resume?
-                if (_paused && _terminal getVariable ["hackResumeRequest", false]) then {
-                    _paused = false;
-                    _terminal setVariable ["hackResumeRequest", false, true];
-                    if (_resumeActId >= 0) then { _terminal removeAction _resumeActId; _resumeActId = -1; };
-                    [format ["Hack resumed. Time remaining: %1", [_hackTime] call _fmtTime]] call _showUi;
-                    ["Hack resumed."] remoteExec ["systemChat", (allPlayers select { side _x == east }) apply { owner _x }];
-                };
-
-                // Tick when not paused
-                if (!_paused) then { _hackTime = _hackTime - 1; };
-
-                // UI every 1s
-                if (time >= _nextUiTick) then {
-                    private _mmss = [_hackTime] call _fmtTime;
-                    private _label = if (_paused) then {"Paused"} else {"Hacking"};
-                    [format ["%1 %2", _label, _mmss]] call _showUi;
-                    _nextUiTick = time + 1;
-                };
-
-                // Waves
-                if ((time - _lastWave) > _waveGap) then {
-                    [_center,_combInf] call _spawnWave;
-                    _lastWave = time;
-                };
-
-                // Final-minute heli (once)
-                if (_hackTime <= 120 && !_heliCalled) then {
-                    _heliCalled = true;
-                    [_center,_combElite] call _callEliteHelo;
-                };
-
-                // Success
-                if (_hackTime <= 0) then {
-                    [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
-                    private _amt = 6 + floor random 4; // 6–9 tokens
-                    {
-                        if (side _x == east && alive _x) then {
-                            for "_i" from 1 to _amt do { _x addItem "VRP_HL_Token_Item"; };
-                        };
-                    } forEach allPlayers;
-                    [format ["Terminal hacked! You pilfer %1 Tokens.", _amt]] call _showUi;
-                    sleep 3; ["" ] call _showUi;
-					// clear UI + actions
-					[""] call _showUi;
-					if (!isNull _terminal) then {
-						{ if (_x isEqualType 0 && _x >= 0) then { _terminal removeAction _x; } } forEach [_startActId, _resumeActId];
-					};
-
-					// let the immediate fight resolve a touch
-					sleep 300;
-
-					// delete groups (units inside) then props/loose units
-					{
-						{ if (!isNull _x) then { deleteVehicle _x }; } forEach units _x;
-						deleteGroup _x;
-					} forEach _groups;
-
-					{ if (!isNull _x) then { deleteVehicle _x }; } forEach _props;
-
-					{
-						if (!isNull _x && {!alive _x || {!(_x isKindOf 'Man')}}) then { deleteVehicle _x };
-					} forEach _units;
-
-					[_taskId] call BIS_fnc_deleteTask;
-                    breakOut "HACK_SCOPE";
-                };
+                } forEach allPlayers;
+                [format ["Terminal hacked! You pilfer %1 Tokens.", _amt]] call _showUi;
+                breakOut "HACK_SCOPE";
             };
 
-            // Timeout
+            // Timeout?
             if (time > _deadline) then {
                 [_taskId, "FAILED", true] call BIS_fnc_taskSetState;
                 ["Hack failed — time limit exceeded."] remoteExec ["systemChat", 0];
                 ["" ] call _showUi;
-				// clear UI + actions
-				[""] call _showUi;
-				if (!isNull _terminal) then {
-					{ if (_x isEqualType 0 && _x >= 0) then { _terminal removeAction _x; } } forEach [_startActId, _resumeActId];
-				};
-
-				// let the immediate fight resolve a touch
-				sleep 300;
-
-				// delete groups (units inside) then props/loose units
-				{
-					{ if (!isNull _x) then { deleteVehicle _x }; } forEach units _x;
-					deleteGroup _x;
-				} forEach _groups;
-
-				{ if (!isNull _x) then { deleteVehicle _x }; } forEach _props;
-
-				{
-					if (!isNull _x && {!alive _x || {!(_x isKindOf 'Man')}}) then { deleteVehicle _x };
-				} forEach _units;
-				[_taskId] call BIS_fnc_deleteTask;
                 breakOut "HACK_SCOPE";
             };
         };
+
+        // Cleanup (simple)
+        [""] call _showUi;
+        sleep 60;
+
+        { { if (!isNull _x) then { deleteVehicle _x }; } forEach units _x; deleteGroup _x; } forEach _groups;
+        { if (!isNull _x) then { deleteVehicle _x }; } forEach _props;
+        { if (!isNull _x && { !alive _x || { !(_x isKindOf 'Man') } }) then { deleteVehicle _x }; } forEach _units;
+
+        sleep 5;
+        [_taskId] call BIS_fnc_deleteTask;
     };
 };
+
 
 // === Mission 3: Steal Conscript Supply Truck (center on truck) ===
 case 3: {
@@ -520,7 +355,7 @@ case 3: {
 
     // --- Tight guard close to the truck (always spawns) ---
     private _tightGrp = createGroup west;
-    private _tightCount = 4 + floor random 3; // 4–6
+    private _tightCount = 3 + floor random 3; // 3–5
     for "_i" from 1 to _tightCount do {
         private _p = [_truckPos, 10, 25, 0, 0, 10, 0] call BIS_fnc_findSafePos;
         private _u = _tightGrp createUnit [selectRandom _conscripts, _p, [], 0, "FORM"];
@@ -543,7 +378,7 @@ case 3: {
     private _extraGroups = (3 + floor random 2) - 1 max 0; // 2–3 more, since tight group already spawned
     for "_g" from 1 to _extraGroups do {
         private _grp = createGroup west;
-        private _count = 4 + floor random 3; // 4–6 per group
+        private _count = 3 + floor random 3; // 4–5 per group
         for "_i" from 1 to _count do {
             private _p = [_truckPos, 120, 350, 0, 0, 20, 0] call BIS_fnc_findSafePos;
             private _u = _grp createUnit [selectRandom _conscripts, _p, [], 0, "FORM"];
