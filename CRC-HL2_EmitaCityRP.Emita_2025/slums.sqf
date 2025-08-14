@@ -12,8 +12,17 @@ if (!isServer) exitWith {};
 	private _detectWarn = 50;        // warn at <= 50m (assume inspection position)
 	private _detectFlip = 10;        // flip to OPFOR / confiscate at <= 10m
 
-	private _cpTypes     = ["WBK_Combine_CP_P","WBK_Combine_CP_SMG"];
-	private _sweepCount  = 5;        // number of slums_ markers per sweep
+        private _cpTypes     = ["WBK_Combine_CP_P","WBK_Combine_CP_SMG"];
+        private _sweepCount  = 5;        // number of slums_ markers per sweep
+
+        private _zombieTypes   = [
+                "WBK_Zombine_HLA_1",
+                "WBK_ClassicZombie_HLA_1","WBK_ClassicZombie_HLA_2","WBK_ClassicZombie_HLA_3",
+                "WBK_ClassicZombie_HLA_4","WBK_ClassicZombie_HLA_5","WBK_ClassicZombie_HLA_6",
+                "WBK_ClassicZombie_HLA_7","WBK_ClassicZombie_HLA_8","WBK_ClassicZombie_HLA_9"
+        ];
+        private _hordeChance   = 0.1;    // 10% chance when players present
+        private _hordeCooldown = 300;    // seconds between horde spawn checks
 	
 
 	// ---------- Marker helpers ----------
@@ -163,9 +172,9 @@ if (!isServer) exitWith {};
 	};
 
 	// ---------- Pursue nearest civilian until resolved, then RTB ----------
-	private _pursueTarget = {
-		params ["_grp","_guardPos","_slumsMarkers","_areaRadius","_blacklist","_detectWarn","_detectFlip"];
-		if (isNull _grp) exitWith {};
+        private _pursueTarget = {
+                params ["_grp","_guardPos","_slumsMarkers","_areaRadius","_blacklist","_detectWarn","_detectFlip"];
+                if (isNull _grp) exitWith {};
 
 		private _lead = leader _grp;
 		if (isNull _lead) exitWith {};
@@ -247,15 +256,36 @@ if (!isServer) exitWith {};
 		call _clearWPs;
 		private _wpHome = _grp addWaypoint [_guardPos, 0];
 		_wpHome setWaypointType "MOVE";
-		_grp setBehaviour "SAFE";
-		_grp setSpeedMode "LIMITED";
-		_grp setCombatMode "RED";    // keep fire-at-will even on patrol
-	};
+                _grp setBehaviour "SAFE";
+                _grp setSpeedMode "LIMITED";
+                _grp setCombatMode "RED";    // keep fire-at-will even on patrol
+        };
+
+        // ---------- Spawn a zombie horde toward a target ----------
+        private _spawnHorde = {
+                params ["_target","_types"];
+                private _spawnPos = _target getPos [50 + random 50, random 360];
+                private _grp = createGroup resistance;
+                for "_i" from 1 to (4 + floor random 4) do {
+                        private _u = _grp createUnit [selectRandom _types, _spawnPos, [], 5, "FORM"];
+                        _u setBehaviour "AWARE";
+                        _u setCombatMode "RED";
+                        _u doMove (getPos _target);
+                };
+                [_grp,_target] spawn {
+                        params ["_grp","_target"];
+                        while { ({alive _x} count units _grp) > 0 && alive _target } do {
+                                { if (alive _x) then { _x doMove (getPos _target) }; } forEach units _grp;
+                                sleep (10 + random 10);
+                        };
+                };
+        };
 
 	// ---------- Main supervisor loop ----------
-	private _grp = grpNull;
-	private _units = [];
-	private _lastPresence = time;
+        private _grp = grpNull;
+        private _units = [];
+        private _lastPresence = time;
+        private _lastHorde = -_hordeCooldown;
 
 	while { true } do {
 		private _slums     = call _getSlumsMarkers;
@@ -263,12 +293,21 @@ if (!isServer) exitWith {};
 
 		if (_guardName == "") exitWith { diag_log "[SLUMS] Missing slums_guard marker."; };
 
-		private _guardPos = getMarkerPos _guardName;
-		private _near     = [_slums,_guardName,_presenceRadius] call _playersInSlums;
+                private _guardPos = getMarkerPos _guardName;
+                private _near     = [_slums,_guardName,_presenceRadius] call _playersInSlums;
 
-		// Spawn if any players present and no patrol exists
-		if ((count _near) > 0 && isNull _grp) then {
-			private _spawn = [_guardPos] call _spawnPatrol;
+                // Random zombie horde spawn near a player
+                if ((count _near) > 0 && {time > _lastHorde + _hordeCooldown}) then {
+                        _lastHorde = time;
+                        if (random 1 < _hordeChance) then {
+                                private _tgt = selectRandom _near;
+                                [_tgt,_zombieTypes] call _spawnHorde;
+                        };
+                };
+
+                // Spawn if any players present and no patrol exists
+                if ((count _near) > 0 && isNull _grp) then {
+                        private _spawn = [_guardPos] call _spawnPatrol;
 			_grp   = _spawn select 0;
 			_units = _spawn select 1;
 
