@@ -17,12 +17,12 @@ if (!isServer) exitWith {};
 
         private _zombieTypes   = [
                 "WBK_Zombine_HLA_1",
-                "WBK_ClassicZombie_HLA_1","WBK_ClassicZombie_HLA_2","WBK_ClassicZombie_HLA_3",
+                "WBK_ClassicZombie_HLA_1","WBK_Headcrab_Normal","WBK_ClassicZombie_HLA_3",
                 "WBK_ClassicZombie_HLA_4","WBK_ClassicZombie_HLA_5","WBK_ClassicZombie_HLA_6",
-                "WBK_ClassicZombie_HLA_7","WBK_ClassicZombie_HLA_8","WBK_ClassicZombie_HLA_9"
+                "WBK_ClassicZombie_HLA_7","WBK_ClassicZombie_HLA_8","WBK_Zombie_HECU_1"
         ];
         private _hordeChance   = 0.1;    // 10% chance when players present
-        private _hordeCooldown = 300;    // seconds between horde spawn checks
+        private _hordeCooldown = 120;    // seconds between horde spawn checks
 	
 
 	// ---------- Marker helpers ----------
