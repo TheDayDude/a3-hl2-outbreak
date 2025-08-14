@@ -51,7 +51,7 @@
                     };
 
                     _grp setBehaviour "SAFE";
-                    _grp setCombatMode "GREEN";
+                    _grp setCombatMode "RED";
 
                     if (toLower _marker find "patrol_" == 0) then {
                         for "_i" from 1 to 3 do {
@@ -122,7 +122,7 @@
                 };
 
                 _grp setBehaviour "SAFE";
-                _grp setCombatMode "GREEN";
+                _grp setCombatMode "RED";
 
                 _entry set [1, _newUnits];
                 _entry set [2, time];

@@ -7,7 +7,7 @@
                 alive _x &&
                 damage _x < 0.9 &&
 				!captive _x &&
-                {!(_x inArea City18)}
+                {!(_x inArea City18) && !(_x inArea nexus) && !(_x inArea slums)}
             ) then {
                 private _target = _x;
                 [_target] joinSilent createGroup east;
@@ -230,7 +230,7 @@
                     // Ensure unit is still civilian when firing
                     if (side _unit != civilian) exitWith {};
 
-                    // Check for nearby Combine (west) units
+                    // Check for nearby (west units
                     private _combineNearby = allUnits select {
                         side _x == west &&
                         alive _x &&

@@ -359,7 +359,7 @@ case 3: {
 
             // ACE friendliness if available
 			[_bag, true] remoteExecCall ["ACE_dragging_fnc_setDraggable", 0, _bag];
-			[_bag, 1]    remoteExecCall ["ACE_cargo_fnc_setSize",        0, _bag];
+			[_bag, 2]    remoteExecCall ["ACE_cargo_fnc_setSize",        0, _bag];
 
             hideBody _c; deleteVehicle _c;
         };

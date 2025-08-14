@@ -89,7 +89,7 @@
                 private _spawnPos = _target getPos [random 200, random 360];
                 private _grp      = createGroup resistance;
 
-                for "_i" from 1 to (2 + floor random 3) do {
+                for "_i" from 1 to (1 + floor random 2) do {
                     private _unit = _grp createUnit ["WBK_Antlion_1", _spawnPos, [], 5, "FORM"];
                     _unit doMove getPos _target;
                     _unit addEventHandler ["Killed", {
@@ -148,7 +148,7 @@
                     };
                 };
             };
-            private _delay = 15 + random 45;
+            private _delay = 90 + random 120;
             sleep _delay;
         };
     };
@@ -223,7 +223,7 @@
                     };
                 };
             };
-            private _delay = 30 + random 60;
+            private _delay = 90 + random 120;
             sleep _delay;
         };
     };

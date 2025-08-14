@@ -8,6 +8,9 @@ if (!isServer) exitWith {};
     private _despawnGrace  = 30;
     private _tokenClass    = "VRP_HL_Token_Item";
     private _packClass     = "Combaine_backpack_NB";
+	private _outlandsSpawnChance = 0.4;   // 50% chance to spawn when players are near
+	private _outlandsDeny = [];           // [markerName, denyUntilTime] so we don't re-roll too often
+
 
     // --- Stock ---
     private _stock_equip = [
@@ -47,8 +50,69 @@ if (!isServer) exitWith {};
         ["VRP_Loyalist_Ration_Item","Egg Flavored Rations",4],
         ["VRP_Loyalist2_Ration_Item","Noodle Flavored Rations",5]
     ];
+    private _stock_outlands = [
+		["WBK_CP_HeavySmg_Resist","Heavy SMG (Resist)",45],
+		["hlc_rifle_ak47","AK-47",50],
+		["hlc_rifle_ak74_dirty2","AK-74 (Worn)",48],
+		["hlc_rifle_ak74m","AK-74M",50],
+		["hlc_rifle_ak74m_gl","AK-74M GL",55],
+		["hlc_rifle_akm","AKM",48],
+		["hlc_rifle_akmgl","AKM GL",53],
+		["hlc_rifle_aks74","AKS-74",47],
+		["hlc_rifle_aks74_GL","AKS-74 GL",52],
+		["hlc_rifle_aks74u","AKS-74U",45],
+		["hlc_rifle_RPK12","RPK-12",60],
+		["launch_RPG7_F","RPG-7 Launcher",120],
+		["optic_MRCO","MRCO Optic",15],
+		["hlc_optic_kobra","Kobra Sight",12],
+		["hlc_optic_VOMZ","VOMZ Optic",15],
+		["HLC_optic_ISM1400A7","ISM1400A7 Optic",18],
+		["hlc_optic_LeupoldM3A","Leupold M3A Optic",20],
+		["HLC_Optic_PSO1","PSO-1 Scope",18],
+		["HLC_Optic_1p29","1P29 Scope",16],
+		["hlc_optic_VOMZ3d","VOMZ 3D Optic",17],
+		["hlc_optic_HensoldtZO_lo_Docter","HensoldtZO Docter Optic",22],
+		["HLC_optic_Aimpoint3000","Aimpoint 3000",15],
+		["HLC_optic_Aimpoint3000_Magnifier","Aimpoint 3000 + Magnifier",18],
+		["HLC_optic_Aimpoint5000","Aimpoint 5000",16],
+		["HLC_optic_Aimpoint5000_Magnifier","Aimpoint 5000 + Magnifier",19],
+		["hlc_acc_AIM1D_Generic","AIM1D Laser",8],
+		["HLC_Charm_Teethgang","Weapon Charm: Teethgang",5],
+		["HLC_Charm_Izhmash","Weapon Charm: Izhmash",5],
+		["acc_pointer_IR","IR Pointer",7],
+		["HLC_Charm_Herstal","Weapon Charm: Herstal",5],
+		["ACE_acc_pointer_green","Green Laser Pointer",7],
+		["hlc_30Rnd_762x39_b_ak","30Rnd 7.62mm AK Mag",3],
+		["hlc_30Rnd_545x39_B_AK","30Rnd 5.45mm AK Mag",3],
+		["hlc_45Rnd_545x39_b_rpkm","45Rnd 5.45mm RPK Mag",4],
+		["hlc_60Rnd_545x39_b_rpk","60Rnd 5.45mm RPK Mag",5],
+		["hlc_40Rnd_762x39_b_rpk","40Rnd 7.62mm RPK Mag",4],
+		["hlc_75Rnd_762x39_b_rpk","75Rnd 7.62mm RPK Drum",6],
+		["hlc_75Rnd_762x39_AP_rpk","75Rnd AP 7.62mm RPK Drum",8],
+		["H_bms_helmet_1","BMS Helmet",10],
+		["H_hecu_pasgt_urban_nvo_strap_swdg","Urban PASGT Helmet",10],
+		["HL_RES_U_Rebel_03","Rebel Uniform 03",15],
+		["HL_RES_U_Rebel_02","Rebel Uniform 02",15],
+		["HL_RES_U_Rebel_01","Rebel Uniform 01",15],
+		["HL_RES_U_Rebel_Medic","Rebel Medic Uniform",18],
+		["HL_RES_U_HEV_MK5","HEV Mk5 Suit",50],
+		["Crowbar","Crowbar",5],
+		["VRP_HoundMeat","Houndeye Meat",2],
+		["VRP_HeadcrabMeat","Headcrab Meat",2],
+		["VRP_AntlionMeat","Antlion Meat",2],
+		["ACE_MRE_MeatballsPasta","MRE: Meatballs & Pasta",1],
+		["ACE_Canteen","Canteen",1],
+		["ACE_WaterBottle","Water Bottle",1],
+		["ToolKit","Toolkit",5],
+		["Medikit","Medikit",10],
+		["FirstAidKit","First Aid Kit",5],
+		["ACE_EntrenchingTool","Entrenching Tool",3],
+		["ACE_DefusalKit","Defusal Kit",7],
+		["ACE_DeadManSwitch","Dead Man's Switch",8],
+		["ACE_CableTie","Cable Tie",1]
+    ];
 
-    // Price roll per merchant (with RationStock influence)
+    // Price roll per merchant
     private _rollInventory = {
         params ["_stock","_count"];
         private _pool = +_stock call BIS_fnc_arrayShuffle;
@@ -98,12 +162,11 @@ if (!isServer) exitWith {};
             private _isBackpack = (isClass (configFile >> "CfgVehicles" >> _cls)) && { getNumber (configFile >> "CfgVehicles" >> _cls >> "isBackpack") == 1 };
             private _isWeapon   = (isClass (configFile >> "CfgWeapons"  >> _cls)) && { (getNumber (configFile >> "CfgWeapons" >> _cls >> "type")) in [1,2,4,5] };
 
-			// 1) Backpacks: equip on the buyer's client
-			if (_isBackpack) exitWith {
-				[_caller, _cls] remoteExec ["MRC_fnc_equipBackpack", owner _caller];
-				[format ["%1 purchased. New backpack equipped.", _name]] remoteExec ["hintSilent", owner _caller];
-			};
-
+            // 1) Backpacks: equip on the buyer's client
+            if (_isBackpack) exitWith {
+                [_caller, _cls] remoteExec ["MRC_fnc_equipBackpack", owner _caller];
+                [format ["%1 purchased. New backpack equipped.", _name]] remoteExec ["hintSilent", owner _caller];
+            };
 
             // 2) Weapons: drop at merchant
             if (_isWeapon) exitWith {
@@ -152,10 +215,10 @@ if (!isServer) exitWith {};
                 [format ["%1 purchased. Merchant pack full — item dropped next to the merchant.", _name]] remoteExec ["hintSilent", owner _caller];
             };
         };
-        // (server function doesn't need publicVariable)
+        // server fn: no need to publicVariable
     };
 
-    // CLIENT: add the actions to a merchant (MUST be published so clients know it)
+    // CLIENT: add the actions to a merchant
     if (isNil "MRC_fnc_addMerchantActions") then {
         MRC_fnc_addMerchantActions = {
             params ["_m", "_entries"];
@@ -201,29 +264,29 @@ if (!isServer) exitWith {};
                 "_this distance _target < 4"
             ];
         };
-        publicVariable "MRC_fnc_addMerchantActions";   // <-- THIS was missing
+        publicVariable "MRC_fnc_addMerchantActions";
     };
-	
-	if (isNil "MRC_fnc_equipBackpack") then {
-		MRC_fnc_equipBackpack = {
-			params ["_plr","_cls"];
-			if (isNull _plr) exitWith {};
 
-			private _old = unitBackpack _plr;
-			if (!isNull _old) then {
-				private _pos = getPosATL _plr;
-				private _holder = createVehicle ["GroundWeaponHolder", _pos, [], 0, "NONE"];
-				private _p = getPosATL _holder; _p set [2, (_p select 2) + 0.5];
-				_holder setPosATL _p;
-				_holder addBackpackCargoGlobal [typeOf _old, 1];
-				removeBackpack _plr;
-			};
+    // CLIENT: equip backpack on buyer (runs on buyer's client)
+    if (isNil "MRC_fnc_equipBackpack") then {
+        MRC_fnc_equipBackpack = {
+            params ["_plr","_cls"];
+            if (isNull _plr) exitWith {};
 
-			_plr addBackpack _cls;
-		};
-		publicVariable "MRC_fnc_equipBackpack";
-	};
+            private _old = unitBackpack _plr;
+            if (!isNull _old) then {
+                private _pos = getPosATL _plr;
+                private _holder = createVehicle ["GroundWeaponHolder", _pos, [], 0, "NONE"];
+                private _p = getPosATL _holder; _p set [2, (_p select 2) + 0.5];
+                _holder setPosATL _p;
+                _holder addBackpackCargoGlobal [typeOf _old, 1];
+                removeBackpack _plr;
+            };
 
+            _plr addBackpack _cls;
+        };
+        publicVariable "MRC_fnc_equipBackpack";
+    };
 
     // === Spawner ===
     private _spawnOne = {
@@ -246,20 +309,23 @@ if (!isServer) exitWith {};
         _unit setBehaviour "SAFE";
         _unit setCaptive true;
 
+        // Uniform by type (Outlands gets a distinct look)
         removeUniform _unit;
         switch (_type) do {
-            case "equip": { _unit forceAddUniform "Civilian_Jumpsuit_4"; };
-            case "medic": { _unit forceAddUniform "Civilian_Jumpsuit_3"; };
-            default      { _unit forceAddUniform "Civilian_Jumpsuit_2"; };
+            case "equip":    { _unit forceAddUniform "Civilian_Jumpsuit_4"; };
+            case "medic":    { _unit forceAddUniform "Civilian_Jumpsuit_3"; };
+            case "outlands": { _unit forceAddUniform "Civilian_Jumpsuit_1"; };
+            default          { _unit forceAddUniform "Civilian_Jumpsuit_2"; };
         };
 
         removeBackpack _unit;
         _unit addBackpack _packClass;
 
         private _stock = switch (_type) do {
-            case "equip": { _stock_equip };
-            case "medic": { _stock_medic };
-            default      { _stock_food  };
+            case "equip":    { _stock_equip };
+            case "medic":    { _stock_medic };
+            case "outlands": { _stock_outlands };
+            default          { _stock_food  };
         };
         private _count   = 4 + floor random 3;
         private _entries = ([_stock,_count] call _rollInventory);
@@ -274,43 +340,81 @@ if (!isServer) exitWith {};
     private _live = [];
 
     while { true } do {
-        private _equipMarkers = allMapMarkers select { toLower _x find "merchant_equip_" == 0 };
-        private _medicMarkers = allMapMarkers select { toLower _x find "merchant_medic_" == 0 };
-        private _foodMarkers  = allMapMarkers select { toLower _x find "merchant_food_"  == 0 };
+        private _equipMarkers    = allMapMarkers select { toLower _x find "merchant_equip_"    == 0 };
+        private _medicMarkers    = allMapMarkers select { toLower _x find "merchant_medic_"    == 0 };
+        private _foodMarkers     = allMapMarkers select { toLower _x find "merchant_food_"     == 0 };
+        private _outlandsMarkers = allMapMarkers select { toLower _x find "merchant_outlands_" == 0 };
 
-        private _process = {
-            params ["_markers","_type"];
-            {
-                private _m   = _x;
-                private _pos = getMarkerPos _m;
-                private _near = allPlayers select { alive _x && (_x distance2D _pos) < _spawnRadius };
+		private _process = {
+			params ["_markers","_type"];
+			{
+				private _m   = _x;
+				private _pos = getMarkerPos _m;
+				private _near = allPlayers select { alive _x && (_x distance2D _pos) < _spawnRadius };
 
-                private _idx = _live findIf { (_x select 0) == _m };
-                private _has = _idx >= 0;
+				private _idx = _live findIf { (_x select 0) == _m };
+				private _has = _idx >= 0;
 
-                if ((count _near) > 0 && !_has) then {
-                    private _u = [_m,_type] call _spawnOne;
-                    _live pushBack [_m,_u,time];
-                };
+				// Outlands: honor a deny window to avoid reroll spam
+				private _denyIdx = -1;
+				private _denyActive = false;
+				if (_type == "outlands") then {
+					_denyIdx = _outlandsDeny findIf { (_x select 0) == _m };
+					if (_denyIdx >= 0) then {
+						_denyActive = (time < ((_outlandsDeny select _denyIdx) select 1));
+					};
+				};
 
-                if ((count _near) > 0 && _has) then {
-                    (_live select _idx) set [2, time];
-                };
+				// Try to spawn
+				if ((count _near) > 0 && !_has) then {
+					private _canSpawn = true;
 
-                if ((count _near) == 0 && _has) then {
-                    private _entry = _live select _idx;
-                    if ((time - (_entry select 2)) > _despawnGrace) then {
-                        private _u = _entry select 1;
-                        if (!isNull _u) then { deleteVehicle _u };
-                        _live deleteAt _idx;
-                    };
-                };
-            } forEach _markers;
-        };
+					if (_type == "outlands") then {
+						// if in deny window, skip; otherwise roll chance
+						if (_denyActive) then {
+							_canSpawn = false;
+						} else {
+							if !(random 1 < _outlandsSpawnChance) then {
+								_canSpawn = false;
+								// set/refresh a brief deny window (e.g., 2 minutes)
+								private _until = time + 120;
+								if (_denyIdx >= 0) then {
+									(_outlandsDeny select _denyIdx) set [1, _until];
+								} else {
+									_outlandsDeny pushBack [_m, _until];
+								};
+							};
+						};
+					};
 
-        [_equipMarkers,"equip"] call _process;
-        [_medicMarkers,"medic"] call _process;
-        [_foodMarkers,"food"]   call _process;
+					if (_canSpawn) then {
+						private _u = [_m,_type] call _spawnOne;
+						_live pushBack [_m,_u,time];
+					};
+				};
+
+				// Keepalive ping when players nearby
+				if ((count _near) > 0 && _has) then {
+					(_live select _idx) set [2, time];
+				};
+
+				// Despawn if empty for grace period
+				if ((count _near) == 0 && _has) then {
+					private _entry = _live select _idx;
+					if ((time - (_entry select 2)) > _despawnGrace) then {
+						private _u = _entry select 1;
+						if (!isNull _u) then { deleteVehicle _u };
+						_live deleteAt _idx;
+					};
+				};
+			} forEach _markers;
+		};
+
+
+        [_equipMarkers,"equip"]       call _process;
+        [_medicMarkers,"medic"]       call _process;
+        [_foodMarkers,"food"]         call _process;
+        [_outlandsMarkers,"outlands"] call _process;
 
         sleep 5;
     };

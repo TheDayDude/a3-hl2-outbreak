@@ -305,7 +305,7 @@ case 3: {
                 _units pushBack _u;
             };
 
-            sleep 15;
+            sleep 30;
         };
 
         // Proxy dead => hive destroyed => success
