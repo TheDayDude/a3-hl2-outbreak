@@ -1,238 +1,48 @@
-diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/slums.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/slums.sqf
-index b3e15141bf8a12628511f1a056ff90f75eb2271f..8fde5f651eea4513323b6a31cf2d31a49aceb8a3 100644
---- a/CRC-HL2_EmitaCityRP.Emita_2025/slums.sqf
-+++ b/CRC-HL2_EmitaCityRP.Emita_2025/slums.sqf
-@@ -1,41 +1,50 @@
- // slums.sqf — Server-side persistent CPF patrol for Slums (Fire-at-will + hunt/return)
- if (!isServer) exitWith {};
+diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/spawnLootSystem.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/spawnLootSystem.sqf
+index c16ddb88818f545332152a8f8bce5ab3f07c3e62..8d17697eb256ac4dc97d04880e22deb92c8521b6 100644
+--- a/CRC-HL2_EmitaCityRP.Emita_2025/spawnLootSystem.sqf
++++ b/CRC-HL2_EmitaCityRP.Emita_2025/spawnLootSystem.sqf
+@@ -42,34 +42,43 @@
+                                 _pool = _lootMilitary; _containers = _containersMilitary; _count = 10 + floor random 12; _spawnChance = 0.4;
+                             };
+                         };
+                     };
+                 };
  
- [] spawn {
- 	// ---------- Tunables ----------
- 	private _presenceRadius = 300;   // players within this of any slums_/slums_guard "count as in Slums"
- 	private _despawnGrace   = 60;    // seconds with no players before despawn
+                 if (!(_pool isEqualTo []) && {random 1 < _spawnChance}) then {
+                     private _crateClass = selectRandom _containers;
+                     private _box = _crateClass createVehicle _pos;
  
- 	private _pauseMin = 60;          // wait at guard before next 5-point sweep
- 	private _pauseMax = 120;
+                     clearItemCargoGlobal _box;
+                     clearWeaponCargoGlobal _box;
+                     clearMagazineCargoGlobal _box;
+                     clearBackpackCargoGlobal _box;
  
- 	private _detectWarn = 50;        // warn at <= 50m (assume inspection position)
- 	private _detectFlip = 10;        // flip to OPFOR / confiscate at <= 10m
+                     for "_i" from 1 to _count do {
+                         _box addItemCargoGlobal [selectRandom _pool, 1];
+                     };
  
--	private _cpTypes     = ["WBK_Combine_CP_P","WBK_Combine_CP_SMG"];
--	private _sweepCount  = 5;        // number of slums_ markers per sweep
-+        private _cpTypes     = ["WBK_Combine_CP_P","WBK_Combine_CP_SMG"];
-+        private _sweepCount  = 5;        // number of slums_ markers per sweep
-+
-+        private _zombieTypes   = [
-+                "WBK_Zombine_HLA_1",
-+                "WBK_ClassicZombie_HLA_1","WBK_ClassicZombie_HLA_2","WBK_ClassicZombie_HLA_3",
-+                "WBK_ClassicZombie_HLA_4","WBK_ClassicZombie_HLA_5","WBK_ClassicZombie_HLA_6",
-+                "WBK_ClassicZombie_HLA_7","WBK_ClassicZombie_HLA_8","WBK_ClassicZombie_HLA_9"
-+        ];
-+        private _hordeChance   = 0.1;    // 10% chance when players present
-+        private _hordeCooldown = 300;    // seconds between horde spawn checks
- 	
+                     if (_nameLower find "loot_military_" == 0 && {random 1 < 0.25}) then {
+                         _box addItemCargoGlobal [selectRandom _lootEquipment, 1];
+                     };
+                     if (_nameLower find "loot_food_" == 0 && {random 1 < 0.20}) then {
+                         _box addItemCargoGlobal [selectRandom _lootMedical, 1];
+                     };
++                    _box addEventHandler ["Killed", {
++                        private _amount  = 2 + floor random 4;
++                        private _targets = allPlayers select { side _x == west && alive _x };
++                        {
++                            for "_i" from 1 to _amount do { _x addItem "VRP_HL_Token_Item"; };
++                        } forEach _targets;
++                        [format ["Loot cache destroyed. You receive %1 Tokens.", _amount]]
++                            remoteExec ["hintSilent", _targets apply { owner _x }];
++                    }];
+                 };
  
- 	// ---------- Marker helpers ----------
- 	private _getSlumsMarkers = {
- 		allMapMarkers select { toLower _x find "slums_" == 0 && { toLower _x != "slums_guard" } }
- 	};
- 	private _getGuardMarker = {
- 		private _g = allMapMarkers select { toLower _x == "slums_guard" };
- 		if (_g isEqualTo []) exitWith { "" };
- 		_g select 0
- 	};
+                 deleteMarker _m;
+             };
+         } forEach _markers;
  
- 	// ---------- Surrender / captive detection ----------
- 	private _isSurrendering = {
- 		params ["_u"];
- 		_u getVariable ["ace_captives_isSurrendering", (_u getVariable ["ACE_isSurrendering", false])]
- 	};
- 	private _isDownOrCaptive = {
- 		params ["_u"];
- 		(captive _u)
- 		|| (lifeState _u in ["INCAPACITATED","UNCONSCIOUS"])
- 		|| (_u getVariable ["ACE_isUnconscious", false])
- 		|| !(alive _u)
- 	};
- 
-diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/slums.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/slums.sqf
-index b3e15141bf8a12628511f1a056ff90f75eb2271f..8fde5f651eea4513323b6a31cf2d31a49aceb8a3 100644
---- a/CRC-HL2_EmitaCityRP.Emita_2025/slums.sqf
-+++ b/CRC-HL2_EmitaCityRP.Emita_2025/slums.sqf
-@@ -141,53 +150,53 @@ if (!isServer) exitWith {};
- 	private _assignSweep = {
- 		params ["_grp","_guardPos","_slumMarkers","_count"];
- 		if (isNull _grp) exitWith {};
- 		private _pick = +_slumMarkers call BIS_fnc_arrayShuffle;
- 		_pick = _pick select [0, _count min (count _pick)];
- 
- 		call _clearWPs;
- 
- 		{
- 			private _p = getMarkerPos _x;
- 			private _wp = _grp addWaypoint [_p, 0];
- 			_wp setWaypointType "MOVE";
- 			_wp setWaypointBehaviour "SAFE";
- 			_wp setWaypointSpeed "LIMITED";
- 			_wp setWaypointCompletionRadius 8;
- 		} forEach _pick;
- 
- 		private _wpR = _grp addWaypoint [_guardPos, 0];
- 		_wpR setWaypointType "MOVE";
- 		_wpR setWaypointBehaviour "SAFE";
- 		_wpR setWaypointSpeed "LIMITED";
- 		_wpR setWaypointCompletionRadius 8;
- 	};
- 
- 	// ---------- Pursue nearest civilian until resolved, then RTB ----------
--	private _pursueTarget = {
--		params ["_grp","_guardPos","_slumsMarkers","_areaRadius","_blacklist","_detectWarn","_detectFlip"];
--		if (isNull _grp) exitWith {};
-+        private _pursueTarget = {
-+                params ["_grp","_guardPos","_slumsMarkers","_areaRadius","_blacklist","_detectWarn","_detectFlip"];
-+                if (isNull _grp) exitWith {};
- 
- 		private _lead = leader _grp;
- 		if (isNull _lead) exitWith {};
- 
- 		// choose nearest civilian inside 50 m (caller already checked, but re-find at start)
- 		private _civs50 = (allPlayers select { side _x == civilian && alive _x && (_x distance2D _lead) <= _detectWarn });
- 		if (_civs50 isEqualTo []) exitWith {};
- 		private _target = [_civs50, [], { _lead distance2D _x }] call BIS_fnc_sortBy select 0;
- 
- 		// Cancel patrol & switch to hunt posture
- 		call _clearWPs;
- 		_grp setBehaviour "AWARE";
- 		_grp setSpeedMode "NORMAL";
- 		_grp setCombatMode "RED";   // ensure fire-at-will during chase
- 
- 		private _warned = false;
- 		private _resolved = false;
- 		private _lastCmd = -999;
- 
- 		while { !_resolved } do {
- 			sleep 0.5;
- 			if (isNull _target || {!alive _target}) exitWith { _resolved = true; };
- 
- 			// target left slums → resolve
- 			if (!([_target,_slumsMarkers,_guardPos,_areaRadius] call _inSlums)) exitWith { _resolved = true; };
-diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/slums.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/slums.sqf
-index b3e15141bf8a12628511f1a056ff90f75eb2271f..8fde5f651eea4513323b6a31cf2d31a49aceb8a3 100644
---- a/CRC-HL2_EmitaCityRP.Emita_2025/slums.sqf
-+++ b/CRC-HL2_EmitaCityRP.Emita_2025/slums.sqf
-@@ -225,72 +234,102 @@ if (!isServer) exitWith {};
- 				private _isSurr = ([_target] call _isSurrendering) || ([_target] call _isDownOrCaptive);
- 				if (_isSurr) then {
- 					// Confiscate on server
- 					private _black = missionNamespace getVariable ["SLUMS_Contraband", _defaultContraband];
- 					[_target,_black] remoteExec ["SLUMS_fnc_confiscate", 2];
- 					["Inspection complete. Contraband confiscated. Remain in position until the officers vacate."] remoteExec ["hintSilent", owner _target];
- 				} else {
- 					// Flip to OPFOR
- 					if (side _target == civilian) then {
- 						[_target] joinSilent (createGroup east);
- 						["You have been processed as malcompliant."] remoteExec ["systemChat", owner _target];
- 						["Attention Residents: This block (District 4) contains potential civil infection. Inform, cooperate, assemble."] remoteExec ["systemChat", 0];
- 						["Ftrainstationinformspkr"] remoteExec ["playSound", 0];	
- 						_target setCaptive false;
- 					};
- 				};
- 				};
- 				_resolved = true;
- 			};
- 		};
- 
- 		// Return to guard, reset posture to SAFE patrol
- 		call _clearWPs;
- 		private _wpHome = _grp addWaypoint [_guardPos, 0];
- 		_wpHome setWaypointType "MOVE";
--		_grp setBehaviour "SAFE";
--		_grp setSpeedMode "LIMITED";
--		_grp setCombatMode "RED";    // keep fire-at-will even on patrol
--	};
-+                _grp setBehaviour "SAFE";
-+                _grp setSpeedMode "LIMITED";
-+                _grp setCombatMode "RED";    // keep fire-at-will even on patrol
-+        };
-+
-+        // ---------- Spawn a zombie horde toward a target ----------
-+        private _spawnHorde = {
-+                params ["_target","_types"];
-+                private _spawnPos = _target getPos [50 + random 50, random 360];
-+                private _grp = createGroup resistance;
-+                for "_i" from 1 to (4 + floor random 4) do {
-+                        private _u = _grp createUnit [selectRandom _types, _spawnPos, [], 5, "FORM"];
-+                        _u setBehaviour "AWARE";
-+                        _u setCombatMode "RED";
-+                        _u doMove (getPos _target);
-+                };
-+                [_grp,_target] spawn {
-+                        params ["_grp","_target"];
-+                        while { ({alive _x} count units _grp) > 0 && alive _target } do {
-+                                { if (alive _x) then { _x doMove (getPos _target) }; } forEach units _grp;
-+                                sleep (10 + random 10);
-+                        };
-+                };
-+        };
- 
- 	// ---------- Main supervisor loop ----------
--	private _grp = grpNull;
--	private _units = [];
--	private _lastPresence = time;
-+        private _grp = grpNull;
-+        private _units = [];
-+        private _lastPresence = time;
-+        private _lastHorde = -_hordeCooldown;
- 
- 	while { true } do {
- 		private _slums     = call _getSlumsMarkers;
- 		private _guardName = call _getGuardMarker;
- 
- 		if (_guardName == "") exitWith { diag_log "[SLUMS] Missing slums_guard marker."; };
- 
--		private _guardPos = getMarkerPos _guardName;
--		private _near     = [_slums,_guardName,_presenceRadius] call _playersInSlums;
--
--		// Spawn if any players present and no patrol exists
--		if ((count _near) > 0 && isNull _grp) then {
--			private _spawn = [_guardPos] call _spawnPatrol;
-+                private _guardPos = getMarkerPos _guardName;
-+                private _near     = [_slums,_guardName,_presenceRadius] call _playersInSlums;
-+
-+                // Random zombie horde spawn near a player
-+                if ((count _near) > 0 && {time > _lastHorde + _hordeCooldown}) then {
-+                        _lastHorde = time;
-+                        if (random 1 < _hordeChance) then {
-+                                private _tgt = selectRandom _near;
-+                                [_tgt,_zombieTypes] call _spawnHorde;
-+                        };
-+                };
-+
-+                // Spawn if any players present and no patrol exists
-+                if ((count _near) > 0 && isNull _grp) then {
-+                        private _spawn = [_guardPos] call _spawnPatrol;
- 			_grp   = _spawn select 0;
- 			_units = _spawn select 1;
- 
- 			[_grp,_guardPos,_slums,_sweepCount] call _assignSweep;
- 		};
- 
- 		// If patrol exists, maintain, hunt, or despawn
- 		if (!isNull _grp) then {
- 			if ((count _near) == 0) then {
- 				// no players -> maybe despawn after grace
- 				if (time > _lastPresence + _despawnGrace) then {
- 					{ if (!isNull _x) then { deleteVehicle _x } } forEach _units;
- 					if (!isNull _grp) then { deleteGroup _grp };
- 					_grp = grpNull; _units = [];
- 				};
- 			} else {
- 				_lastPresence = time;
- 
- 				// If patrol reached guard and finished its route, wait and assign new sweep
- 				private _ldr = leader _grp;
- 				if (!isNull _ldr) then {
- 					private _wpCur   = currentWaypoint _grp;
- 					private _wpTotal = count waypoints _grp;
- 
- 					if ((_ldr distance2D _guardPos) < 12 && (_wpCur >= _wpTotal)) then {
+         sleep 10;
+     };
+ };

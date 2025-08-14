@@ -2,8 +2,8 @@
 if (!isServer) exitWith {};
 
 [] spawn {
-    private _smugglerClass = "HL_CIV_Man_01";
-    private _packClass     = "Combaine_backpack_NB";
+    private _smugglerClass = "RDS_PL_Profiteer_Random";
+    private _packClass     = "B_Carryall_blk";
     private _activeTime    = 1800;  // 30 minutes active
     private _respawnMin    = 1800;  // 30 minutes
     private _respawnMax    = 3600;  // 45 minutes

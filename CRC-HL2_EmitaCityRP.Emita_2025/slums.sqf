@@ -127,15 +127,22 @@ if (!isServer) exitWith {};
 	private _spawnPatrol = {
 		params ["_guardPos"];
 		private _grp   = createGroup west;
-		private _count = 4 + floor (random 3); // 4–6
+		private _count = 5 + floor (random 3); // 5–7
 
-		private _units = [];
-		for "_i" from 1 to _count do {
-			private _pos = [_guardPos, 3, 12, 1, 0, 20, 0] call BIS_fnc_findSafePos;
-			private _u   = _grp createUnit [selectRandom _cpTypes, _pos, [], 0, "FORM"];
-			_u setDir random 360;
-			_units pushBack _u;
-		};
+                private _units = [];
+                for "_i" from 1 to _count do {
+                        private _pos   = [_guardPos, 3, 12, 1, 0, 20, 0] call BIS_fnc_findSafePos;
+                        private _class = selectRandom _cpTypes;
+                        private _u     = _grp createUnit [_class, _pos, [], 0, "FORM"];
+                        _u setDir random 360;
+                        _u forceAddUniform "Z_C18_Uniform_1";
+                        if (_class == "WBK_Combine_CP_P") then {
+                                removeAllWeapons _u;
+                                for "_m" from 1 to 3 do { _u addMagazine "HLB_HSMG_Mag"; };
+                                _u addWeapon "WBK_CP_HeavySMG";
+                        };
+                        _units pushBack _u;
+                };
 
 		// Patrol defaults: SAFE stance, FIRE AT WILL
 		_grp setSpeedMode "LIMITED";
