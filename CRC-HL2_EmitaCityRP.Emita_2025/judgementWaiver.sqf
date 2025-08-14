@@ -23,7 +23,7 @@ JW_fnc_start = {
     {
         [_x] joinSilent createGroup east;
     } forEach _targets;
-
+	
     // Allow SFX or other systems to react
 	["Attention all Ground Protection Teams: JUDGEMENT WAIVER is now in effect. Capital prosecution is discretionary."] remoteExec ["systemChat", 0];
 	["Fprotectionresponse5spkr"] remoteExec ["playSound", 0];
@@ -43,11 +43,11 @@ JW_fnc_start = {
 [] spawn {
     while {true} do {
         // Delay between potential activations (10-20 minutes)
-        private _delay = 600 + random 1200;
+        private _delay = 3600 + random 3600;
         sleep _delay;
 
         // 50% chance to trigger each cycle
-        if (random 1 < 0.5) then {
+        if (random 1 < 0.2) then {
             [] call JW_fnc_start;
         };
     };
