@@ -306,7 +306,7 @@
                 private _target = _x;
 
                 // Spawn Combine Squad near the target
-                private _spawnPos = _target getPos [100 + random 50, random 360];
+                private _spawnPos = _target getPos [200 + random 100, random 360];
                 private _grp = createGroup west;
                 private _units = [];
 

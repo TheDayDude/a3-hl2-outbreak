@@ -23,6 +23,10 @@ if (!isServer) exitWith {};
         ];
         private _hordeChance   = 0.1;    // 10% chance when players present
         private _hordeCooldown = 120;    // seconds between horde spawn checks
+
+        private _qrfApcChance = 0.4;   // 40% chance a QRF includes APC support
+        private _qrfCooldown  = 120;    // seconds between QRF waves
+        private _apcClass     = "HL_CMB_CP_APC";
 	
 
 	// ---------- Marker helpers ----------
@@ -150,17 +154,53 @@ if (!isServer) exitWith {};
 		_grp setCombatMode "RED";     // <— Fire at will
 		_grp setFormation "LINE";
 
-		[_grp,_units]
-	};
+                [_grp,_units]
+        };
 
-	// ---------- Make a sweep of N random slums_ markers then return ----------
-	private _assignSweep = {
-		params ["_grp","_guardPos","_slumMarkers","_count"];
-		if (isNull _grp) exitWith {};
-		private _pick = +_slumMarkers call BIS_fnc_arrayShuffle;
+        // ---------- Spawn a QRF toward a target position ----------
+        private _spawnQRF = {
+                params ["_guardPos","_targetPos"];
+                private _spawn = [_guardPos] call _spawnPatrol;
+                private _grp   = _spawn select 0;
+                private _units = _spawn select 1;
+
+                _grp setBehaviour "AWARE";
+                _grp setSpeedMode "NORMAL";
+                _grp setCombatMode "RED";
+                [_grp] call _clearWPs;
+                private _wp = _grp addWaypoint [_targetPos, 0];
+                _wp setWaypointType "SAD";
+                _wp setWaypointBehaviour "AWARE";
+                _wp setWaypointSpeed "NORMAL";
+
+                private _veh = objNull;
+                private _vehGrp = grpNull;
+                if (random 1 < _qrfApcChance) then {
+                        _veh = createVehicle [_apcClass, _guardPos, [], 0, "NONE"];
+                        createVehicleCrew _veh;
+                        _veh setDir random 360;
+                        _veh lock false;
+                        _vehGrp = group (driver _veh);
+                        _vehGrp setBehaviour "AWARE";
+                        _vehGrp setCombatMode "RED";
+                        [_vehGrp] call _clearWPs;
+                        private _wpv = _vehGrp addWaypoint [_targetPos, 0];
+                        _wpv setWaypointType "SAD";
+                        _wpv setWaypointBehaviour "AWARE";
+                        _wpv setWaypointSpeed "NORMAL";
+                        { _units pushBack _x } forEach crew _veh;
+                };
+                [_grp,_units,_veh,_vehGrp]
+        };
+
+        // ---------- Make a sweep of N random slums_ markers then return ----------
+        private _assignSweep = {
+                params ["_grp","_guardPos","_slumMarkers","_count"];
+                if (isNull _grp) exitWith {};
+                private _pick = +_slumMarkers call BIS_fnc_arrayShuffle;
 		_pick = _pick select [0, _count min (count _pick)];
 
-		call _clearWPs;
+                [_grp] call _clearWPs;
 
 		{
 			private _p = getMarkerPos _x;
@@ -191,9 +231,9 @@ if (!isServer) exitWith {};
 		if (_civs50 isEqualTo []) exitWith {};
 		private _target = [_civs50, [], { _lead distance2D _x }] call BIS_fnc_sortBy select 0;
 
-		// Cancel patrol & switch to hunt posture
-		call _clearWPs;
-		_grp setBehaviour "AWARE";
+                // Cancel patrol & switch to hunt posture
+                [_grp] call _clearWPs;
+                _grp setBehaviour "AWARE";
 		_grp setSpeedMode "NORMAL";
 		_grp setCombatMode "RED";   // ensure fire-at-will during chase
 
@@ -259,9 +299,9 @@ if (!isServer) exitWith {};
 			};
 		};
 
-		// Return to guard, reset posture to SAFE patrol
-		call _clearWPs;
-		private _wpHome = _grp addWaypoint [_guardPos, 0];
+                // Return to guard, reset posture to SAFE patrol
+                [_grp] call _clearWPs;
+                private _wpHome = _grp addWaypoint [_guardPos, 0];
 		_wpHome setWaypointType "MOVE";
                 _grp setBehaviour "SAFE";
                 _grp setSpeedMode "LIMITED";
@@ -293,6 +333,14 @@ if (!isServer) exitWith {};
         private _units = [];
         private _lastPresence = time;
         private _lastHorde = -_hordeCooldown;
+        private _qrfGrp = grpNull;
+        private _qrfUnits = [];
+        private _qrfVeh = objNull;
+        private _qrfVehGrp = grpNull;
+        private _qrfTarget = [0,0,0];
+        private _qrfLastPresence = time;
+        private _lastQrf = -_qrfCooldown;
+        private _lastPatrolPos = [0,0,0];
 
 	while { true } do {
 		private _slums     = call _getSlumsMarkers;
@@ -303,6 +351,19 @@ if (!isServer) exitWith {};
                 private _guardPos = getMarkerPos _guardName;
                 private _near     = [_slums,_guardName,_presenceRadius] call _playersInSlums;
 
+                if (!isNull _grp) then {
+                        private _lp = leader _grp;
+                        if (!isNull _lp) then { _lastPatrolPos = getPosATL _lp; };
+                };
+                if (!isNull _qrfGrp) then {
+                        private _lq = leader _qrfGrp;
+                        if (!isNull _lq) then { _qrfTarget = getPosATL _lq; };
+                };
+                if (!isNull _qrfVehGrp) then {
+                        private _lv = leader _qrfVehGrp;
+                        if (!isNull _lv) then { _qrfTarget = getPosATL _lv; };
+                };
+
                 // Random zombie horde spawn near a player
                 if ((count _near) > 0 && {time > _lastHorde + _hordeCooldown}) then {
                         _lastHorde = time;
@@ -312,8 +373,8 @@ if (!isServer) exitWith {};
                         };
                 };
 
-                // Spawn if any players present and no patrol exists
-                if ((count _near) > 0 && isNull _grp) then {
+                // Spawn patrol if players present and no patrol or QRF is active
+                if ((count _near) > 0 && isNull _grp && isNull _qrfGrp && isNull _qrfVehGrp && { _qrfTarget distance2D [0,0,0] < 1 }) then {
                         private _spawn = [_guardPos] call _spawnPatrol;
 			_grp   = _spawn select 0;
 			_units = _spawn select 1;
@@ -321,46 +382,92 @@ if (!isServer) exitWith {};
 			[_grp,_guardPos,_slums,_sweepCount] call _assignSweep;
 		};
 
-		// If patrol exists, maintain, hunt, or despawn
-		if (!isNull _grp) then {
-			if ((count _near) == 0) then {
-				// no players -> maybe despawn after grace
-				if (time > _lastPresence + _despawnGrace) then {
-					{ if (!isNull _x) then { deleteVehicle _x } } forEach _units;
-					if (!isNull _grp) then { deleteGroup _grp };
-					_grp = grpNull; _units = [];
-				};
-			} else {
-				_lastPresence = time;
+                // If patrol exists, maintain, hunt, or despawn
+                if (!isNull _grp) then {
+                        if ({alive _x} count _units == 0) then {
+                                if ((_lastPatrolPos distance2D [0,0,0]) > 0) then { _qrfTarget = _lastPatrolPos; };
+                                _lastQrf = time - _qrfCooldown;
+                                if (!isNull _grp) then { deleteGroup _grp; };
+                                _grp = grpNull; _units = [];
+                        } else {
+                                if ((count _near) == 0) then {
+                                        // no players -> maybe despawn after grace
+                                        if (time > _lastPresence + _despawnGrace) then {
+                                                { if (!isNull _x) then { deleteVehicle _x } } forEach _units;
+                                                if (!isNull _grp) then { deleteGroup _grp };
+                                                _grp = grpNull; _units = [];
+                                        };
+                                } else {
+                                        _lastPresence = time;
 
-				// If patrol reached guard and finished its route, wait and assign new sweep
-				private _ldr = leader _grp;
-				if (!isNull _ldr) then {
-					private _wpCur   = currentWaypoint _grp;
-					private _wpTotal = count waypoints _grp;
+                                        // If patrol reached guard and finished its route, wait and assign new sweep
+                                        private _ldr = leader _grp;
+                                        if (!isNull _ldr) then {
+                                                private _wpCur   = currentWaypoint _grp;
+                                                private _wpTotal = count waypoints _grp;
 
-					if ((_ldr distance2D _guardPos) < 12 && (_wpCur >= _wpTotal)) then {
-						sleep (_pauseMin + random (_pauseMax - _pauseMin));
-						[_grp,_guardPos,_slums,_sweepCount] call _assignSweep;
-					};
+                                                if ((_ldr distance2D _guardPos) < 12 && (_wpCur >= _wpTotal)) then {
+                                                        sleep (_pauseMin + random (_pauseMax - _pauseMin));
+                                                        [_grp,_guardPos,_slums,_sweepCount] call _assignSweep;
+                                                };
 
-					// HUNT: any civilian within 50 m? Break patrol and pursue until resolved
-					private _closeCivs = allPlayers select { side _x == civilian && alive _x && (_x distance2D _ldr) <= _detectWarn };
-					if !(_closeCivs isEqualTo []) then {
-						[_grp,_guardPos,_slums,_presenceRadius,
-							missionNamespace getVariable ["SLUMS_Contraband", _defaultContraband],
-							_detectWarn,_detectFlip
-						] call _pursueTarget;
+                                                // HUNT: any civilian within 50 m? Break patrol and pursue until resolved
+                                                private _closeCivs = allPlayers select { side _x == civilian && alive _x && (_x distance2D _ldr) <= _detectWarn };
+                                                if !(_closeCivs isEqualTo []) then {
+                                                        [_grp,_guardPos,_slums,_presenceRadius,
+                                                                missionNamespace getVariable ["SLUMS_Contraband", _defaultContraband],
+                                                                _detectWarn,_detectFlip
+                                                        ] call _pursueTarget;
 
-						// After pursuit, short pause & start a fresh sweep
-						sleep (_pauseMin + random (_pauseMax - _pauseMin));
-						[_grp,_guardPos,_slums,_sweepCount] call _assignSweep;
-					};
-				};
-			};
-		};
+                                                        // After pursuit, short pause & start a fresh sweep
+                                                        sleep (_pauseMin + random (_pauseMax - _pauseMin));
+                                                        [_grp,_guardPos,_slums,_sweepCount] call _assignSweep;
+                                                };
+                                        };
+                                };
+                        };
+                };
 
-		// idle tick rate
-		if (isNull _grp && {(count _near) == 0}) then { sleep 5 } else { sleep 1 };
+                // Spawn QRF waves
+                if ((_qrfTarget distance2D [0,0,0]) > 0 && isNull _qrfGrp && isNull _qrfVehGrp && (count _near) > 0 && time >= _lastQrf + _qrfCooldown) then {
+                        private _q = [_guardPos,_qrfTarget] call _spawnQRF;
+                        _qrfGrp = _q select 0;
+                        _qrfUnits = _q select 1;
+                        _qrfVeh = _q select 2;
+                        _qrfVehGrp = _q select 3;
+                        _qrfLastPresence = time;
+                        _lastQrf = time;
+                };
+
+                // Maintain QRF
+                if (!isNull _qrfGrp || !isNull _qrfVehGrp) then {
+                        private _alive = 0;
+                        if (!isNull _qrfGrp) then { _alive = _alive + ({alive _x} count units _qrfGrp); };
+                        if (!isNull _qrfVehGrp) then { _alive = _alive + ({alive _x} count units _qrfVehGrp); };
+                        if (!isNull _qrfVeh && {!alive _qrfVeh}) then { _alive = 0; };
+                        if (_alive == 0) then {
+                                if (!isNull _qrfGrp) then { deleteGroup _qrfGrp; };
+                                if (!isNull _qrfVehGrp) then { deleteGroup _qrfVehGrp; };
+                                if (!isNull _qrfVeh) then { deleteVehicle _qrfVeh; };
+                                _qrfGrp = grpNull; _qrfVehGrp = grpNull; _qrfVeh = objNull; _qrfUnits = [];
+                                _lastQrf = time;
+                        } else {
+                                if ((count _near) == 0) then {
+                                        if (time > _qrfLastPresence + _despawnGrace) then {
+                                                { if (!isNull _x) then { deleteVehicle _x } } forEach _qrfUnits;
+                                                if (!isNull _qrfVeh) then { deleteVehicle _qrfVeh; };
+                                                if (!isNull _qrfGrp) then { deleteGroup _qrfGrp; };
+                                                if (!isNull _qrfVehGrp) then { deleteGroup _qrfVehGrp; };
+                                                _qrfGrp = grpNull; _qrfVehGrp = grpNull; _qrfVeh = objNull; _qrfUnits = [];
+                                                _qrfTarget = [0,0,0];
+                                        };
+                                } else {
+                                        _qrfLastPresence = time;
+                                };
+                        };
+                };
+
+                // idle tick rate
+                if (isNull _grp && isNull _qrfGrp && isNull _qrfVehGrp && {(count _near) == 0}) then { sleep 5 } else { sleep 1 };
 	};
 };

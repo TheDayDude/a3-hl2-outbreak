@@ -6,7 +6,7 @@ while {true} do {
 
     // Get all valid civilian players
     private _civilians = allUnits select {
-        side _x == civilian && alive _x && damage _x < 0.9
+        side _x == civilian && alive _x && damage _x < 0.9 
     };
 
     {
@@ -17,7 +17,7 @@ while {true} do {
             private _civ = _x;
             private _dist = _xen distance _civ;
 
-            if (_dist < 8) then {
+            if (_dist < 5) then {
                 if (!(_civ getVariable ["isXenHostile", false])) then {
                     _civ addRating -10000;  // Civ becomes hostile to Resistance
                     _civ setVariable ["isXenHostile", true, false];
@@ -40,5 +40,5 @@ while {true} do {
 
     } forEach _xenians;
 
-    sleep 3;
+    sleep 2;
 };
