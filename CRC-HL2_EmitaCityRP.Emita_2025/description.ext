@@ -33,14 +33,14 @@ class CfgSFX
 	{
 		name="(CRC)Sector5revolt";
 		sounds[]= {"sfxsound"};
-		sfxsound[] = { "\sector5revolt.ogg", 800, 0.5, 6000, 1, 120, 300, 900};
+		sfxsound[] = { "\sector5revolt.ogg", 800, 1, 6000, 0.5, 120, 300, 900};
 		empty[] = {"", 0, 0, 0, 0, 0, 0, 0,};
 	};
 	class judgement
 	{
 		name="Judgement";
 		sounds[]= {"sfxsound"};
-		sfxsound[] = { "\judgement.ogg", 10, 1, 20000, 1, 2, 4, 6};
+		sfxsound[] = { "\judgement.ogg", 10, 1, 20000, 1, 2, 4, 10};
 		empty[] = {"", 0, 0, 0, 0, 0, 0, 0,};
 	};
 	class Xentele
@@ -57,5 +57,9 @@ class CfgVehicles
 	class XenTele
 	{
 		sound = "XenTele";
+	};
+	class judgement
+	{
+		sound = "judgement";
 	};
 };

@@ -9,14 +9,61 @@ if (!isServer) exitWith {};
     private _respawnMax    = 3600;  // 45 minutes
     private _fakeCIDPrice  = 30;    // tokens for fake CID
 
-    private _stock_smuggler = [
-        ["WBK_CP_HeavySmg_Resist","Heavy SMG (Resist)",45],
-        ["hlc_rifle_akm","AKM",48],
-        ["Crowbar","Crowbar",5],
-        ["ACE_Canteen","Canteen",1],
-        ["ACE_MRE_MeatballsPasta","MRE: Meatballs & Pasta",1],
-        ["Medikit","Medikit",10]
-    ];
+	private _stock_smuggler = [
+		["Cytech_Makeshift_Argument_Short","Makeshift Argument (Short)",15],
+		["Cytech_Makeshift_PM","Makeshift PM",5],
+		["Cytech_Makeshift_Argument","Makeshift Argument",7],
+		["Cytech_Makeshift_APS","Makeshift APS",10],
+		["Cytech_flashlight_Normal","Normal Flashlight",1],
+		["Cytech_APS_Compensator","APS Compensator",2],
+		["Cytech_PM_Amplifier","PM Amplifier",2],
+		["Cytech_14Rnd_9x18_Mag","14Rnd 9x18mm Mag",2],
+		["Cytech_35Rnd_9x18_Mag","35Rnd 9x18mm Mag",3],
+		["Cytech_6Rnd_45ACP","6Rnd .45 ACP Cylinder",3],
+		["hlc_rifle_aks74u","AKS-74U",25],
+		["hlc_30Rnd_545x39_B_AK","30Rnd 5.45mm AK Mag",3],
+		["H_bms_helmet_1","BMS Helmet",10],
+		["V_resistance_vest_bms","Resistance Vest",12],
+		["V_BandollierB_blk","Black Bandolier",2],
+		["B_hecu_survival_m81_2","HECU Survival Pack",5],
+		["G_Bandanna_blk","Black Bandanna",1],
+		["G_Balaclava_cloth_blk_F","Black Cloth Balaclava",1],
+		["M40_Gas_mask_nbc_f4_d","M40 Gas Mask (NBC)",4],
+		["BMS_X800","NVG X800 Goggles",4],
+		["O_NVGoggles_urb_F","Compact NVGs",20],
+		["GrenadeMolotovPSRUS","Molotov Cocktail",3],
+		["IEDLandBig_Remote_Mag","Large Land IED (Remote)",18],
+		["IEDUrbanBig_Remote_Mag","Large Urban IED (Remote)",18],
+		["IEDLandSmall_Remote_Mag","Small Land IED (Remote)",10],
+		["IEDUrbanSmall_Remote_Mag","Small Urban IED (Remote)",10],
+		["ACE_Clacker","M57 Firing Device",5],
+		["VRP_AntlionMeat","Antlion Meat",2],
+		["WBK_Health_ArmourPlate","Armor Plate",3],
+		["WBK_Health_Bandage","Bandage",1],
+		["ACE_Banana","Banana",2],
+		["plp_bo_w_BottleLiqCream","Bottle of Cream Liqueur",4],
+		["plp_bo_w_BottleGin","Bottle of Gin",4],
+		["plp_bo_w_BottleTequila","Bottle of Tequila",4],
+		["ACE_CableTie","Cable Tie",1],
+		["ACE_Can_Spirit","Can of Spirit",2],
+		["ACE_Can_RedGull","Can of RedGull",2],
+		["ACE_Can_Franta","Can of Franta",2],
+		["ACE_Canteen","Canteen",3],
+		["ACE_DeadManSwitch","Dead Man's Switch",5],
+		["ACE_DefusalKit","Defusal Kit",5],
+		["VRP_Bread","Bread",5],
+		["VRP_HeadcrabMeat","Headcrab Meat",2],
+		["VRP_HoundMeat","Houndeye Meat",2],
+		["VRP_Watermelon","Watermelon",4],
+		["ACE_MRE_BeefStew","MRE: Beef Stew",5],
+		["ACE_MRE_LambCurry","MRE: Lamb Curry",5],
+		["HLC_Optic_1p29","1P29 Scope",8],
+		["HLC_Optic_PSO1","PSO-1 Scope",8],
+		["WBK_BearRebel_Rifle_Scope","Bear Rebel Rifle Scope",10],
+		["WBK_BearRebel_Rifle","Bear Rebel Rifle",15],
+		["HL_CivHuntingRifle_Mag","Civ. Hunting Rifle Mag",3]
+	];
+
 
     private _rollInventory = {
         params ["_stock","_count"];
@@ -32,7 +79,8 @@ if (!isServer) exitWith {};
     private _giveTask = {
         params ["_players", "_pos", "_smug"];
         if (_players isEqualTo []) exitWith {};
-        private _ply = selectRandom _players;
+        sleep 30;
+		private _ply = selectRandom _players;
         private _taskId = format ["task_smuggler_%1_%2", side _ply, diag_tickTime];
         [_ply, _taskId,
             ["Find the smuggler rumored to be in the Slums. He will not stay for very long.", "Rumors of a Smuggler", ""],

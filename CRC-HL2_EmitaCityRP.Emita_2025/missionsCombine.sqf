@@ -184,7 +184,7 @@ case 2: {
     };
 
     // Chance for a rebel patrol vehicle
-    if (random 1 < 0.35) then {
+    if (random 1 < 0.7) then {
         private _vehPos = [_center, 80, 200, 5, 0, 0.4, 0] call BIS_fnc_findSafePos;
         private _vehCls = selectRandom _rebelVehicleClasses;
         private _veh = createVehicle [_vehCls, _vehPos, [], 0, "NONE"];
@@ -281,7 +281,7 @@ case 3: {
     // Antlion spawn management
     private _grp          = createGroup resistance;
     private _spawnedUnits = [];
-    private _capAlive     = 15;
+    private _capAlive     = 7;
     private _spawnRadius  = 50;
 
     // Spawner loop — runs while the proxy is alive

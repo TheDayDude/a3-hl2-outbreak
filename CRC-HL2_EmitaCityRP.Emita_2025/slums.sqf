@@ -93,11 +93,7 @@ if (!isServer) exitWith {};
 
 
 	// Default contraband (override via missionNamespace setVariable ["SLUMS_Contraband",[...],true])
-	private _defaultContraband = [
-		"NVGoggles","NVGoggles_OPFOR","NVGoggles_INDEP",
-		"Laserdesignator","Laserdesignator_02","Laserdesignator_03",
-		"ACE_Clacker","ACE_M26_Clacker","ACE_Cellphone","ACE_M84"
-	];
+	private _defaultContraband = ["Cytech_Makeshift_Argument_Short","Cytech_Makeshift_PM","Cytech_Makeshift_Argument","Cytech_Makeshift_APS","Cytech_flashlight_Normal","Cytech_APS_Compensator","Cytech_PM_Amplifier","Cytech_14Rnd_9x18_Mag","Cytech_35Rnd_9x18_Mag","Cytech_6Rnd_45ACP","hlc_rifle_aks74u","hlc_30Rnd_545x39_B_AK","H_bms_helmet_1","V_resistance_vest_bms","V_BandollierB_blk","B_hecu_survival_m81_2","G_Bandanna_blk","G_Balaclava_cloth_blk_F","M40_Gas_mask_nbc_f4_d","BMS_X800","O_NVGoggles_urb_F","GrenadeMolotovPSRUS","IEDLandBig_Remote_Mag","IEDUrbanBig_Remote_Mag","IEDLandSmall_Remote_Mag","IEDUrbanSmall_Remote_Mag","VRP_AntlionMeat","WBK_Health_ArmourPlate","WBK_Health_Bandage","ACE_Banana","plp_bo_w_BottleLiqCream","plp_bo_w_BottleGin","plp_bo_w_BottleTequila","ACE_CableTie","ACE_Can_Spirit","ACE_Can_RedGull","ACE_Can_Franta","ACE_Canteen","ACE_DeadManSwitch","ACE_DefusalKit","VRP_Bread","VRP_HeadcrabMeat","VRP_HoundMeat","VRP_Watermelon","ACE_MRE_BeefStew","ACE_MRE_LambCurry","HLC_Optic_1p29","HLC_Optic_PSO1","WBK_BearRebel_Rifle_Scope","WBK_BearRebel_Rifle","HL_CivHuntingRifle_Mag"];
 
 	// ---------- Presence check ----------
 	private _playersInSlums = {
