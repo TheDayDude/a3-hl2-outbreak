@@ -153,6 +153,73 @@ case 1: {
 case 2: {
     if (!isServer) exitWith {};
 
+    // ---- Client/Server helpers for recruit action ----
+    if (isNil "RBL_fnc_addRecruitAction") then {
+        RBL_fnc_addRecruitAction = {
+            params ["_u"];
+            if (isNull _u) exitWith {};
+            _u addAction [
+                "Recruit",
+                {
+                    params ["_target","_caller"];
+                    if (_target getVariable ["rr_state","pending"] != "pending") exitWith {};
+                    _caller playMoveNow "Acts_CivilTalking_1";
+                    [_caller] spawn { params ["_c"]; uiSleep 8; _c switchMove ""; };
+                    [_target, _caller] remoteExec ["RBL_fnc_recruitServer", 2];
+                },
+                nil, 1.5, true, true, "",
+                "side _this == east && {_target getVariable ['rr_state','pending'] == 'pending'}",
+                4
+            ];
+        };
+        publicVariable "RBL_fnc_addRecruitAction";
+    };
+
+    if (isNil "RBL_fnc_removeRecruitAction") then {
+        RBL_fnc_removeRecruitAction = {
+            params ["_u"];
+            if (isNull _u) exitWith {};
+            removeAllActions _u;
+        };
+        publicVariable "RBL_fnc_removeRecruitAction";
+    };
+
+    if (isNil "RBL_fnc_recruitServer") then {
+        RBL_fnc_recruitServer = {
+            params ["_target","_caller"];
+            if (isNull _target || isNull _caller) exitWith {};
+            if (_target getVariable ["rr_state","pending"] != "pending") exitWith {};
+            _target setVariable ["rr_state","used", true];
+            removeAllActions _target;
+            [_target] remoteExec ["RBL_fnc_removeRecruitAction", 0, true];
+            _target playMoveNow "Acts_CivilListening_1";
+            uiSleep 8;
+            _target switchMove "";
+            if (random 1 < 0.67) then {
+                _target removeEventHandler ["Killed", _target getVariable ["rr_killEh",-1]];
+                [_target] joinSilent (group _caller);
+                removeAllWeapons _target;
+                _target addWeapon "WBK_CP_HeavySmg_Resist";
+                for "_m" from 1 to 3 do { _target addMagazine "HLB_HSMG_Mag"; };
+                _target selectWeapon "WBK_CP_HeavySmg_Resist";
+                missionNamespace setVariable ["rr_recruited", (missionNamespace getVariable ["rr_recruited",0]) + 1];
+                ["You're right. We can't just sit here and do nothing."] remoteExec ["systemChat", owner _caller];
+                [_target, "rebel_announcekill_01"] remoteExecCall ["say3D", 0];
+            } else {
+                _target removeEventHandler ["Killed", _target getVariable ["rr_killEh",-1]];
+                missionNamespace setVariable ["rr_failed", (missionNamespace getVariable ["rr_failed",0]) + 1];
+                ["Attention Residents: Miscount detected in your block. Cooperation with your Civil Protection team permits full ration reward."] remoteExec ["systemChat", 0];
+                ["Ftrainstationcooperationspkr"] remoteExec ["playSound", 0];
+                ["Are you crazy? Get out of here!"] remoteExec ["systemChat", owner _caller];
+				[_target, "rebel_squadmemberlost_01"] remoteExecCall ["say3D", 0];
+                private _runPos = _target getPos [100, _target getDir _caller];
+                _target doMove _runPos;
+                [_target] spawn { params ["_c"]; sleep 30; if (alive _c) then { deleteVehicle _c; }; };
+            };
+        };
+        publicVariable "RBL_fnc_recruitServer";
+    };
+
     private _slumMarkers = allMapMarkers select { toLower _x find "slums_" == 0 };
     if (_slumMarkers isEqualTo []) exitWith {
         ["[Rebel Mission] No slums_ markers found — mission skipped."] remoteExec ["systemChat", 0];
@@ -171,7 +238,7 @@ case 2: {
         private _grp = createGroup civilian;
         private _civ = _grp createUnit [selectRandom _civClasses, _pos, [], 0, "FORM"];
         _civs pushBack _civ;
-        _civ setVariable ["rr_state", "pending"];
+        _civ setVariable ["rr_state", "pending", true];
 
         private _eh = _civ addEventHandler ["Killed", {
             missionNamespace setVariable ["rr_failed", (missionNamespace getVariable ["rr_failed",0]) + 1];
@@ -180,39 +247,7 @@ case 2: {
 
         [_grp, _pos, 80] call BIS_fnc_taskPatrol;
 
-        _civ addAction ["Recruit", {
-            params ["_target","_caller"];
-            if (_target getVariable ["rr_state","pending"] != "pending") exitWith {};
-            _target setVariable ["rr_state","used"];
-            removeAllActions _target;
-			_caller playMoveNow "Acts_CivilTalking_1";
-			_target playMoveNow "Acts_CivilListening_1";
-            uiSleep 8;
-            _caller switchMove "";
-			_target switchMove "";
-
-            if (random 1 < 0.67) then {
-                _target removeEventHandler ["Killed", _target getVariable ["rr_killEh",-1]];
-                [_target] joinSilent (group _caller);
-                removeAllWeapons _target;
-                _target addWeapon "WBK_CP_HeavySmg_Resist";
-                for "_m" from 1 to 3 do { _target addMagazine "HLB_HSMG_Mag"; };
-                _target selectWeapon "WBK_CP_HeavySmg_Resist";
-                missionNamespace setVariable ["rr_recruited", (missionNamespace getVariable ["rr_recruited",0]) + 1];
-				["You're right. We can't just sit here and do nothing."] remoteExec ["systemChat", owner _caller];
-				_target say3D "rebel_announcekill_01";
-            } else {
-                _target removeEventHandler ["Killed", _target getVariable ["rr_killEh",-1]];
-                missionNamespace setVariable ["rr_failed", (missionNamespace getVariable ["rr_failed",0]) + 1];
-				["Attention Residents: Miscount detected in your block. Cooperation with your Civil Protection team permits full ration reward."] remoteExec ["systemChat", 0];
-				["Ftrainstationcooperationspkr"] remoteExec ["playSound", 0];
-				["Are you crazy? Get out of here!"] remoteExec ["systemChat", owner _caller];
-				_target say3D "rebel_squadmemberlost_01";
-                private _runPos = _target getPos [100, _target getDir _caller];
-                _target doMove _runPos;
-                [_target] spawn { params ["_c"]; sleep 30; if (alive _c) then { deleteVehicle _c; }; };
-            };
-        }, [], 1.5, true, true, "", "side _this == east", 4];
+        [_civ] remoteExec ["RBL_fnc_addRecruitAction", 0, true];
     };
 
     private _taskId = format ["task_rallyRebels_%1", diag_tickTime];
