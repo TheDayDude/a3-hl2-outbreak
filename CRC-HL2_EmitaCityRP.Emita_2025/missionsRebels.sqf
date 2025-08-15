@@ -212,7 +212,7 @@ case 2: {
                 _target doMove _runPos;
                 [_target] spawn { params ["_c"]; sleep 30; if (alive _c) then { deleteVehicle _c; }; };
             };
-        }, [], 1.5, true, true, "", "side _this == east"];
+        }, [], 1.5, true, true, "", "side _this == east", 4];
     };
 
     private _taskId = format ["task_rallyRebels_%1", diag_tickTime];
