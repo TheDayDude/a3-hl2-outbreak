@@ -64,6 +64,15 @@
                     if (_nameLower find "loot_food_" == 0 && {random 1 < 0.20}) then {
                         _box addItemCargoGlobal [selectRandom _lootMedical, 1];
                     };
+                    _box addEventHandler ["Killed", {
+                        private _amount  = 2 + floor random 4;
+                        private _targets = allPlayers select { side _x == west && alive _x };
+                        {
+                            for "_i" from 1 to _amount do { _x addItem "VRP_HL_Token_Item"; };
+                        } forEach _targets;
+                        [format ["Malignant cache destroyed. You are awarded %1 Tokens.", _amount]]
+                            remoteExec ["hintSilent", _targets apply { owner _x }];
+                    }];
                 };
 
                 deleteMarker _m;
