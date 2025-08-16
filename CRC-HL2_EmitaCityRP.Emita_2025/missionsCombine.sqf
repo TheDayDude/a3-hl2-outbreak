@@ -394,10 +394,11 @@ case 4: {
                 [_target] joinSilent createGroup east;
                 _target setVariable ["cd_state","resisted", true];
 				[_target, "rebel_squadmemberlost_01"] remoteExecCall ["say3D", 0];
-                if (random 1 < 0.8) then {
+                if (random 1 < 0.7) then {
                     removeAllWeapons _target;
+					_target addMagazine "HL_Revolver_Mag";
                     _target addWeapon "WBK_Revolver_HL1_2";
-                    _target addMagazine "HL_Revolver_Mag";
+					_target addMagazine "HL_Revolver_Mag";
                     _target selectWeapon "WBK_Revolver_HL1_2";
                 } else {
                     private _runPos = _target getPos [100, random 360];
