@@ -1,44 +1,50 @@
 while {true} do {
-    // Get all Xenian units (resistance side)
+    // Gather all Xenian units (Resistance)
     private _xenians = allUnits select {
         side _x == resistance && alive _x
     };
 
-    // Get all valid civilian players
+    // Gather all valid civilians
     private _civilians = allUnits select {
-        side _x == civilian && alive _x && damage _x < 0.9 
+        side _x == civilian && alive _x && damage _x < 0.9
     };
 
     {
-        private _xen = _x;
-        private _xenPos = getPos _xen;
+        private _civ = _x;
 
+        // Find nearby xenians within 30 meters
+        private _nearXenians = _xenians select {
+            _civ distance _x < 30
+        };
+
+        // Make each xenian move toward this civilian
         {
-            private _civ = _x;
-            private _dist = _xen distance _civ;
+            _x doMove (getPos _civ);
+        } forEach _nearXenians;
 
-            if (_dist < 5) then {
-                if (!(_civ getVariable ["isXenHostile", false])) then {
-                    _civ addRating -10000;  // Civ becomes hostile to Resistance
-                    _civ setVariable ["isXenHostile", true, false];
-                };
-            } else {
-                // Random chance to stalk within 30m
-                if (_dist < 50 && random 1 < 0.8) then {
-                    _xen doMove getPos _civ;
-					_xen doTarget _civ;
-					_xen doFire _civ;
-                };
+        // Check for close contact (within 5 meters)
+        private _closeXenians = _nearXenians select {
+            _civ distance _x < 3
+        };
 
-                if (_civ getVariable ["isXenHostile", false] && _dist > 10) then {
-                    _civ addRating 10000;  // Restore rating when far
-                    _civ setVariable ["isXenHostile", false, false];
+        if ((count _closeXenians) > 0) then {
+            if (!(_civ getVariable ["isXenHostile", false])) then {
+                _civ addRating -10000;
+                _civ setVariable ["isXenHostile", true, false];
+
+                // Revert back to civilian after 10 seconds
+                [_civ] spawn {
+                    params ["_unit"]; 
+                    sleep 10;
+                    if (alive _unit) then {
+                        _civ addRating 10000;
+                        _unit setVariable ["isXenHostile", false, false];
+                    };
                 };
             };
+        };
 
-        } forEach _civilians;
-
-    } forEach _xenians;
+    } forEach _civilians;
 
     sleep 2;
 };

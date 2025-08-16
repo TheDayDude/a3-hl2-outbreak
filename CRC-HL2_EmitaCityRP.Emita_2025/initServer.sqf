@@ -16,6 +16,7 @@ CID_Malcompliance = createHashMap;
 [] execVM "slums.sqf";
 [] execVM "smuggler.sqf";
 [] execVM "judgementWaiver.sqf";
+[] execVM "quartermaster.sqf";
 
 if (isNil { missionNamespace getVariable "RationStock" }) then {
     missionNamespace setVariable ["RationStock", 5, true]; // true = publicVariable
