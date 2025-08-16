@@ -24,12 +24,12 @@ while {true} do {
 
         // Check for close contact (within 5 meters)
         private _closeXenians = _nearXenians select {
-            _civ distance _x < 5
+            _civ distance _x < 3
         };
 
         if ((count _closeXenians) > 0) then {
             if (!(_civ getVariable ["isXenHostile", false])) then {
-                [_civ] joinSilent createGroup east;  // Temporarily convert to OpFor
+                _civ addRating -10000;
                 _civ setVariable ["isXenHostile", true, false];
 
                 // Revert back to civilian after 10 seconds
@@ -37,7 +37,7 @@ while {true} do {
                     params ["_unit"]; 
                     sleep 10;
                     if (alive _unit) then {
-                        [_unit] joinSilent createGroup civilian;
+                        _civ addRating 10000;
                         _unit setVariable ["isXenHostile", false, false];
                     };
                 };

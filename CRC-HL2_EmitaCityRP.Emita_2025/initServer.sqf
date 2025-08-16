@@ -71,8 +71,8 @@ call compile preprocessFileLineNumbers "portalStorm.sqf";
 //garbagio cleanup
 [] spawn {
     while {true} do {
-        // Wait 55 minutes (3300 seconds)
-        sleep 3300;
+        // Wait 55 minutes (6600 seconds)
+        sleep 6600;
 
         // 5-minute warning
         ["Cleanup Warning: All corpses, wrecks, and loose items will be removed in 5 minutes."] remoteExec ["hint", 0];

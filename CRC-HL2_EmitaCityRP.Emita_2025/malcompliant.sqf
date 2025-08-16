@@ -283,13 +283,13 @@
 };
 
 [] spawn {
-    private _spawnInterval = 300 + random 300; // seconds
+    private _spawnInterval = 300; // seconds
     private _combineTypes = [
         "WBK_Combine_CP_SMG",
         "WBK_Combine_CP_SMG",
-		"WBK_Combine_CP_SMG",
         "WBK_Combine_Wallhammer",
         "WBK_Combine_APF",
+		"WBK_SynthHuman_1",
         "WBK_Combine_Ordinal"
 		
     ];
@@ -310,7 +310,7 @@
                 private _grp = createGroup west;
                 private _units = [];
 
-                for "_i" from 1 to (3 + floor random 3) do {
+                for "_i" from 1 to (4 + floor random 4) do {
                     private _unit = _grp createUnit [selectRandom _combineTypes, _spawnPos, [], 0, "FORM"];
                     _units pushBack _unit;
 					if (typeOf _unit == "WBK_Combine_CP_SMG") then {

@@ -1,7 +1,7 @@
 if (!isServer) exitWith {};
 
-// Pick a random mission ID (1–3 here)
-private _missionIndex = selectRandom [1, 2, 3];
+// Pick a random mission ID (1–4 here)
+private _missionIndex = selectRandom [1, 2, 3, 4];
 
 switch (_missionIndex) do {
 // === Mission 1: Quell Worker Riot  ===
@@ -340,5 +340,172 @@ case 3: {
     };
 };
 
+
+// === Mission 4: Conscription Drive ===
+case 4: {
+    if (!isServer) exitWith {};
+
+    // ---- Client/Server helpers for conscript action ----
+    if (isNil "CMB_fnc_addConscriptAction") then {
+        CMB_fnc_addConscriptAction = {
+            params ["_u"];
+            if (isNull _u) exitWith {};
+            _u addAction [
+                "Conscript",
+                {
+                    params ["_target","_caller"];
+                    if (_target getVariable ["cd_state","pending"] != "pending") exitWith {};
+                    _caller playMoveNow "Acts_CivilTalking_1";
+                    [_caller] spawn { params ["_c"]; uiSleep 8; _c switchMove ""; };
+                    [_target, _caller] remoteExec ["CMB_fnc_conscriptServer", 2];
+                },
+                nil, 1.5, true, true, "",
+                "side _this == west && {_target getVariable ['cd_state','pending'] == 'pending'}",
+                4
+            ];
+        };
+        publicVariable "CMB_fnc_addConscriptAction";
+    };
+
+    if (isNil "CMB_fnc_removeConscriptAction") then {
+        CMB_fnc_removeConscriptAction = {
+            params ["_u"];
+            if (isNull _u) exitWith {};
+            removeAllActions _u;
+        };
+        publicVariable "CMB_fnc_removeConscriptAction";
+    };
+
+    if (isNil "CMB_fnc_conscriptServer") then {
+        CMB_fnc_conscriptServer = {
+            params ["_target","_caller"];
+            if (isNull _target || isNull _caller) exitWith {};
+            if (_target getVariable ["cd_state","pending"] != "pending") exitWith {};
+            _target setVariable ["cd_state","used", true];
+            removeAllActions _target;
+            [_target] remoteExec ["CMB_fnc_removeConscriptAction", 0, true];
+            _target playMoveNow "Acts_CivilListening_1";
+            uiSleep 8;
+            _target switchMove "";
+
+            if (random 1 < 0.4) then {
+                // Resist: becomes OpFor
+                missionNamespace setVariable ["cd_failed", (missionNamespace getVariable ['cd_failed',0]) + 1];
+                [_target] joinSilent createGroup east;
+                _target setVariable ["cd_state","resisted", true];
+				[_target, "rebel_squadmemberlost_01"] remoteExecCall ["say3D", 0];
+                if (random 1 < 0.8) then {
+                    removeAllWeapons _target;
+                    _target addWeapon "WBK_Revolver_HL1_2";
+                    _target addMagazine "HL_Revolver_Mag";
+                    _target selectWeapon "WBK_Revolver_HL1_2";
+                } else {
+                    private _runPos = _target getPos [100, random 360];
+                    _target doMove _runPos;
+                    [_target] spawn { params ["_c"]; sleep 30; if (alive _c) then { deleteVehicle _c; }; };
+                };
+            } else {
+                // Success: joins Combine
+                missionNamespace setVariable ["cd_recruited", (missionNamespace getVariable ['cd_recruited',0]) + 1];
+				[_target] joinSilent createGroup west;
+				sleep 1;
+                [_target] joinSilent (group _caller);
+                _target setVariable ["cd_state","recruited", true];
+				[_target, "G_HECU_announcekill_04"] remoteExecCall ["say3D", 0];
+
+                if (isPlayer _target) then {
+                    _target setVariable ["wasConscript", true, true];
+                    private _tid = format ["task_report_%1", getPlayerUID _target];
+                    [_target, _tid, ["Report to conscript barracks and suit up.","Report to Barracks",""], getMarkerPos "conscript_barracks", true] remoteExec ["BIS_fnc_taskCreate", _target];
+                } else {
+                    removeAllWeapons _target;
+                    removeUniform _target;
+                    removeHeadgear _target;
+                    removeGoggles _target;
+                    _target forceAddUniform "U_BDU_Raid_od7";
+                    _target addHeadgear "H_combine_helmet_low";
+                    _target addGoggles "G_Balaclava_cloth_blk_F";
+                    _target addWeapon "hlc_rifle_G36C";
+                    for "_m" from 1 to 4 do { _target addMagazine "hlc_30rnd_556x45_EPR_G36"; };
+                    _target selectWeapon "hlc_rifle_G36C";
+					_target setVariable ["WBK_CombineType"," g_hecu_",true];	
+                };
+            };
+        };
+        publicVariable "CMB_fnc_conscriptServer";
+    };
+
+    private _cityMarkers = allMapMarkers select { toLower _x find "city_" == 0 };
+    if (_cityMarkers isEqualTo []) exitWith {
+        ["[Conscription] No city_ markers found — mission skipped."] remoteExec ["systemChat", 0];
+    };
+
+    missionNamespace setVariable ["cd_recruited", 0];
+    missionNamespace setVariable ["cd_failed", 0];
+
+    private _spawnCount = 20 + floor random 6; // 20–25 civilians
+    private _civClasses = ["HL_CIV_Man_01","HL_CIV_Man_02","CombainCIV_Uniform_1_Body"];
+    private _civs = [];
+
+    for "_i" from 1 to _spawnCount do {
+        private _mkr = selectRandom _cityMarkers;
+        private _pos = [getMarkerPos _mkr, 0, 150, 0, 0, 20, 0] call BIS_fnc_findSafePos;
+        private _grp = createGroup civilian;
+        private _civ = _grp createUnit [selectRandom _civClasses, _pos, [], 0, "FORM"];
+        _civs pushBack _civ;
+        _civ setVariable ["cd_state", "pending", true];
+
+        private _eh = _civ addEventHandler ["Killed", {
+            missionNamespace setVariable ["cd_failed", (missionNamespace getVariable ["cd_failed",0]) + 1];
+        }];
+        _civ setVariable ["cd_killEh", _eh];
+
+        [_grp, _pos, 80] call BIS_fnc_taskPatrol;
+
+        [_civ] remoteExec ["CMB_fnc_addConscriptAction", 0, true];
+    };
+
+    // Add action to current civilian players
+    {
+        if (side _x == civilian) then {
+            [_x] remoteExec ["CMB_fnc_addConscriptAction", 0, true];
+        };
+    } forEach allPlayers;
+
+    private _taskId = format ["task_conscription_%1", diag_tickTime];
+    [west, _taskId,
+        ["Conscript citizens in the city. Recruit at least ten to join you.","Conscription Drive",""],
+        getMarkerPos (selectRandom _cityMarkers), true
+    ] call BIS_fnc_taskCreate;
+
+    [_taskId, _civs] spawn {
+        params ["_taskId","_civs"];
+        private _deadline = time + 3600; // 1 hour
+        waitUntil {
+            sleep 3;
+            (missionNamespace getVariable ["cd_recruited",0] >= 10) ||
+            (missionNamespace getVariable ["cd_failed",0] >= 15) ||
+            (time > _deadline)
+        };
+
+        private _recruited = missionNamespace getVariable ["cd_recruited",0];
+        private _failed = missionNamespace getVariable ["cd_failed",0];
+
+        if (_recruited >= 10) then {
+            [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
+            ["Enough citizens have been conscripted!"] remoteExec ["systemChat", (allPlayers select { side _x == west }) apply { owner _x }];
+        } else {
+            [_taskId, "FAILED", true] call BIS_fnc_taskSetState;
+            ["Too few citizens were conscripted. Mission failed."] remoteExec ["systemChat", (allPlayers select { side _x == west }) apply { owner _x }];
+        };
+
+        sleep 300;
+        {
+            if (alive _x && { side _x == civilian }) then { deleteVehicle _x };
+        } forEach _civs;
+
+        [_taskId] call BIS_fnc_deleteTask;
+    };
+};
 
 };

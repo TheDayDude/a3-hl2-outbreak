@@ -1,3 +1,44 @@
+if (isNil "XEN_fnc_addAnchorAction") then {
+    XEN_fnc_addAnchorAction = {
+        params ["_anchor"];
+        if (isNull _anchor) exitWith {};
+        _anchor addAction [
+            "Clear Xen Anchor",
+            {
+                params ["_target", "_caller"];
+                [_target, _caller] spawn {
+                    params ["_t", "_c"];
+                    _c playMove "AinvPknlMstpSnonWnonDnon_medic_1";
+                    uisleep 6;
+                    [_t, _c] remoteExecCall ["XEN_fnc_clearAnchorServer", 2];
+                };
+            },
+            nil, 1.5, true, true, "", "_this distance _target < 4", 5, true
+        ];
+    };
+    publicVariable "XEN_fnc_addAnchorAction";
+};
+
+if (isNil "XEN_fnc_clearAnchorServer") then {
+    XEN_fnc_clearAnchorServer = {
+        params ["_anchor", "_caller"];
+        if (isNull _anchor || isNull _caller) exitWith {};
+        private _tokenCount = 1 + floor random 2;
+        for "_i" from 1 to _tokenCount do { _caller addItem "VRP_HL_Token_Item"; };
+        private _meatCount = 3 + floor random 3;
+        for "_i" from 1 to _meatCount do { _caller addItem "VRP_StrangeMeat"; };
+		[format ["Xen Anchor cleared. You are awarded %1 Tokens for Infestation Control duty. You also scavenge %2 Strange Meat.", _tokenCount, _meatCount]]
+		remoteExec ["hintSilent", _caller];		
+        if (uniform _caller != "CombainCIV_Uniform_2" && random 1 < 0.7) then {
+            _caller setDamage (damage _caller + 0.4);
+            [format ["Lacking hazard protection, your skin burns from corrosive exogen material. But you still are awarded %1 Tokens for Infestation Control duty and manage to scavenge %2 Strange Meat. "], _tokenCount, _meatCount]
+            remoteExec ["hintSilent", _caller];			
+        };
+        deleteVehicle _anchor;
+    };
+    publicVariable "XEN_fnc_clearAnchorServer";
+};
+
 [] spawn {
     // === QZONE 1: Zombies, Headcrabs, Rare Bullsquid/Houndeye ===
     [] spawn {
@@ -225,6 +266,26 @@
             };
             private _delay = 90 + random 120;
             sleep _delay;
+        };
+    };
+    
+    // === Xen Anchor Spawner ===
+    [] spawn {
+        private _markers = allMapMarkers select { (_x select [0,7]) == "anchor_" };
+        private _active  = [];
+        private _max     = 6;
+        while {true} do {
+            _active = _active select { alive (_x select 1) };
+            {
+                if (count _active >= _max) exitWith {};
+                private _m = _x;
+                if (_active findIf { (_x select 0) == _m } == -1 && {random 1 < 0.2}) then {
+                    private _anchor = createVehicle ["xen_anchor", getMarkerPos _m, [], 0, "NONE"];
+                    _active pushBack [_m, _anchor];
+                    [_anchor] remoteExec ["XEN_fnc_addAnchorAction", 0, true];
+                };
+            } forEach _markers;
+            sleep (300 + random 120);
         };
     };
 };
