@@ -394,6 +394,24 @@ case 4: {
                 [_target] joinSilent createGroup east;
                 _target setVariable ["cd_state","resisted", true];
 				[_target, "rebel_squadmemberlost_01"] remoteExecCall ["say3D", 0];
+				 // Spawn 0-2 additional melee rebels near the action caller
+                private _extraCount = floor random 3;
+                if (_extraCount > 0) then {
+                    private _meleeWeapons = [
+                        "Pipe_aluminium","Crowbar","FireAxe","WBK_survival_weapon_2","WBK_survival_weapon_1",
+                        "WBK_pipeStyledSword","Shovel_Russian","WBK_SmallHammer","Axe","WBK_ww1_Club"
+                    ];
+                    private _grp = createGroup east;
+                    for "_i" from 1 to _extraCount do {
+                        private _pos = _caller getPos [random 50, random 360];
+                        private _u = _grp createUnit ["WBK_Rebel_HL2_refugee_6", _pos, [], 2, "FORM"];
+                        removeAllWeapons _u;
+                        _u addWeapon (selectRandom _meleeWeapons);
+                        _u doMove (getPos _caller);
+                    };
+                    _grp setBehaviour "AWARE";
+                    _grp setCombatMode "RED";
+                };
                 if (random 1 < 0.7) then {
                     removeAllWeapons _target;
 					_target addMagazine "HL_Revolver_Mag";
