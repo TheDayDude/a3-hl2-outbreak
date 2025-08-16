@@ -122,6 +122,9 @@ if (!isServer) exitWith {};
         MRC_fnc_buyFakeCID = {
             params ["_plr", "_smug", "_price"];
             if (isNull _plr || { !alive _plr }) exitWith {};
+            if (_plr getVariable ["isOTA", false]) exitWith {
+                ["Your loyalty programming forbids this."] remoteExec ["hintSilent", owner _plr];
+            };			
             private _tokens = { _x == "VRP_HL_Token_Item" } count (items _plr);
             if (_tokens < _price) exitWith {
                 ["Not enough tokens."] remoteExec ["hintSilent", owner _plr];
@@ -158,8 +161,8 @@ if (!isServer) exitWith {};
             private _msg = format ["Fake CID purchased. New CID: %1", _cid];
             if (_wasCPF) then {
                 _msg = _msg + "\n You dirty cop... the merchant has a free uniform for you in his pack.";
-				["Vital Alert: Autonomous unit subsumed. Mandatory compliance with tenets of advisorial assistance act. Threat level adjustment. Probe. Expunge."] remoteExec ["systemChat", 0];
-				["Overbarn"] remoteExec ["playSound", 0];
+				["Autonomous Unit: Accept mandatory sector assimilation. Coordinated constriction underway. Debride and cauterize. Entering phase nine, enhanced compliance. Deploy advisory control and oversight. Submit and be subsumed."] remoteExec ["systemChat", 0];
+				["Overvista"] remoteExec ["playSound", 0];
 				_plr setVariable ["WBK_CombineType"," g_hecu_",true];				
             };
             [_msg] remoteExec ["hintSilent", owner _plr];

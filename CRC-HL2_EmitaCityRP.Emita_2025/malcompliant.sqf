@@ -151,7 +151,7 @@
             if (
                 side _civ == civilian &&
                 alive _civ &&
-				!captive _x &&
+				!captive _civ &&
                 damage _civ < 0.9 // Skip downed/incapacitated units
             ) then {
 
@@ -220,6 +220,7 @@
                 side _civ == civilian &&
                 alive _civ &&
 				!captive _x &&
+                damage _civ < 0.9 &&
                 isNil {_civ getVariable "firedEHAdded"}
             ) then {
                 _civ setVariable ["firedEHAdded", true];
@@ -258,6 +259,7 @@
                 side _x == west &&
                 alive _x &&
 				!captive _x &&
+				damage _x < 0.9 &&
                 isNil {_x getVariable "hasKilledEH"}
             ) then {
                 _x addEventHandler ["Killed", {
