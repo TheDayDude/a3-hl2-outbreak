@@ -463,6 +463,9 @@ case 4: {
         ["[Conscription] No city_ markers found — mission skipped."] remoteExec ["systemChat", 0];
     };
 
+    // Choose a single city marker as the conscription area
+    private _cityMarker = selectRandom _cityMarkers;
+
     missionNamespace setVariable ["cd_recruited", 0];
     missionNamespace setVariable ["cd_failed", 0];
 
@@ -471,8 +474,8 @@ case 4: {
     private _civs = [];
 
     for "_i" from 1 to _spawnCount do {
-        private _mkr = selectRandom _cityMarkers;
-        private _pos = [getMarkerPos _mkr, 0, 150, 0, 0, 20, 0] call BIS_fnc_findSafePos;
+        // Spawn each worker within 100m of the chosen city marker
+        private _pos = [getMarkerPos _cityMarker, 0, 100, 0, 0, 20, 0] call BIS_fnc_findSafePos;
         private _grp = createGroup civilian;
         private _civ = _grp createUnit [selectRandom _civClasses, _pos, [], 0, "FORM"];
         _civs pushBack _civ;
@@ -498,7 +501,7 @@ case 4: {
     private _taskId = format ["task_conscription_%1", diag_tickTime];
     [west, _taskId,
         ["Conscript workers throughout the city (Districts 1-3). Recruit at least ten to join you.","Conscription Drive",""],
-        getMarkerPos (selectRandom _cityMarkers), true
+        getMarkerPos _cityMarker, true
     ] call BIS_fnc_taskCreate;
 
     [_taskId, _civs] spawn {

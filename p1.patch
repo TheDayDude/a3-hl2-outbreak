@@ -1,249 +1,91 @@
-diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/missionsRebels.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/missionsRebels.sqf
-index 9f76aed872c5553189faaad6a5964cd4378f7f4c..1fec1bcb22901a8c0770c213bb77f6544c21911d 100644
---- a/CRC-HL2_EmitaCityRP.Emita_2025/missionsRebels.sqf
-+++ b/CRC-HL2_EmitaCityRP.Emita_2025/missionsRebels.sqf
-@@ -1,29 +1,29 @@
+diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/judgementWaiver.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/judgementWaiver.sqf
+index cbb1d70db63b2d7cba9c9a09469f15405f31db6d..6e2341a4263ad13aa14d8e6e6e032b1e61a027c7 100644
+--- a/CRC-HL2_EmitaCityRP.Emita_2025/judgementWaiver.sqf
++++ b/CRC-HL2_EmitaCityRP.Emita_2025/judgementWaiver.sqf
+@@ -1,52 +1,72 @@
+ // File: judgementWaiver.sqf
+ // Prototype for Judgement Waiver global event.
+ // Periodically converts non-loyalist civilians to OPFOR for testing.
+ 
  if (!isServer) exitWith {};
  
--// Pick a random mission ID (1–3 here)
--private _missionIndex = selectRandom [1, 2, 3];
-+// Pick a random mission ID (1–4 here)
-+private _missionIndex = selectRandom [1, 2, 3, 4];
+ // Public variable to allow audio/visual cues
+ waiverActive = false;
+ publicVariable "waiverActive";
  
- switch (_missionIndex) do {
- // === Mission 1: Assassinate Ordinal ===
- case 1: {
-     // Find a combine_ marker to host the target
-     private _cmbMarkers = allMapMarkers select { toLower _x find "combine_" == 0 };
-     if (_cmbMarkers isEqualTo []) exitWith {
-         ["[Rebel Mission] No combine_ markers found — mission skipped."] remoteExec ["systemChat", 0];
+ JW_fnc_start = {
+     waiverActive = true;
+     publicVariable "waiverActive";
+-	[] remoteExec ["JW_fnc_playJudgement", 0];
++        [] remoteExec ["JW_fnc_playJudgement", 0];
+     private _targets = allUnits select {
+         side _x isEqualTo civilian &&
+         alive _x &&
+         !captive _x &&
+         !(_x getVariable ["ACE_isUnconscious", false]) &&
+         !(_x getVariable ["isLoyalist", false])
      };
++    private _otaGroups = [];
  
-     private _chosenMarker = selectRandom _cmbMarkers;
-     private _center       = getMarkerPos _chosenMarker;
- 
-     // Task for EAST (Rebels)
-     private _taskId  = format ["task_assassinateOrdinal_%1", diag_tickTime];
-     private _taskPos = [_center, 60 + random 60, random 360] call BIS_fnc_relPos; // offset so it's not too obvious
-     [east, _taskId,
-         ["Eliminate the Combine Ordinal leading operations in this sector.",
-          "Assassinate Ordinal", ""],
-         _taskPos, true
-     ] call BIS_fnc_taskCreate;
- 
-     // Target & defenders
-     private _defClasses = [
-         "WBK_Combine_Grunt",
-diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/missionsRebels.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/missionsRebels.sqf
-index 9f76aed872c5553189faaad6a5964cd4378f7f4c..1fec1bcb22901a8c0770c213bb77f6544c21911d 100644
---- a/CRC-HL2_EmitaCityRP.Emita_2025/missionsRebels.sqf
-+++ b/CRC-HL2_EmitaCityRP.Emita_2025/missionsRebels.sqf
-@@ -407,31 +407,207 @@ case 3: {
-             [format ["Truck stolen! You pilfer %1 Tokens.", _amt]]
-                 remoteExec ["hintSilent", (allPlayers select { side _x == east }) apply { owner _x }];
- 
-             // Cleanup conscripts only (keep truck) after 5 minutes
-             sleep 300;
-             {
-                 { if (!isNull _x) then { deleteVehicle _x } } forEach units _x;
-                 deleteGroup _x;
-             } forEach _groups;
- 
-         } else {
-             [_taskId, "FAILED", true] call BIS_fnc_taskSetState;
-             ["The truck was lost or time has expired. Mission failed."]
-                 remoteExec ["systemChat", (allPlayers select { side _x == east }) apply { owner _x }];
- 
-             // Cleanup conscripts AND the truck after 5 minutes
-             sleep 300;
-             {
-                 { if (!isNull _x) then { deleteVehicle _x } } forEach units _x;
-                 deleteGroup _x;
-             } forEach _groups;
-             if (!isNull _truck) then { deleteVehicle _truck; };
-         };
- 
-         sleep 10;
-+    [_taskId] call BIS_fnc_deleteTask;
-+    };
-+};
-+
-+
-+// === Mission 4: Rescue Rogue Unit ===
-+case 4: {
-+    if (!isServer) exitWith {};
-+
-+    // --- Dedicated server-safe action helpers ---
-+    if (isNil "RRU_fnc_addFreeAction") then {
-+        RRU_fnc_addFreeAction = {
-+            params ["_u"];
-+            if (isNull _u) exitWith {};
-+            _u addAction [
-+                "Free Rogue Officer",
-+                {
-+                    params ["_target","_caller"];
-+                    [_target,_caller] remoteExec ["RRU_fnc_freeRogueServer",2];
-+                },
-+                nil,1.5,true,true,"",
-+                "side _this == east && captive _target",
-+                4
-+            ];
-+        };
-+        publicVariable "RRU_fnc_addFreeAction";
-+    };
-+
-+    if (isNil "RRU_fnc_removeFreeAction") then {
-+        RRU_fnc_removeFreeAction = {
-+            params ["_u"];
-+            if (isNull _u) exitWith {};
-+            removeAllActions _u;
-+        };
-+        publicVariable "RRU_fnc_removeFreeAction";
-+    };
-+
-+    if (isNil "RRU_fnc_freeRogueServer") then {
-+        RRU_fnc_freeRogueServer = {
-+            params ["_rogue","_caller"];
-+            if (isNull _rogue || isNull _caller) exitWith {};
-+            if (!captive _rogue) exitWith {};
-+            _rogue setCaptive false;
-+            _rogue enableAI "MOVE";
-+            [_rogue] joinSilent (group _caller);
-+            [_rogue] remoteExec ["RRU_fnc_removeFreeAction",0,true];
-+
-+            missionNamespace setVariable ["rru_freed",true,true];
-+
-+            // spawn hunting squad
-+            private _huntPos = getMarkerPos "slums_guard";
-+            private _huntGrp = createGroup west;
-+            for "_i" from 1 to (3 + floor random 3) do {
-+                _huntGrp createUnit [selectRandom ["WBK_Combine_CP_P","WBK_Combine_CP_SMG"], _huntPos, [], 5, "FORM"];
+     {
+         [_x] joinSilent createGroup east;
+     } forEach _targets;
+     // Allow SFX or other systems to react
+-	["Attention all Ground Protection Teams: JUDGEMENT WAIVER is now in effect. Capital prosecution is discretionary."] remoteExec ["systemChat", 0];
+-	["Fprotectionresponse5spkr"] remoteExec ["playSound", 0];
++        ["Attention all Ground Protection Teams: JUDGEMENT WAIVER is now in effect. Capital prosecution is discretionary."] remoteExec ["systemChat", 0];
++        ["Fprotectionresponse5spkr"] remoteExec ["playSound", 0];
+     sleep 20;
+-	["Attention all Ground Protection Teams: Autonomous judgement is now in effect. Sentencing is now discretionary. Code: amputate, zero, confirm."] remoteExec ["systemChat", 0];
+-	["Fprotectionresponse4spkr"] remoteExec ["playSound", 0];
+-	sleep 600;
++        ["Attention all Ground Protection Teams: Autonomous judgement is now in effect. Sentencing is now discretionary. Code: amputate, zero, confirm."] remoteExec ["systemChat", 0];
++        ["Fprotectionresponse4spkr"] remoteExec ["playSound", 0];
++    // Spawn Overwatch squads at patrol markers
++    private _patrolMarkers = allMapMarkers select { toLower _x find "patrol_" == 0 };
++    private _otaTypes = [
++        "WBK_Combine_ASS_SMG",
++        "WBK_Combine_ASS_Sniper",
++        "WBK_Combine_APF",
++        "WBK_Combine_HL2_Type_Elite"
++    ];
++    {
++        if (random 1 < 0.5) then {
++            private _grp = createGroup west;
++            private _pos = getMarkerPos _x;
++            for "_i" from 1 to 4 do {
++                _grp createUnit [selectRandom _otaTypes, _pos, [], 0, "FORM"];
 +            };
-+            _huntGrp setBehaviour "COMBAT";
-+            _huntGrp setCombatMode "RED";
-+            [_huntGrp,_rogue] spawn {
-+                params ["_grp","_vip"];
-+                while {alive _vip && {count units _grp > 0}} do {
-+                    _grp doMove position _vip;
-+                    sleep 15;
-+                };
-+            };
-+            missionNamespace setVariable ["rru_huntGrp",_huntGrp];
++            _grp setBehaviour "AWARE";
++            _grp setCombatMode "RED";
++            _otaGroups pushBack _grp;
 +        };
-+        publicVariable "RRU_fnc_freeRogueServer";
-+    };
-+
-+    if (isNil "RRU_fnc_createRescueMarker") then {
-+        RRU_fnc_createRescueMarker = {
-+            params ["_name","_pos"];
-+            private _m = createMarkerLocal [_name,_pos];
-+            _m setMarkerShapeLocal "ICON";
-+            _m setMarkerTypeLocal "mil_pickup";
-+            _m setMarkerTextLocal "VIP Rescue Point";
-+            _m setMarkerColorLocal "ColorGreen";
-+        };
-+        publicVariable "RRU_fnc_createRescueMarker";
-+    };
-+
-+    if (isNil "RRU_fnc_deleteMarker") then {
-+        RRU_fnc_deleteMarker = {
-+            deleteMarkerLocal _this;
-+        };
-+        publicVariable "RRU_fnc_deleteMarker";
-+    };
-+
-+    // Gather possible markers
-+    private _slumMarkers = allMapMarkers select { toLower _x find "slums_" == 0 };
-+    private _rebelMarkers = allMapMarkers select { toLower _x find "rebel_" == 0 };
-+    if (_slumMarkers isEqualTo [] || _rebelMarkers isEqualTo []) exitWith {
-+        ["[Rebel Mission] Missing slums_ or rebel_ markers — mission skipped."] remoteExec ["systemChat",0];
-+    };
-+
-+    private _spawnMarker = selectRandom _slumMarkers;
-+    private _spawnPos    = getMarkerPos _spawnMarker;
-+
-+    // Rogue captive
-+    private _rogueGrp = createGroup west;
-+    private _rogue    = _rogueGrp createUnit ["UU_CP", _spawnPos, [], 0, "NONE"];
-+    _rogue setCaptive true;
-+    _rogue disableAI "MOVE";
-+    _rogue setVariable ["rru_state","captive",true];
-+    [_rogue] remoteExec ["RRU_fnc_addFreeAction",0,true];
-+
-+    // Guard squad
-+    private _guardGrp = createGroup west;
-+    private _guards   = [];
-+    for "_i" from 1 to 4 do {
-+        private _p = [_spawnPos,8 + random 5, random 360] call BIS_fnc_relPos;
-+        private _g = _guardGrp createUnit [selectRandom ["WBK_Combine_CP_P","WBK_Combine_CP_SMG"], _p, [], 0, "FORM"];
-+        _guards pushBack _g;
-+    };
-+    _guardGrp setBehaviour "AWARE";
-+    _guardGrp setCombatMode "RED";
-+    [_guardGrp,_spawnPos,40] call BIS_fnc_taskPatrol;
-+
-+    // Rebel extraction team
-+    private _rebelMarker = selectRandom _rebelMarkers;
-+    private _rescuePos   = getMarkerPos _rebelMarker;
-+    private _rebelGrp    = createGroup east;
-+    private _rebels      = [];
-+    for "_i" from 1 to 4 do {
-+        private _rp = [_rescuePos,5 + random 5, random 360] call BIS_fnc_relPos;
-+        private _r  = _rebelGrp createUnit [selectRandom ["WBK_Rebel_Rifleman_1","WBK_Rebel_SMG_2","WBK_Rebel_Rifleman_2"], _rp, [], 0, "FORM"];
-+        _rebels pushBack _r;
-+    };
-+    _rebelGrp setBehaviour "SAFE";
-+    _rebelGrp setCombatMode "YELLOW";
-+
-+    private _markerName = format ["vipRescue_%1",diag_tickTime];
-+    [_markerName,_rescuePos] remoteExec ["RRU_fnc_createRescueMarker", (allPlayers select { side _x == east }) apply { owner _x }, true];
-+
-+    // Task setup
-+    private _taskId = format ["task_rescueRogue_%1", diag_tickTime];
-+    [east,_taskId,
-+        ["Free the rogue CPF officer and deliver him to the rebels.","Rescue Rogue Unit",""],
-+        _spawnPos,true
-+    ] call BIS_fnc_taskCreate;
-+
-+    // Monitor success/failure
-+    [_taskId,_rogue,_guardGrp,_rebelGrp,_guards+_rebels,_rescuePos,_markerName] spawn {
-+        params ["_taskId","_rogue","_guardGrp","_rebelGrp","_units","_rescuePos","_markerName"];
-+        private _deadline = time + 2700; // 45 minutes
-+        private _success = false;
-+
-+        waitUntil {
-+            sleep 5;
-+            _success = alive _rogue && !captive _rogue && (_rogue distance2D _rescuePos < 10);
-+            _success || !alive _rogue || time > _deadline
-+        };
-+
-+        if (_success) then {
-+            [_taskId,"SUCCEEDED",true] call BIS_fnc_taskSetState;
-+            [_rogue] joinSilent _rebelGrp;
-+            [_markerName] remoteExec ["RRU_fnc_deleteMarker", (allPlayers select { side _x == east }) apply { owner _x }];
-+        } else {
-+            if (time > _deadline && alive _rogue && captive _rogue) then { _rogue setDamage 1; };
-+            [_taskId,"FAILED",true] call BIS_fnc_taskSetState;
-+            [_markerName] remoteExec ["RRU_fnc_deleteMarker", (allPlayers select { side _x == east }) apply { owner _x }];
-+        };
-+
-+        // cleanup after 5 minutes
-+        sleep 300;
-+        { if (!isNull _x) then { deleteVehicle _x }; } forEach _units;
-+        { if (!isNull _x) then { deleteVehicle _x }; } forEach units _guardGrp;
-+        deleteGroup _guardGrp;
-+        { if (!isNull _x) then { deleteVehicle _x }; } forEach units _rebelGrp;
-+        deleteGroup _rebelGrp;
-+        private _huntGrp = missionNamespace getVariable ["rru_huntGrp",grpNull];
-+        if (!isNull _huntGrp) then {
-+            { if (!isNull _x) then { deleteVehicle _x }; } forEach units _huntGrp;
-+            deleteGroup _huntGrp;
-+        };
-+        if (!isNull _rogue) then { deleteVehicle _rogue; };
-         [_taskId] call BIS_fnc_deleteTask;
-     };
++    } forEach _patrolMarkers;
++        sleep 600;
+     waiverActive = false;
+     publicVariable "waiverActive";
+-	["Judgement Waiver is now ending..."] remoteExec ["systemChat", 0];
+-	{
++        ["Judgement Waiver is now ending..."] remoteExec ["systemChat", 0];
++        {
+         [_x] joinSilent createGroup civilian;
+     } forEach _targets;
++    {
++        { deleteVehicle _x } forEach units _x;
++    } forEach _otaGroups;
  };
  
- 
--};
-+};
+ [] spawn {
+     while {true} do {
+-        // Delay between potential activations (10-20 minutes)
+-        private _delay = 3600 + random 3600;
+-        sleep _delay;
+-
+-        // 50% chance to trigger each cycle
+-        if (random 1 < 0.1) then {
++        if (!waiverActive && (missionNamespace getVariable ["Sociostability", 100]) <= 20) then {
+             [] call JW_fnc_start;
+         };
++        sleep 60;
+     };
+ };
