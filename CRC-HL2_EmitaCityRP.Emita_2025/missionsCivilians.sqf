@@ -94,7 +94,7 @@ case 1: {
     [_taskId, _truck, _hcGrp, _hcList, _can] spawn {
         params ["_taskId","_truck","_hcGrp","_hcList","_can"];
 
-        private _deadline = time + 3600; // 1 hour
+        private _deadline = time + 2700; // 1 hour
         private _success  = false;
 
         waitUntil {
@@ -269,7 +269,7 @@ case 2: {
     // Monitor success/fail and clean up
     [_taskId,_patients,_grp] spawn {
         params ["_taskId","_patients","_grp"];
-        private _deadline = time + 3600; // 1 hour
+        private _deadline = time + 2700; // 1 hour
 
         waitUntil {
             sleep 3;
@@ -442,7 +442,7 @@ case 3: {
     // Progress: count actual body bag props in furnace
     private _counted = [];
     private _delivered = 0;
-    private _deadline  = time + 3600;
+    private _deadline  = time + 2700;
     private _lastTick  = -1;
 
     {

@@ -107,7 +107,7 @@ case 1: {
     [_taskId, _ordinal, _spawnedGroups, _spawnedUnits, _props] spawn {
         params ["_taskId","_ordinal","_groups","_units","_props"];
 
-        private _deadline = time + 3600; // 1 hour fallback
+        private _deadline = time + 2700; // 1 hour fallback
 
         waitUntil {
             sleep 3;
@@ -197,6 +197,8 @@ case 2: {
             _target switchMove "";
             if (random 1 < 0.67) then {
                 _target removeEventHandler ["Killed", _target getVariable ["rr_killEh",-1]];
+				[_target] joinSilent createGroup east;
+				sleep 1;
                 [_target] joinSilent (group _caller);
                 removeAllWeapons _target;
                 _target addWeapon "WBK_CP_HeavySmg_Resist";
@@ -208,12 +210,13 @@ case 2: {
             } else {
                 _target removeEventHandler ["Killed", _target getVariable ["rr_killEh",-1]];
                 missionNamespace setVariable ["rr_failed", (missionNamespace getVariable ["rr_failed",0]) + 1];
-                ["Attention Residents: Miscount detected in your block. Cooperation with your Civil Protection team permits full ration reward."] remoteExec ["systemChat", 0];
-                ["Ftrainstationcooperationspkr"] remoteExec ["playSound", 0];
                 ["Are you crazy? Get out of here!"] remoteExec ["systemChat", owner _caller];
 				[_target, "rebel_squadmemberlost_01"] remoteExecCall ["say3D", 0];
                 private _runPos = _target getPos [100, _target getDir _caller];
                 _target doMove _runPos;
+				sleep 10;
+				["Attention Residents: Miscount detected in your block. Cooperation with your Civil Protection team permits full ration reward."] remoteExec ["systemChat", 0];
+                ["Ftrainstationcooperationspkr"] remoteExec ["playSound", 0];
                 [_target] spawn { params ["_c"]; sleep 30; if (alive _c) then { deleteVehicle _c; }; };
             };
         };
@@ -228,7 +231,7 @@ case 2: {
     missionNamespace setVariable ["rr_recruited", 0];
     missionNamespace setVariable ["rr_failed", 0];
 
-    private _spawnCount = 15 + floor random 6; // 15–20 civilians
+    private _spawnCount = 20 + floor random 6; // 20–25 civilians
     private _civClasses = ["HL_CIV_Man_01","HL_CIV_Man_02","CombainCIV_Uniform_1_Body"];
     private _civs = [];
 
@@ -258,11 +261,11 @@ case 2: {
 
     [_taskId, _civs] spawn {
         params ["_taskId","_civs"];
-        private _deadline = time + 3600; // 1 hour
+        private _deadline = time + 2700; // 1 hour
         waitUntil {
             sleep 3;
             (missionNamespace getVariable ["rr_recruited",0] >= 10) ||
-            (missionNamespace getVariable ["rr_failed",0] >= 10) ||
+            (missionNamespace getVariable ["rr_failed",0] >= 15) ||
             (time > _deadline)
         };
 
@@ -382,7 +385,7 @@ case 3: {
     [_taskId, _truck, _truckPos, _groups, _units, _props] spawn {
         params ["_taskId","_truck","_spawnPos","_groups","_units","_props"];
 
-        private _deadline = time + 3600; // 1 hour
+        private _deadline = time + 2700; // 1 hour
         private _success  = false;
 
         waitUntil {

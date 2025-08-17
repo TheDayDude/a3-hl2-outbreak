@@ -17,6 +17,8 @@ CID_Malcompliance = createHashMap;
 [] execVM "smuggler.sqf";
 [] execVM "judgementWaiver.sqf";
 [] execVM "quartermaster.sqf";
+[] execVM "civies.sqf";
+[] execVM "ota_functions.sqf";
 
 if (isNil { missionNamespace getVariable "RationStock" }) then {
     missionNamespace setVariable ["RationStock", 5, true]; // true = publicVariable
@@ -71,8 +73,8 @@ call compile preprocessFileLineNumbers "portalStorm.sqf";
 //garbagio cleanup
 [] spawn {
     while {true} do {
-        // Wait 55 minutes (3300 seconds)
-        sleep 3300;
+        // Wait 55 minutes (6600 seconds)
+        sleep 6600;
 
         // 5-minute warning
         ["Cleanup Warning: All corpses, wrecks, and loose items will be removed in 5 minutes."] remoteExec ["hint", 0];
@@ -110,8 +112,8 @@ call compile preprocessFileLineNumbers "portalStorm.sqf";
     waitUntil {sleep 5; !isNil "allPlayers" && {count allPlayers > 0}};
 
     while {true} do {
-        // Wait between missions (61 minutes, in case a side is idle so their missions don't pile up)
-        private _delay = 3660;
+        // Wait between missions (46 minutes, in case a side is idle so their missions don't pile up)
+        private _delay = 2760;
         sleep _delay;
 
         // Run the mission selectors
@@ -127,7 +129,7 @@ TAG_fnc_requestCivMission = {
 
     private _last = missionNamespace getVariable ["lastMissionRequestCivilian", -99999];
 
-    if (time - _last < 1800) exitWith {
+    if (time - _last < 1200) exitWith {
         ["No missions ready. Come back later."] remoteExec ["hintSilent", _caller];
     };
 
@@ -144,7 +146,7 @@ TAG_fnc_requestRebelsMission = {
 
     private _last = missionNamespace getVariable ["lastMissionRequestRebels", -99999];
 
-    if (time - _last < 1800) exitWith {
+    if (time - _last < 1200) exitWith {
         ["No missions ready. Come back later."] remoteExec ["hintSilent", _caller];
     };
 
@@ -160,7 +162,7 @@ TAG_fnc_requestCombineMission = {
 
     private _last = missionNamespace getVariable ["lastMissionRequestCombine", -99999];
 
-    if (time - _last < 1800) exitWith {
+    if (time - _last < 1200) exitWith {
         ["No missions ready. Come back later."] remoteExec ["hintSilent", _caller];
     };
 
@@ -228,3 +230,11 @@ if (isServer) then {
     };
 };
 
+[] spawn {
+    while {true} do {
+        {
+            _x allowDamage true;
+        } forEach allPlayers;
+        sleep 5;
+    };
+};
