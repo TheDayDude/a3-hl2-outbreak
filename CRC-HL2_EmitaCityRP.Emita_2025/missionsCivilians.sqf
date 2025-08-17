@@ -552,6 +552,25 @@ case 4: {
         publicVariable "CIV_fnc_removePropagandaAction";
     };
 
+    // Helper to make a civilian walk away and despawn
+    if (isNil "CIV_fnc_walkAwayAndDespawn") then {
+        CIV_fnc_walkAwayAndDespawn = {
+            params ["_u"];
+            if (isNull _u) exitWith {};
+            private _far = [getPos _u, 500, 800, 0, 0, 20, 0] call BIS_fnc_findSafePos;
+            _u doMove _far;
+            [_u] spawn {
+                params ["_c"];
+                sleep 60;
+                if (!isNull _c) then { deleteVehicle _c };
+            };
+        };
+        publicVariable "CIV_fnc_walkAwayAndDespawn";
+    };
+
+    missionNamespace setVariable ["CIV_Prop_PosCount",0];
+    missionNamespace setVariable ["CIV_Prop_NegCount",0];
+
     if (isNil "CIV_fnc_propagandaServer") then {
         CIV_fnc_propagandaServer = {
             params ["_target","_caller"];
@@ -567,11 +586,14 @@ case 4: {
                 _target setVariable ["prop_result", 1, true];
                 ["Citizen: You're right, if we just keep our heads down and work hard, the Union will reward us."] remoteExec ["systemChat", owner _caller];
                 missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 0.1, true];
+                missionNamespace setVariable ["CIV_Prop_PosCount", (missionNamespace getVariable ["CIV_Prop_PosCount",0]) + 1];
             } else {
                 [_target, "rebel_squadmemberlost_01"] remoteExecCall ["say3D", 0];
                 _target setVariable ["prop_result", -1, true];
                 ["Citizen: Get lost - loyalist scum."] remoteExec ["systemChat", owner _caller];
+                missionNamespace setVariable ["CIV_Prop_NegCount", (missionNamespace getVariable ["CIV_Prop_NegCount",0]) + 1];
             };
+            [_target] call CIV_fnc_walkAwayAndDespawn;
         };
         publicVariable "CIV_fnc_propagandaServer";
     };
@@ -591,6 +613,7 @@ case 4: {
                 _target setVariable ["prop_result", -1, true];
                 ["Citizen: The Combine will fall!"] remoteExec ["systemChat", owner _caller];
                 missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 0.1, true];
+                missionNamespace setVariable ["CIV_Prop_NegCount", (missionNamespace getVariable ["CIV_Prop_NegCount",0]) + 1];
             } else {
                 [_target, "rebel_fireAt_CP_2"] remoteExecCall ["say3D", 0];
                 _target setVariable ["prop_result", 1, true];
@@ -612,7 +635,9 @@ case 4: {
                         };
                     };
                 };
+                missionNamespace setVariable ["CIV_Prop_PosCount", (missionNamespace getVariable ["CIV_Prop_PosCount",0]) + 1];
             };
+            [_target] call CIV_fnc_walkAwayAndDespawn;
         };
         publicVariable "CIV_fnc_inciteServer";
     };
@@ -649,8 +674,8 @@ case 4: {
     private _negCount = 0;
     while { time < _deadline && (_posCount + _negCount) < _cnt } do {
         sleep 5;
-        _posCount = { _x getVariable ["prop_result", 0] == 1 } count _civs;
-        _negCount = { _x getVariable ["prop_result", 0] == -1 } count _civs;
+        _posCount = missionNamespace getVariable ["CIV_Prop_PosCount",0];
+        _negCount = missionNamespace getVariable ["CIV_Prop_NegCount",0];
     };
 
     if (_posCount > _negCount) then {
@@ -671,6 +696,8 @@ case 4: {
     };
 
     { if (!isNull _x) then { deleteVehicle _x } } forEach _civs;
+    missionNamespace setVariable ["CIV_Prop_PosCount",nil];
+    missionNamespace setVariable ["CIV_Prop_NegCount",nil];
     sleep 5;
     [_taskId] call BIS_fnc_deleteTask;
 };
