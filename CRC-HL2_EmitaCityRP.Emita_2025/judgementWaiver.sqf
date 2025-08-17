@@ -43,8 +43,8 @@ JW_fnc_start = {
     ["Attention all Ground Protection Teams: Autonomous judgement is now in effect. Sentencing is now discretionary. Code: amputate, zero, confirm."] remoteExec ["systemChat", 0];
     ["Fprotectionresponse4spkr"] remoteExec ["playSound", 0];
 
-    // Spawn exactly five Overwatch squads at random patrol markers
-    private _patrolMarkers = allMapMarkers select { toLower _x find "patrol_" == 0 };
+    // Spawn exactly five Overwatch squads that patrol between random city markers
+    private _availableMarkers = allMapMarkers select { toLower _x find "city_" == 0 };
     private _otaTypes = [
         "WBK_Combine_HL2_Type",
         "WBK_Combine_HL2_Type",
@@ -52,9 +52,9 @@ JW_fnc_start = {
         "WBK_Combine_HL2_Type_Elite"
     ];
     for "_i" from 1 to 5 do {
-        if (_patrolMarkers isEqualTo []) exitWith {};
-        private _marker = selectRandom _patrolMarkers;
-        _patrolMarkers deleteAt (_patrolMarkers find _marker);
+        if (_availableMarkers isEqualTo []) exitWith {};
+        private _marker = selectRandom _availableMarkers;
+        _availableMarkers deleteAt (_availableMarkers find _marker);
         private _grp = createGroup west;
         private _pos = getMarkerPos _marker;
         for "_j" from 1 to 4 do {
@@ -62,6 +62,21 @@ JW_fnc_start = {
         };
         _grp setBehaviour "AWARE";
         _grp setCombatMode "RED";
+
+        // Continuously patrol to random city_ markers while the waiver is active
+        [_grp] spawn {
+            params ["_grp"];
+            private _cityMarkers = allMapMarkers select { toLower _x find "city_" == 0 };
+            while {waiverActive && {count units _grp > 0}} do {
+                private _dest = selectRandom _cityMarkers;
+                _grp move getMarkerPos _dest;
+                waitUntil {
+                    sleep 5;
+                    !waiverActive || {count units _grp == 0} ||
+                    ((leader _grp) distance2D (getMarkerPos _dest) < 30)
+                };
+            };
+        };
         _otaGroups pushBack _grp;
     };
 

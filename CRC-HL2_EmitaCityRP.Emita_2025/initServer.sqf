@@ -54,7 +54,10 @@ call compile preprocessFileLineNumbers "portalStorm.sqf";
 
 [] spawn {
     while {true} do {
-        private _delay = 3000 + random 6000;
+        private _infestation = missionNamespace getVariable ["Infestation", 50];
+        private _hours = (4 - (_infestation / 25)) max 0.5;
+        private _interval = _hours * 3600;
+        private _delay = _interval + random (_interval * 0.25);
         sleep _delay;
         [] spawn portalStorm_fnc_start;
     };

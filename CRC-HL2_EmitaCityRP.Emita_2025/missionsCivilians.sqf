@@ -525,6 +525,20 @@ case 4: {
                 "side _this == civilian && {_target getVariable ['prop_result',0] == 0}",
                 4
             ];
+            _civ addAction [
+                "<t color='#FF4040'>Incite Rebellion</t>",
+                {
+                    params ["_target", "_caller"];
+                    if (side _caller != civilian) exitWith { hint "Civilians only."; };
+                    if (_target getVariable ["prop_result",0] != 0) exitWith {};
+                    _caller playMoveNow "Acts_CivilTalking_1";
+                    [_caller] spawn { params ["_c"]; uiSleep 8; _c switchMove ""; };
+                    [_target,_caller] remoteExec ["CIV_fnc_inciteServer",2];
+                },
+                nil, 1.5, true, true, "",
+                "side _this == civilian && {_target getVariable ['prop_result',0] == 0}",
+                4
+            ];
         };
         publicVariable "CIV_fnc_addPropagandaAction";
     };
@@ -549,9 +563,10 @@ case 4: {
             uiSleep 8;
             _target switchMove "";
             if (random 1 < 0.5) then {
-                [_target, "G_HECU_announcekill_04"] remoteExecCall ["say3D", 0];
+                [_target, "rebel_announcekill_07"] remoteExecCall ["say3D", 0];
                 _target setVariable ["prop_result", 1, true];
                 ["Citizen: You're right, if we just keep our heads down and work hard, the Union will reward us."] remoteExec ["systemChat", owner _caller];
+                missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 0.1, true];
             } else {
                 [_target, "rebel_squadmemberlost_01"] remoteExecCall ["say3D", 0];
                 _target setVariable ["prop_result", -1, true];
@@ -559,6 +574,47 @@ case 4: {
             };
         };
         publicVariable "CIV_fnc_propagandaServer";
+    };
+
+    if (isNil "CIV_fnc_inciteServer") then {
+        CIV_fnc_inciteServer = {
+            params ["_target","_caller"];
+            if (isNull _target || isNull _caller) exitWith {};
+            if (_target getVariable ["prop_result",0] != 0) exitWith {};
+            removeAllActions _target;
+            [_target] remoteExec ["CIV_fnc_removePropagandaAction",0,true];
+            _target playMoveNow "Acts_CivilListening_1";
+            uiSleep 8;
+            _target switchMove "";
+            if (random 1 < 0.7) then {
+                [_target, "rebel_announcekill_07"] remoteExecCall ["say3D", 0];
+                _target setVariable ["prop_result", -1, true];
+                ["Citizen: The Combine will fall!"] remoteExec ["systemChat", owner _caller];
+                missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 0.1, true];
+            } else {
+                [_target, "rebel_fireAt_CP_2"] remoteExecCall ["say3D", 0];
+                _target setVariable ["prop_result", 1, true];
+                ["Citizen: I'm reporting you to Civil Protection!"] remoteExec ["systemChat", owner _caller];
+                if (random 1 < 0.7) then {
+                    [_caller] joinSilent createGroup east;
+                    private _huntPos = position _caller;
+                    private _huntGrp = createGroup west;
+                    for "_i" from 1 to (3 + floor random 3) do {
+                        _huntGrp createUnit [selectRandom ["WBK_Combine_CP_P","WBK_Combine_CP_SMG"], _huntPos, [], 5, "FORM"];
+                    };
+                    _huntGrp setBehaviour "COMBAT";
+                    _huntGrp setCombatMode "RED";
+                    [_huntGrp,_caller] spawn {
+                        params ["_grp","_tgt"];
+                        while {alive _tgt && {count units _grp > 0}} do {
+                            _grp move position _tgt;
+                            sleep 15;
+                        };
+                    };
+                };
+            };
+        };
+        publicVariable "CIV_fnc_inciteServer";
     };
 
     private _cityMarkers = allMapMarkers select { toLower _x find "city_" == 0 };
@@ -612,7 +668,6 @@ case 4: {
         [_taskId, "FAILED", true] call BIS_fnc_taskSetState;
         ["Propaganda attempt failed."] remoteExec ["systemChat", (allPlayers select { side _x == civilian }) apply { owner _x }];
         missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 1, true];
-        missionNamespace setVariable ["RationStock", (missionNamespace getVariable ["RationStock",0]) - 5, true];
     };
 
     { if (!isNull _x) then { deleteVehicle _x } } forEach _civs;

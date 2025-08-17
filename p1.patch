@@ -1,129 +1,145 @@
-diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/judgementWaiver.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/judgementWaiver.sqf
-index 6e2341a4263ad13aa14d8e6e6e032b1e61a027c7..9af1e2eacd2fddd205ea203b8c06d85cc845572f 100644
---- a/CRC-HL2_EmitaCityRP.Emita_2025/judgementWaiver.sqf
-+++ b/CRC-HL2_EmitaCityRP.Emita_2025/judgementWaiver.sqf
-@@ -1,72 +1,93 @@
- // File: judgementWaiver.sqf
- // Prototype for Judgement Waiver global event.
- // Periodically converts non-loyalist civilians to OPFOR for testing.
- 
- if (!isServer) exitWith {};
- 
- // Public variable to allow audio/visual cues
- waiverActive = false;
- publicVariable "waiverActive";
-+lastWaiverEndTime = -3600; // allows immediate trigger on mission start
- 
- JW_fnc_start = {
-     waiverActive = true;
-     publicVariable "waiverActive";
--        [] remoteExec ["JW_fnc_playJudgement", 0];
--    private _targets = allUnits select {
--        side _x isEqualTo civilian &&
--        alive _x &&
--        !captive _x &&
--        !(_x getVariable ["ACE_isUnconscious", false]) &&
--        !(_x getVariable ["isLoyalist", false])
--    };
-+    [] remoteExec ["JW_fnc_playJudgement", 0];
-+
-+    private _targets = [];
-     private _otaGroups = [];
- 
--    {
--        [_x] joinSilent createGroup east;
--    } forEach _targets;
-+    // Continuously convert non-loyalist civilians to OPFOR
-+    [_targets] spawn {
-+        params ["_targets"];
-+        while {waiverActive} do {
-+            private _new = allUnits select {
-+                side _x isEqualTo civilian &&
-+                alive _x &&
-+                !captive _x &&
-+                !(_x getVariable ["ACE_isUnconscious", false]) &&
-+                !(_x getVariable ["isLoyalist", false])
-+            };
-+            {
-+                [_x] joinSilent createGroup east;
-+                if !(_x in _targets) then { _targets pushBack _x };
-+            } forEach _new;
-+            sleep 60;
-+        };
-+    };
-+
-     // Allow SFX or other systems to react
--        ["Attention all Ground Protection Teams: JUDGEMENT WAIVER is now in effect. Capital prosecution is discretionary."] remoteExec ["systemChat", 0];
--        ["Fprotectionresponse5spkr"] remoteExec ["playSound", 0];
-+    ["Attention all Ground Protection Teams: JUDGEMENT WAIVER is now in effect. Capital prosecution is discretionary."] remoteExec ["systemChat", 0];
-+    ["Fprotectionresponse5spkr"] remoteExec ["playSound", 0];
-     sleep 20;
--        ["Attention all Ground Protection Teams: Autonomous judgement is now in effect. Sentencing is now discretionary. Code: amputate, zero, confirm."] remoteExec ["systemChat", 0];
--        ["Fprotectionresponse4spkr"] remoteExec ["playSound", 0];
--    // Spawn Overwatch squads at patrol markers
-+    ["Attention all Ground Protection Teams: Autonomous judgement is now in effect. Sentencing is now discretionary. Code: amputate, zero, confirm."] remoteExec ["systemChat", 0];
-+    ["Fprotectionresponse4spkr"] remoteExec ["playSound", 0];
-+
-+    // Spawn exactly five Overwatch squads at random patrol markers
-     private _patrolMarkers = allMapMarkers select { toLower _x find "patrol_" == 0 };
-     private _otaTypes = [
-         "WBK_Combine_ASS_SMG",
-         "WBK_Combine_ASS_Sniper",
-         "WBK_Combine_APF",
-         "WBK_Combine_HL2_Type_Elite"
-     ];
--    {
--        if (random 1 < 0.5) then {
--            private _grp = createGroup west;
--            private _pos = getMarkerPos _x;
--            for "_i" from 1 to 4 do {
--                _grp createUnit [selectRandom _otaTypes, _pos, [], 0, "FORM"];
--            };
--            _grp setBehaviour "AWARE";
--            _grp setCombatMode "RED";
--            _otaGroups pushBack _grp;
-+    for "_i" from 1 to 5 do {
-+        if (_patrolMarkers isEqualTo []) exitWith {};
-+        private _marker = selectRandom _patrolMarkers;
-+        _patrolMarkers deleteAt (_patrolMarkers find _marker);
-+        private _grp = createGroup west;
-+        private _pos = getMarkerPos _marker;
-+        for "_j" from 1 to 4 do {
-+            _grp createUnit [selectRandom _otaTypes, _pos, [], 0, "FORM"];
-         };
--    } forEach _patrolMarkers;
--        sleep 600;
-+        _grp setBehaviour "AWARE";
-+        _grp setCombatMode "RED";
-+        _otaGroups pushBack _grp;
-+    };
-+
-+    // Event duration
-+    sleep 1800;
-+
-     waiverActive = false;
-     publicVariable "waiverActive";
--        ["Judgement Waiver is now ending..."] remoteExec ["systemChat", 0];
--        {
-+    ["Judgement Waiver is now ending..."] remoteExec ["systemChat", 0];
-+
-+    {
-         [_x] joinSilent createGroup civilian;
-     } forEach _targets;
-+
-     {
-         { deleteVehicle _x } forEach units _x;
-     } forEach _otaGroups;
-+
-+    lastWaiverEndTime = time;
+diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/missionsCivilians.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/missionsCivilians.sqf
+index 50626f56824d3efb155917e95c969c3acbc9260d..cd32c4def9cb04b3c9868905ac501763ac58c581 100644
+--- a/CRC-HL2_EmitaCityRP.Emita_2025/missionsCivilians.sqf
++++ b/CRC-HL2_EmitaCityRP.Emita_2025/missionsCivilians.sqf
+@@ -503,86 +503,140 @@ case 3: {
+     [_taskId] call BIS_fnc_deleteTask;
  };
  
- [] spawn {
-     while {true} do {
--        if (!waiverActive && (missionNamespace getVariable ["Sociostability", 100]) <= 20) then {
-+        if (!waiverActive && (time - lastWaiverEndTime) >= 3600 && (missionNamespace getVariable ["Sociostability", 100]) <= 20) then {
-             [] call JW_fnc_start;
+ // === Case 4: Spread Propaganda ===
+ case 4: {
+     if (!isServer) exitWith {};
+ 
+     if (isNil "CIV_fnc_addPropagandaAction") then {
+         CIV_fnc_addPropagandaAction = {
+             params ["_civ"];
+             if (isNull _civ) exitWith {};
+             _civ addAction [
+                 "<t color='#FFFF80'>Praise Universal Union</t>",
+                 {
+                     params ["_target", "_caller"];
+                     if (side _caller != civilian) exitWith { hint "Civilians only."; };
+                     if (_target getVariable ["prop_result",0] != 0) exitWith {};
+                     _caller playMoveNow "Acts_CivilTalking_1";
+                     [_caller] spawn { params ["_c"]; uiSleep 8; _c switchMove ""; };
+                     [_target,_caller] remoteExec ["CIV_fnc_propagandaServer",2];
+                 },
+                 nil, 1.5, true, true, "",
+                 "side _this == civilian && {_target getVariable ['prop_result',0] == 0}",
+                 4
+             ];
++            _civ addAction [
++                "<t color='#FF4040'>Incite Rebellion</t>",
++                {
++                    params ["_target", "_caller"];
++                    if (side _caller != civilian) exitWith { hint "Civilians only."; };
++                    if (_target getVariable ["prop_result",0] != 0) exitWith {};
++                    _caller playMoveNow "Acts_CivilTalking_1";
++                    [_caller] spawn { params ["_c"]; uiSleep 8; _c switchMove ""; };
++                    [_target,_caller] remoteExec ["CIV_fnc_inciteServer",2];
++                },
++                nil, 1.5, true, true, "",
++                "side _this == civilian && {_target getVariable ['prop_result',0] == 0}",
++                4
++            ];
          };
-         sleep 60;
+         publicVariable "CIV_fnc_addPropagandaAction";
      };
- };
+ 
+     if (isNil "CIV_fnc_removePropagandaAction") then {
+         CIV_fnc_removePropagandaAction = {
+             params ["_u"];
+             if (isNull _u) exitWith {};
+             removeAllActions _u;
+         };
+         publicVariable "CIV_fnc_removePropagandaAction";
+     };
+ 
+     if (isNil "CIV_fnc_propagandaServer") then {
+         CIV_fnc_propagandaServer = {
+             params ["_target","_caller"];
+             if (isNull _target || isNull _caller) exitWith {};
+             if (_target getVariable ["prop_result",0] != 0) exitWith {};
+             removeAllActions _target;
+             [_target] remoteExec ["CIV_fnc_removePropagandaAction",0,true];
+             _target playMoveNow "Acts_CivilListening_1";
+             uiSleep 8;
+             _target switchMove "";
+             if (random 1 < 0.5) then {
+                 [_target, "G_HECU_announcekill_04"] remoteExecCall ["say3D", 0];
+                 _target setVariable ["prop_result", 1, true];
+                 ["Citizen: You're right, if we just keep our heads down and work hard, the Union will reward us."] remoteExec ["systemChat", owner _caller];
+             } else {
+                 [_target, "rebel_squadmemberlost_01"] remoteExecCall ["say3D", 0];
+                 _target setVariable ["prop_result", -1, true];
+                 ["Citizen: Get lost - loyalist scum."] remoteExec ["systemChat", owner _caller];
+             };
+         };
+         publicVariable "CIV_fnc_propagandaServer";
+     };
+ 
++    if (isNil "CIV_fnc_inciteServer") then {
++        CIV_fnc_inciteServer = {
++            params ["_target","_caller"];
++            if (isNull _target || isNull _caller) exitWith {};
++            if (_target getVariable ["prop_result",0] != 0) exitWith {};
++            removeAllActions _target;
++            [_target] remoteExec ["CIV_fnc_removePropagandaAction",0,true];
++            _target playMoveNow "Acts_CivilListening_1";
++            uiSleep 8;
++            _target switchMove "";
++            if (random 1 < 0.7) then {
++                [_target, "rebel_squadmemberlost_01"] remoteExecCall ["say3D", 0];
++                _target setVariable ["prop_result", -1, true];
++                ["Citizen: The Combine will fall!"] remoteExec ["systemChat", owner _caller];
++            } else {
++                [_target, "G_HECU_announcekill_04"] remoteExecCall ["say3D", 0];
++                _target setVariable ["prop_result", 1, true];
++                ["Citizen: I'm reporting you to Civil Protection!"] remoteExec ["systemChat", owner _caller];
++                if (random 1 < 0.5) then {
++                    [_caller] joinSilent createGroup east;
++                    private _huntPos = position _caller;
++                    private _huntGrp = createGroup west;
++                    for "_i" from 1 to (3 + floor random 3) do {
++                        _huntGrp createUnit [selectRandom ["WBK_Combine_CP_P","WBK_Combine_CP_SMG"], _huntPos, [], 5, "FORM"];
++                    };
++                    _huntGrp setBehaviour "COMBAT";
++                    _huntGrp setCombatMode "RED";
++                    [_huntGrp,_caller] spawn {
++                        params ["_grp","_tgt"];
++                        while {alive _tgt && {count units _grp > 0}} do {
++                            _grp move position _tgt;
++                            sleep 15;
++                        };
++                    };
++                };
++            };
++        };
++        publicVariable "CIV_fnc_inciteServer";
++    };
++
+     private _cityMarkers = allMapMarkers select { toLower _x find "city_" == 0 };
+     if (_cityMarkers isEqualTo []) exitWith {
+         ["[CIV Mission] No city_ markers found — mission skipped."] remoteExec ["systemChat", 0];
+     };
+ 
+     private _chosen = selectRandom _cityMarkers;
+     private _center = getMarkerPos _chosen;
+ 
+     private _taskId = format ["task_propaganda_%1", diag_tickTime];
+     [civilian, _taskId,
+         ["Citizen, spread glorious words of the Universal Union. Workers are gathering at this location - dissuade them from anticivil acts.",
+          "Spread Propaganda", ""],
+         _center, true
+     ] call BIS_fnc_taskCreate;
+ 
+     private _cnt = 10 + floor random 6; // 10–15 civilians
+     private _civs = [];
+     for "_i" from 1 to _cnt do {
+         private _pos = [_center, 5, 80, 0, 0, 20, 0] call BIS_fnc_findSafePos;
+         private _grp = createGroup civilian;
+         private _c = _grp createUnit ["CombainCIV_Uniform_1_Body", _pos, [], 0, "FORM"];
+         _c setVariable ["prop_result", 0, true];
+         [_c] remoteExec ["CIV_fnc_addPropagandaAction", 0, true];
+         [_grp, _center, 40] call BIS_fnc_taskPatrol;
+         _civs pushBack _c;
