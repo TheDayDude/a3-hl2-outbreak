@@ -32,3 +32,14 @@
     };
 };
 
+sleep 5;
+
+[] spawn {
+    while {true} do {
+        private _socio = missionNamespace getVariable ["Sociostability", 0];
+        private _inf = missionNamespace getVariable ["Infestation", 0];
+        private _text = format ["<t size='0.5' align='center'>Sociostability: %1%% | Infestation: %2%%</t>", round Sociostability, round Infestation];
+        [_text, safeZoneX + safeZoneW / 2, safeZoneY + 0.02, 30, 0, 0] spawn BIS_fnc_dynamicText;
+        sleep 5;
+    };
+};

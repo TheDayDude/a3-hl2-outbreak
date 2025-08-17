@@ -79,7 +79,7 @@ case 1: {
     [_spawnedUnits, _spawnedGroups, _taskId] spawn {
         params ["_units","_groups","_taskId"];
 
-        private _timeLimit = time + 3600; // 1 hour
+        private _timeLimit = time + 2700; // 1 hour
 
         waitUntil {
             sleep 5;
@@ -204,7 +204,7 @@ case 2: {
     [_captain, _groups, _units, _taskId] spawn {
         params ["_captain","_groups","_units","_taskId"];
 
-        private _deadline = time + 3600; // 1-hour fail-safe
+        private _deadline = time + 2700; // 1-hour fail-safe
 
         waitUntil {
             sleep 5;
@@ -463,7 +463,7 @@ case 4: {
     missionNamespace setVariable ["cd_failed", 0];
 
     private _spawnCount = 20 + floor random 6; // 20–25 civilians
-    private _civClasses = ["HL_CIV_Man_01","HL_CIV_Man_02","CombainCIV_Uniform_1_Body"];
+    private _civClasses = ["CombainCIV_Uniform_1_Body"];
     private _civs = [];
 
     for "_i" from 1 to _spawnCount do {
@@ -493,13 +493,13 @@ case 4: {
 
     private _taskId = format ["task_conscription_%1", diag_tickTime];
     [west, _taskId,
-        ["Conscript citizens in the city. Recruit at least ten to join you.","Conscription Drive",""],
+        ["Conscript workers throughout the city (Districts 1-3). Recruit at least ten to join you.","Conscription Drive",""],
         getMarkerPos (selectRandom _cityMarkers), true
     ] call BIS_fnc_taskCreate;
 
     [_taskId, _civs] spawn {
         params ["_taskId","_civs"];
-        private _deadline = time + 3600; // 1 hour
+        private _deadline = time + 2700; // 1 hour
         waitUntil {
             sleep 3;
             (missionNamespace getVariable ["cd_recruited",0] >= 10) ||

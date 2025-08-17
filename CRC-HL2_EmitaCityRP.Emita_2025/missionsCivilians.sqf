@@ -1,7 +1,7 @@
 if (!isServer) exitWith {};
 
 // Pick a random mission ID (1–3 here)
-private _missionIndex = selectRandom [1, 2, 3];
+private _missionIndex = selectRandom [1, 2, 3, 4];
 
 switch (_missionIndex) do {
 // === Mission 1: Repair Combine Cargo Truck ===
@@ -94,7 +94,7 @@ case 1: {
     [_taskId, _truck, _hcGrp, _hcList, _can] spawn {
         params ["_taskId","_truck","_hcGrp","_hcList","_can"];
 
-        private _deadline = time + 3600; // 1 hour
+        private _deadline = time + 2700; // 1 hour
         private _success  = false;
 
         waitUntil {
@@ -269,7 +269,7 @@ case 2: {
     // Monitor success/fail and clean up
     [_taskId,_patients,_grp] spawn {
         params ["_taskId","_patients","_grp"];
-        private _deadline = time + 3600; // 1 hour
+        private _deadline = time + 2700; // 1 hour
 
         waitUntil {
             sleep 3;
@@ -442,7 +442,7 @@ case 3: {
     // Progress: count actual body bag props in furnace
     private _counted = [];
     private _delivered = 0;
-    private _deadline  = time + 3600;
+    private _deadline  = time + 2700;
     private _lastTick  = -1;
 
     {
@@ -491,6 +491,120 @@ case 3: {
     // Cleanup spawned props (bags are removed when delivered)
     { if (!isNull _x) then { deleteVehicle _x }; } forEach _props;
 
+    sleep 5;
+    [_taskId] call BIS_fnc_deleteTask;
+};
+
+// === Case 4: Spread Propaganda ===
+case 4: {
+    if (!isServer) exitWith {};
+
+    if (isNil "CIV_fnc_addPropagandaAction") then {
+        CIV_fnc_addPropagandaAction = {
+            params ["_civ"];
+            if (isNull _civ) exitWith {};
+            _civ addAction [
+                "<t color='#FFFF80'>Praise Universal Union</t>",
+                {
+                    params ["_target", "_caller"];
+                    if (side _caller != civilian) exitWith { hint "Civilians only."; };
+                    if (_target getVariable ["prop_result",0] != 0) exitWith {};
+                    _caller playMoveNow "Acts_CivilTalking_1";
+                    [_caller] spawn { params ["_c"]; uiSleep 8; _c switchMove ""; };
+                    [_target,_caller] remoteExec ["CIV_fnc_propagandaServer",2];
+                },
+                nil, 1.5, true, true, "",
+                "side _this == civilian && {_target getVariable ['prop_result',0] == 0}",
+                4
+            ];
+        };
+        publicVariable "CIV_fnc_addPropagandaAction";
+    };
+
+    if (isNil "CIV_fnc_removePropagandaAction") then {
+        CIV_fnc_removePropagandaAction = {
+            params ["_u"];
+            if (isNull _u) exitWith {};
+            removeAllActions _u;
+        };
+        publicVariable "CIV_fnc_removePropagandaAction";
+    };
+
+    if (isNil "CIV_fnc_propagandaServer") then {
+        CIV_fnc_propagandaServer = {
+            params ["_target","_caller"];
+            if (isNull _target || isNull _caller) exitWith {};
+            if (_target getVariable ["prop_result",0] != 0) exitWith {};
+            removeAllActions _target;
+            [_target] remoteExec ["CIV_fnc_removePropagandaAction",0,true];
+            _target playMoveNow "Acts_CivilListening_1";
+            uiSleep 8;
+            _target switchMove "";
+            if (random 1 < 0.5) then {
+                [_target, "G_HECU_announcekill_04"] remoteExecCall ["say3D", 0];
+                _target setVariable ["prop_result", 1, true];
+                ["Citizen: The Universal Union keeps us safe!"] remoteExec ["systemChat", owner _caller];
+            } else {
+                [_target, "rebel_squadmemberlost_01"] remoteExecCall ["say3D", 0];
+                _target setVariable ["prop_result", -1, true];
+                ["Citizen: I don't trust the Union."] remoteExec ["systemChat", owner _caller];
+            };
+        };
+        publicVariable "CIV_fnc_propagandaServer";
+    };
+
+    private _cityMarkers = allMapMarkers select { toLower _x find "city_" == 0 };
+    if (_cityMarkers isEqualTo []) exitWith {
+        ["[CIV Mission] No city_ markers found — mission skipped."] remoteExec ["systemChat", 0];
+    };
+
+    private _chosen = selectRandom _cityMarkers;
+    private _center = getMarkerPos _chosen;
+
+    private _taskId = format ["task_propaganda_%1", diag_tickTime];
+    [civilian, _taskId,
+        ["Citizen, spread glorious words of the Universal Union. Convince the population it works for their benefit.",
+         "Spread Propaganda", ""],
+        _center, true
+    ] call BIS_fnc_taskCreate;
+
+    private _cnt = 10 + floor random 6; // 10–15 civilians
+    private _civs = [];
+    for "_i" from 1 to _cnt do {
+        private _pos = [_center, 5, 25, 0, 0, 20, 0] call BIS_fnc_findSafePos;
+        private _grp = createGroup civilian;
+        private _c = _grp createUnit ["CombainCIV_Uniform_1_Body", _pos, [], 0, "FORM"];
+        _c setVariable ["prop_result", 0, true];
+        [_c] remoteExec ["CIV_fnc_addPropagandaAction", 0, true];
+        [_grp, _center, 40] call BIS_fnc_taskPatrol;
+        _civs pushBack _c;
+    };
+
+    private _deadline = time + 1800; // 30 minutes
+    private _posCount = 0;
+    private _negCount = 0;
+    while { time < _deadline && (_posCount + _negCount) < _cnt } do {
+        sleep 5;
+        _posCount = { _x getVariable ["prop_result", 0] == 1 } count _civs;
+        _negCount = { _x getVariable ["prop_result", 0] == -1 } count _civs;
+    };
+
+    if (_posCount > _negCount) then {
+        [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
+        private _amt = 2 + floor random 3; // 2–4 tokens
+        {
+            if (side _x == civilian && alive _x) then {
+                for "_i" from 1 to _amt do { _x addItem "VRP_HL_Token_Item"; };
+            };
+        } forEach allPlayers;
+        [format ["Propaganda successful. You received %1 Tokens.", _amt]]
+            remoteExec ["hintSilent", (allPlayers select { side _x == civilian }) apply { owner _x }];
+    } else {
+        [_taskId, "FAILED", true] call BIS_fnc_taskSetState;
+        ["Propaganda attempt failed."] remoteExec ["systemChat", (allPlayers select { side _x == civilian }) apply { owner _x }];
+    };
+
+    { if (!isNull _x) then { deleteVehicle _x } } forEach _civs;
     sleep 5;
     [_taskId] call BIS_fnc_deleteTask;
 };

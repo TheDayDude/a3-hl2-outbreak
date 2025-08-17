@@ -4,7 +4,7 @@
 
 if (!isServer) exitWith {};
 
-private _civTypes = ["HL_CIV_Man_01","HL_CIV_Man_02","CombainCIV_Uniform_1_Body"];
+private _civTypes = ["HL_CIV_Man_01","HL_CIV_Man_02"];
 
 private _cityMarkers = allMapMarkers select { toLower _x find "city_" == 0 };
 if (_cityMarkers isEqualTo []) exitWith {};

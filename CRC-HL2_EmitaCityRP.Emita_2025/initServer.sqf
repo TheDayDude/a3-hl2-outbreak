@@ -19,6 +19,8 @@ CID_Malcompliance = createHashMap;
 [] execVM "quartermaster.sqf";
 [] execVM "civies.sqf";
 [] execVM "ota_functions.sqf";
+[] execVM "sociostability.sqf";
+[] execVM "infestation.sqf";
 
 if (isNil { missionNamespace getVariable "RationStock" }) then {
     missionNamespace setVariable ["RationStock", 5, true]; // true = publicVariable
@@ -38,6 +40,14 @@ if (isNil { missionNamespace getVariable "Armor" }) then {
 
 if (isNil { missionNamespace getVariable "PlasmaLevel" }) then {
     missionNamespace setVariable ["PlasmaLevel", 5, true];
+};
+
+if (isNil { missionNamespace getVariable "Infestation" }) then {
+    missionNamespace setVariable ["Infestation", 50, true];
+};
+
+if (isNil { missionNamespace getVariable "Sociostability" }) then {
+    missionNamespace setVariable ["Sociostability", 50, true];
 };
 
 call compile preprocessFileLineNumbers "portalStorm.sqf";
@@ -112,8 +122,8 @@ call compile preprocessFileLineNumbers "portalStorm.sqf";
     waitUntil {sleep 5; !isNil "allPlayers" && {count allPlayers > 0}};
 
     while {true} do {
-        // Wait between missions (61 minutes, in case a side is idle so their missions don't pile up)
-        private _delay = 3660;
+        // Wait between missions (46 minutes, in case a side is idle so their missions don't pile up)
+        private _delay = 2760;
         sleep _delay;
 
         // Run the mission selectors
@@ -129,7 +139,7 @@ TAG_fnc_requestCivMission = {
 
     private _last = missionNamespace getVariable ["lastMissionRequestCivilian", -99999];
 
-    if (time - _last < 1800) exitWith {
+    if (time - _last < 1200) exitWith {
         ["No missions ready. Come back later."] remoteExec ["hintSilent", _caller];
     };
 
@@ -146,7 +156,7 @@ TAG_fnc_requestRebelsMission = {
 
     private _last = missionNamespace getVariable ["lastMissionRequestRebels", -99999];
 
-    if (time - _last < 1800) exitWith {
+    if (time - _last < 1200) exitWith {
         ["No missions ready. Come back later."] remoteExec ["hintSilent", _caller];
     };
 
@@ -162,7 +172,7 @@ TAG_fnc_requestCombineMission = {
 
     private _last = missionNamespace getVariable ["lastMissionRequestCombine", -99999];
 
-    if (time - _last < 1800) exitWith {
+    if (time - _last < 1200) exitWith {
         ["No missions ready. Come back later."] remoteExec ["hintSilent", _caller];
     };
 
@@ -230,3 +240,11 @@ if (isServer) then {
     };
 };
 
+[] spawn {
+    while {true} do {
+        {
+            _x allowDamage true;
+        } forEach allPlayers;
+        sleep 5;
+    };
+};
