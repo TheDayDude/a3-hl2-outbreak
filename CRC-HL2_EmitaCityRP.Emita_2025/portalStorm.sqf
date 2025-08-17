@@ -14,6 +14,7 @@ portalStorm_fnc_start = {
 	["Fprisonnonstandardexogen"] remoteExec ["playSound", 0];
 
     sleep 150;
+	missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) + 2, true];
 	
 {
     private _player = _x;

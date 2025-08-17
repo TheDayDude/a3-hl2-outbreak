@@ -114,6 +114,7 @@ case 1: {
             } forEach allPlayers;
             [format ["Truck delivered. You receive %1 Tokens.", _amt]]
                 remoteExec ["hintSilent", (allPlayers select { side _x == civilian }) apply { owner _x }];
+                missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
 
             // Keep the truck; clean up creatures/prop after 5 min
             sleep 300;
@@ -126,6 +127,8 @@ case 1: {
             ["Cargo recovery failed."] remoteExec ["systemChat", (allPlayers select { side _x == civilian }) apply { owner _x }];
 			["Attention occupants: your block is now charged with permissive inaction coercion. 5 ration units deducted."] remoteExec ["systemChat", 0];
 			["Frationunitsdeduct3spkr"] remoteExec ["playSound", 0];
+            missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 1, true];
+            missionNamespace setVariable ["RationStock", (missionNamespace getVariable ["RationStock",0]) - 5, true];
 
             // Cleanup all after 5 min (truck if still alive, headcrabs, prop)
             sleep 300;
@@ -278,6 +281,7 @@ case 2: {
 
             if (_treated >= (count _patients)) exitWith {
                 [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
+                missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
 
                 // Reward civilians present (2–5 tokens each)
                 private _amt = 3 + floor random 6;
@@ -297,6 +301,8 @@ case 2: {
                 ["Medical response failed — insufficient successful treatments."] remoteExec ["systemChat", 0];
                 ["Attention occupants: your block is now charged with permissive inaction coercion. 5 ration units deducted."] remoteExec ["systemChat", 0];
                 ["Frationunitsdeduct3spkr"] remoteExec ["playSound", 0];
+                missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 1, true];
+                missionNamespace setVariable ["RationStock", (missionNamespace getVariable ["RationStock",0]) - 5, true];
                 true
             };
 
@@ -482,10 +488,12 @@ case 3: {
 
         [format ["Cleanup complete. You received %1 Tokens.", _amt]]
             remoteExec ["hintSilent", (allPlayers select { side _x == civilian }) apply { owner _x }];
+            missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) - 1, true];
     } else {
         [_taskId, "FAILED", true] call BIS_fnc_taskSetState;
         ["Cleanup failed — time limit exceeded."]
             remoteExec ["systemChat", (allPlayers select { side _x == civilian }) apply { owner _x }];
+            missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) + 1, true];
     };
 
     // Cleanup spawned props (bags are removed when delivered)
@@ -543,11 +551,11 @@ case 4: {
             if (random 1 < 0.5) then {
                 [_target, "G_HECU_announcekill_04"] remoteExecCall ["say3D", 0];
                 _target setVariable ["prop_result", 1, true];
-                ["Citizen: The Universal Union keeps us safe!"] remoteExec ["systemChat", owner _caller];
+                ["Citizen: You're right, if we just keep our heads down and work hard, the Union will reward us."] remoteExec ["systemChat", owner _caller];
             } else {
                 [_target, "rebel_squadmemberlost_01"] remoteExecCall ["say3D", 0];
                 _target setVariable ["prop_result", -1, true];
-                ["Citizen: I don't trust the Union."] remoteExec ["systemChat", owner _caller];
+                ["Citizen: Get lost - loyalist scum."] remoteExec ["systemChat", owner _caller];
             };
         };
         publicVariable "CIV_fnc_propagandaServer";
@@ -563,7 +571,7 @@ case 4: {
 
     private _taskId = format ["task_propaganda_%1", diag_tickTime];
     [civilian, _taskId,
-        ["Citizen, spread glorious words of the Universal Union. Convince the population it works for their benefit.",
+        ["Citizen, spread glorious words of the Universal Union. Workers are gathering at this location - dissuade them from anticivil acts.",
          "Spread Propaganda", ""],
         _center, true
     ] call BIS_fnc_taskCreate;
@@ -571,7 +579,7 @@ case 4: {
     private _cnt = 10 + floor random 6; // 10–15 civilians
     private _civs = [];
     for "_i" from 1 to _cnt do {
-        private _pos = [_center, 5, 25, 0, 0, 20, 0] call BIS_fnc_findSafePos;
+        private _pos = [_center, 5, 80, 0, 0, 20, 0] call BIS_fnc_findSafePos;
         private _grp = createGroup civilian;
         private _c = _grp createUnit ["CombainCIV_Uniform_1_Body", _pos, [], 0, "FORM"];
         _c setVariable ["prop_result", 0, true];
@@ -591,6 +599,7 @@ case 4: {
 
     if (_posCount > _negCount) then {
         [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
+        missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
         private _amt = 2 + floor random 3; // 2–4 tokens
         {
             if (side _x == civilian && alive _x) then {
@@ -602,6 +611,8 @@ case 4: {
     } else {
         [_taskId, "FAILED", true] call BIS_fnc_taskSetState;
         ["Propaganda attempt failed."] remoteExec ["systemChat", (allPlayers select { side _x == civilian }) apply { owner _x }];
+        missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 1, true];
+        missionNamespace setVariable ["RationStock", (missionNamespace getVariable ["RationStock",0]) - 5, true];
     };
 
     { if (!isNull _x) then { deleteVehicle _x } } forEach _civs;

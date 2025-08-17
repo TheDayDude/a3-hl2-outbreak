@@ -75,11 +75,11 @@ case 1: {
     [ "Rioters reported near a checkpoint. Patrol the area and neutralize or detain them." ]
         remoteExec ["hintSilent", (allPlayers select {side _x == west}) apply { owner _x }];
 
- // Monitor for success OR fail after 1 hour
+ // Monitor for success OR fail after 45
     [_spawnedUnits, _spawnedGroups, _taskId] spawn {
         params ["_units","_groups","_taskId"];
 
-        private _timeLimit = time + 2700; // 1 hour
+        private _timeLimit = time + 2700; // 45
 
         waitUntil {
             sleep 5;
@@ -89,6 +89,7 @@ case 1: {
         if (({ alive _x && {!captive _x} } count _units) == 0) then {
             // Success
             [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
+            missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
 
             // Reward BLUFOR (2–5 tokens each)
             private _amount  = 2 + floor random 5;
@@ -102,6 +103,7 @@ case 1: {
         } else {
             // Fail
             [_taskId, "FAILED", true] call BIS_fnc_taskSetState;
+            missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 1, true];
         };
 
         // Cleanup
@@ -312,6 +314,7 @@ case 3: {
         if (!alive _proxy) then {
             [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
             if (!isNull _hive) then { deleteVehicle _hive; };
+            missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) - 1, true];
 
             // grace period then cleanup any surviving ants
             sleep 300;
@@ -322,14 +325,15 @@ case 3: {
         };
     };
 
-    // Safety timeout: 1 hour
+    // Safety timeout: 45 Minutes
     [_proxy, _hive, _grp, _taskId] spawn {
         params ["_proxy","_hive","_grp","_taskId"];
-        private _deadline = time + 3600;
+        private _deadline = time + 2700;
 
         waitUntil { sleep 5; (!alive _proxy) || (time > _deadline) };
         if (time > _deadline && alive _proxy) then {
             [_taskId, "FAILED", true] call BIS_fnc_taskSetState;
+            missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
             if (!isNull _proxy) then { deleteVehicle _proxy; };
             if (!isNull _hive)  then { deleteVehicle _hive; };
             { if (!isNull _x) then { deleteVehicle _x }; } forEach units _grp;
@@ -462,7 +466,7 @@ case 4: {
     missionNamespace setVariable ["cd_recruited", 0];
     missionNamespace setVariable ["cd_failed", 0];
 
-    private _spawnCount = 20 + floor random 6; // 20–25 civilians
+    private _spawnCount = 15 + floor random 6; // 15–20 civilians
     private _civClasses = ["CombainCIV_Uniform_1_Body"];
     private _civs = [];
 
@@ -513,9 +517,11 @@ case 4: {
         if (_recruited >= 10) then {
             [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
             ["Enough citizens have been conscripted!"] remoteExec ["systemChat", (allPlayers select { side _x == west }) apply { owner _x }];
+            missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
         } else {
             [_taskId, "FAILED", true] call BIS_fnc_taskSetState;
             ["Too few citizens were conscripted. Mission failed."] remoteExec ["systemChat", (allPlayers select { side _x == west }) apply { owner _x }];
+            missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 1, true];
         };
 
         sleep 300;

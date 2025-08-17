@@ -23,7 +23,7 @@ CID_Malcompliance = createHashMap;
 [] execVM "infestation.sqf";
 
 if (isNil { missionNamespace getVariable "RationStock" }) then {
-    missionNamespace setVariable ["RationStock", 5, true]; // true = publicVariable
+    missionNamespace setVariable ["RationStock", 10, true]; // true = publicVariable
 };
 
 if (isNil { missionNamespace getVariable "Biomass" }) then {

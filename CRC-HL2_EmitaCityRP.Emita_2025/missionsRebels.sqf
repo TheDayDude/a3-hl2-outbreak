@@ -89,7 +89,7 @@ case 1: {
     _props pushBack _tower;
 
     // Optional: small chance of an APC patrol
-    if (random 1 < 0.15) then {
+    if (random 1 < 0.10) then {
         private _apcPos = [_center, 120 + random 120, random 360] call BIS_fnc_relPos;
         private _apc    = createVehicle ["HL_CMB_OW_APC", _apcPos, [], 0, "NONE"];
         createVehicleCrew _apc;
@@ -129,10 +129,12 @@ case 1: {
             remoteExec ["hintSilent", (allPlayers select { side _x == east }) apply { owner _x }];
 			["Protection team alert: evidence of anti-civil activity in this community. Code: assemble, clamp, contain."] remoteExec ["systemChat", 0];
 			["Fanticivilevidence3spkr"] remoteExec ["playSound", 0];
+            missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 1, true];
         } else {
             // Timeout fail
             [_taskId, "FAILED", true] call BIS_fnc_taskSetState;
             ["Target escaped the area. Mission failed."] remoteExec ["systemChat", (allPlayers select { side _x == east }) apply { owner _x }];
+            missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
         };
 
         // Cleanup
@@ -231,7 +233,7 @@ case 2: {
     missionNamespace setVariable ["rr_recruited", 0];
     missionNamespace setVariable ["rr_failed", 0];
 
-    private _spawnCount = 20 + floor random 6; // 20–25 civilians
+    private _spawnCount = 15 + floor random 6; // 15–20 civilians
     private _civClasses = ["HL_CIV_Man_01","HL_CIV_Man_02","CombainCIV_Uniform_1_Body"];
     private _civs = [];
 
@@ -275,9 +277,11 @@ case 2: {
         if (_recruited >= 10) then {
             [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
             ["Enough citizens have joined the cause!"] remoteExec ["systemChat", (allPlayers select { side _x == east }) apply { owner _x }];
+            missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 1, true];
         } else {
             [_taskId, "FAILED", true] call BIS_fnc_taskSetState;
             ["Too few citizens were recruited. Mission failed."] remoteExec ["systemChat", (allPlayers select { side _x == east }) apply { owner _x }];
+            missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
         };
 
         sleep 300;
@@ -406,6 +410,7 @@ case 3: {
             } forEach allPlayers;
             [format ["Truck stolen! You pilfer %1 Tokens.", _amt]]
                 remoteExec ["hintSilent", (allPlayers select { side _x == east }) apply { owner _x }];
+            missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 1, true];
 
             // Cleanup conscripts only (keep truck) after 5 minutes
             sleep 300;
@@ -418,6 +423,7 @@ case 3: {
             [_taskId, "FAILED", true] call BIS_fnc_taskSetState;
             ["The truck was lost or time has expired. Mission failed."]
                 remoteExec ["systemChat", (allPlayers select { side _x == east }) apply { owner _x }];
+            missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
 
             // Cleanup conscripts AND the truck after 5 minutes
             sleep 300;
@@ -470,8 +476,11 @@ case 4: {
             params ["_rogue","_caller"];
             if (isNull _rogue || isNull _caller) exitWith {};
             if (!captive _rogue) exitWith {};
+            _caller playMoveNow "AinvPknlMstpSnonWnonDnon_medic_1";
+            uiSleep 3.5;
+            _caller switchMove "";
             _rogue setCaptive false;
-            [_rogue,false] remoteExec ["ACE_captives_fnc_setHandcuffed",0,true];
+            [_rogue,""] remoteExec ["switchMove",0,true];
             _rogue enableAI "MOVE";
             [_rogue] joinSilent (group _caller);
             [_rogue] remoteExec ["RRU_fnc_removeFreeAction",0,true];
@@ -535,8 +544,7 @@ case 4: {
     private _rogue    = _rogueGrp createUnit ["UU_CP", _spawnPos, [], 0, "NONE"];
     _rogue setCaptive true;
     removeHeadgear _rogue;
-    [_rogue,true] remoteExec ["ACE_captives_fnc_setHandcuffed",0,true];
-    _rogue disableAI "MOVE";
+    [_rogue,"Acts_ExecutionVictim_Loop"] remoteExec ["switchMove",0,true];
     _rogue setVariable ["rru_state","captive",true];
     [_rogue] remoteExec ["RRU_fnc_addFreeAction",0,true];
 
@@ -545,7 +553,7 @@ case 4: {
     private _guards   = [];
     for "_i" from 1 to 4 do {
         private _p = [_spawnPos,8 + random 5, random 360] call BIS_fnc_relPos;
-        private _g = _guardGrp createUnit [selectRandom ["WBK_Combine_CP_P","WBK_Combine_CP_SMG"], _p, [], 0, "FORM"];
+        private _g = _guardGrp createUnit [selectRandom ["WBK_Combine_HL2","WBK_Combine_CP_SMG"], _p, [], 0, "FORM"];
         _guards pushBack _g;
     };
     _guardGrp setBehaviour "AWARE";
@@ -589,11 +597,13 @@ case 4: {
 
         if (_success) then {
             [_taskId,"SUCCEEDED",true] call BIS_fnc_taskSetState;
+            missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 1, true];
             [_rogue] joinSilent _rebelGrp;
             [_markerName] remoteExec ["RRU_fnc_deleteMarker",0];
         } else {
             if (time > _deadline && alive _rogue && captive _rogue) then { _rogue setDamage 1; };
             [_taskId,"FAILED",true] call BIS_fnc_taskSetState;
+            missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
             [_markerName] remoteExec ["RRU_fnc_deleteMarker",0];
         };
 
