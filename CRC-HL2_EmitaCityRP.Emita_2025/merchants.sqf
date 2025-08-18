@@ -1,6 +1,14 @@
 // merchants.sqf
 if (!isServer) exitWith {};
 
+if (isNil "MRC_fnc_facePlayer") then {
+    MRC_fnc_facePlayer = {
+        params ["_npc", "_caller"];
+        if (isNull _npc || isNull _caller) exitWith {};
+        _npc setDir ([_npc, _caller] call BIS_fnc_dirTo);
+    };
+};
+
 [] spawn {
     // --- Config ---
     private _merchantClass = "HL_CIV_Man_01";
@@ -19,14 +27,13 @@ if (!isServer) exitWith {};
         ["ItemMap","Map",2],
         ["ItemGPS","GPS",4],
         ["ItemAndroid","Android",4],
-        ["Rugged Tablet","Ctab",4],
+        ["ItemcTab","Rugged Tablet",4],
         ["Toolkit","Toolkit",8],
         ["ACE_Flashlight_XL50","XL50 Flashlight",3],
         ["Civilian_Jumpsuit_2","Luxury Jumpsuit",10],
         ["H_Watchcap_blk","Beanie",1],
         ["H_Cap_grn","Cap",1],
         ["H_Construction_basic_orange_F","Hard Hat",3],
-        ["Rugged Tablet","CTab",4],
         ["B_Bag_Sundown","UU Bag",5],
         ["Civ_Backpack_1","UU Throwbag",5],
         ["Civ_Backpack_2","Satchel Bag",3],
@@ -234,6 +241,7 @@ if (!isServer) exitWith {};
                     {
                         params ["_target","_caller","_actionId","_args"];
                         _args params ["_merchant","_cls","_name","_price"];
+                        [_target, _caller] remoteExecCall ["MRC_fnc_facePlayer", 2];
                         ["BUY", _merchant, _caller, _cls, _name, _price] remoteExecCall ["MRC_fnc_merchantServer", 2];
                     },
                     [_m,_cls,_name,_price],
@@ -243,20 +251,10 @@ if (!isServer) exitWith {};
             } forEach _entries;
 
             _m addAction [
-                "<t color='#88CCFF'>Check Token Balance</t>",
-                {
-                    params ["_t","_caller"];
-                    private _c = { _x == 'VRP_HL_Token_Item' } count (items _caller);
-                    hintSilent format ["You have %1 token(s).", _c];
-                },
-                nil, 1.5, true, true, "",
-                "_this distance _target < 4"
-            ];
-
-            _m addAction [
                 "<t color='#A0FFA0'>Access Merchant Pack</t>",
                 {
                     params ["_t","_caller"];
+                    [_t, _caller] remoteExecCall ["MRC_fnc_facePlayer", 2];
                     private _pack = unitBackpack _t;
                     if (isNull _pack) exitWith { hint "Merchant has no backpack." };
                     _caller action ["Gear", _pack];

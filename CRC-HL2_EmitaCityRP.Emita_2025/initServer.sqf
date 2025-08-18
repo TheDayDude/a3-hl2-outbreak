@@ -22,8 +22,14 @@ CID_Malcompliance = createHashMap;
 [] execVM "sociostability.sqf";
 [] execVM "infestation.sqf";
 [] execVM "bank.sqf";
+[] execVM "timeSkip.sqf";
 
 call compile preprocessFileLineNumbers "portalStorm.sqf";
+
+private _savedDate = profileNamespace getVariable ["SavedDate", []];
+if !(_savedDate isEqualTo []) then {
+    setDate _savedDate;
+};
 
 private _defaults = [
     ["RationStock", 10],
@@ -50,7 +56,7 @@ private _defaults = [
                 missionNamespace getVariable [_x, 0]
             ];
         } forEach ["RationStock", "Biomass", "PlasmaLevel", "Infestation", "Sociostability"];
-
+		profileNamespace setVariable ["SavedDate", date];
         saveProfileNamespace;
         sleep 30;
     };
