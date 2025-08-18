@@ -11,10 +11,10 @@ endgame_fnc_finish = {
         case "Xenians": {"Xenian victory: Infestation has reached 100%."};
         default {"Mission complete"};
     };
-    [_msg] remoteExec ["titleText", 0];
+    [_msg, "PLAIN"] remoteExec ["titleText", 0];
     ["WBK_hl_singularity"] remoteExec ["playSound", 0];
 
-    sleep 25;
+    sleep 30;
 
     // Reset persistent variables to defaults
     private _defaults = [
@@ -33,19 +33,23 @@ endgame_fnc_finish = {
     private _date = date;
     setDate [_date select 0, _date select 1, _date select 2, 6, 0];
 
-    // Wipe all player bank balances
+    // Wipe all player bank balances from persistence and memory
     {
         if (_x find "BANK_" == 0) then {
-            profileNamespace setVariable [_x, 0];
+            profileNamespace setVariable [_x, nil];
         };
     } forEach allVariables profileNamespace;
+
     {
+        private _var = format ["BANK_%1", getPlayerUID _x];
+        profileNamespace setVariable [_var, nil];
         _x setVariable ["bankTokens", 0, true];
     } forEach allPlayers;
 
     saveProfileNamespace;
 
-    sleep 30; // allow players to read the message
+    sleep 5; // allow players to read the message
+    saveProfileNamespace;
     ["END1", true] remoteExecCall ["BIS_fnc_endMission", 0];
 };
 

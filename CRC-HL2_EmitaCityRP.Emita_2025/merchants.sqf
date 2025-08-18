@@ -327,7 +327,7 @@ if (isNil "MRC_fnc_facePlayer") then {
             default          { _stock_food  };
         };
         private _count   = 4 + floor random 3;
-        private _entries;
+        private _entries = [];
         if (_type == "outlands") then {
             private _ammo  = _stock select { isClass (configFile >> "CfgMagazines" >> (_x select 0)) };
             private _other = _stock select { !isClass (configFile >> "CfgMagazines" >> (_x select 0)) };
