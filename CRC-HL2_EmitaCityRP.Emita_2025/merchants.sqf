@@ -327,7 +327,15 @@ if (isNil "MRC_fnc_facePlayer") then {
             default          { _stock_food  };
         };
         private _count   = 4 + floor random 3;
-        private _entries = ([_stock,_count] call _rollInventory);
+        private _entries;
+        if (_type == "outlands") then {
+            private _ammo  = _stock select { isClass (configFile >> "CfgMagazines" >> (_x select 0)) };
+            private _other = _stock select { !isClass (configFile >> "CfgMagazines" >> (_x select 0)) };
+            _entries = ([_other, _count] call _rollInventory);
+            _entries append ([_ammo, count _ammo] call _rollInventory);
+        } else {
+            _entries = ([_stock,_count] call _rollInventory);
+        };
 
         // Add actions on every client (and JIP)
         [_unit, _entries] remoteExec ["MRC_fnc_addMerchantActions", 0, true];

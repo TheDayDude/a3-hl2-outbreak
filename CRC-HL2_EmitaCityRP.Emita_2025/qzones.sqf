@@ -51,7 +51,6 @@ if (isNil "XEN_fnc_clearAnchorServer") then {
                 private _grp      = createGroup resistance;
 
                 private _types = [
-                    "WBK_Zombine_HLA_1",
                     "WBK_ClassicZombie_HLA_1","WBK_ClassicZombie_HLA_2","WBK_ClassicZombie_HLA_3",
                     "WBK_ClassicZombie_HLA_4","WBK_ClassicZombie_HLA_5","WBK_ClassicZombie_HLA_6",
                     "WBK_ClassicZombie_HLA_7","WBK_ClassicZombie_HLA_8",
@@ -62,6 +61,7 @@ if (isNil "XEN_fnc_clearAnchorServer") then {
                     _unit doMove getPos _target;
                     _unit addEventHandler ["Killed", {
                         params ["_dead", "_killer"];
+                        missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) - 0.01, true];
                         private _meatCount = selectRandom [0,0,1,1];
                         for "_i" from 1 to _meatCount do {
                             private _item = createVehicle ["GroundWeaponHolder", getPosATL _dead, [], 0, "NONE"];
@@ -71,11 +71,12 @@ if (isNil "XEN_fnc_clearAnchorServer") then {
                 };
 
                 if (random 1 < 0.1) then {
-                    private _rareType = selectRandom ["WBK_Bullsquid_1", "WBK_Houndeye_1"];
+                    private _rareType = selectRandom ["WBK_Zombine_HLA_1", "WBK_Bullsquid_1", "WBK_Houndeye_1"];
                     private _rare = _grp createUnit [_rareType, _spawnPos, [], 5, "FORM"];
                     _rare doMove getPos _target;
                     _rare addEventHandler ["Killed", {
                         params ["_dead", "_killer"];
+                        missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) - 0.02, true];
                         private _meatCount = selectRandom [0,1,1,2];
                         for "_i" from 1 to _meatCount do {
                             private _item = createVehicle ["GroundWeaponHolder", getPosATL _dead, [], 0, "NONE"];

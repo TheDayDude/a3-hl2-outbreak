@@ -196,7 +196,10 @@ if (!isServer) exitWith {};
         removeBackpack _u;
         _u addBackpack _packClass;
 
-        private _entries = ([_stock_smuggler, 6] call _rollInventory);
+        private _ammo  = _stock_smuggler select { isClass (configFile >> "CfgMagazines" >> (_x select 0)) };
+        private _other = _stock_smuggler select { !isClass (configFile >> "CfgMagazines" >> (_x select 0)) };
+        private _entries = ([_other, 6] call _rollInventory);
+        _entries append ([_ammo, count _ammo] call _rollInventory);
         [_u, _entries] remoteExec ["MRC_fnc_addMerchantActions", 0, true];
         [_u, _fakeCIDPrice] remoteExec ["MRC_fnc_addFakeCIDAction", 0, true];
 
