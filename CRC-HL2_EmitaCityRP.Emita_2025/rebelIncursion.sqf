@@ -17,6 +17,8 @@
     while {true} do {
         sleep (3000 + random 6000);
 
+        missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 1, true];
+
         ["Flocalunrestspkr"] remoteExec ["playSound", 0];
 
         private _battleCenter = getPos (selectRandom allPlayers);

@@ -37,7 +37,7 @@ while {true} do {
                     params ["_unit"]; 
                     sleep 10;
                     if (alive _unit) then {
-                        _civ addRating 10000;
+                        _unit addRating 10000;
                         _unit setVariable ["isXenHostile", false, false];
                     };
                 };

@@ -19,6 +19,8 @@ CID_Malcompliance = createHashMap;
 [] execVM "quartermaster.sqf";
 [] execVM "civies.sqf";
 [] execVM "ota_functions.sqf";
+[] execVM "sociostability.sqf";
+[] execVM "infestation.sqf";
 
 if (isNil { missionNamespace getVariable "RationStock" }) then {
     missionNamespace setVariable ["RationStock", 5, true]; // true = publicVariable
@@ -40,11 +42,22 @@ if (isNil { missionNamespace getVariable "PlasmaLevel" }) then {
     missionNamespace setVariable ["PlasmaLevel", 5, true];
 };
 
+if (isNil { missionNamespace getVariable "Infestation" }) then {
+    missionNamespace setVariable ["Infestation", 50, true];
+};
+
+if (isNil { missionNamespace getVariable "Sociostability" }) then {
+    missionNamespace setVariable ["Sociostability", 50, true];
+};
+
 call compile preprocessFileLineNumbers "portalStorm.sqf";
 
 [] spawn {
     while {true} do {
-        private _delay = 3000 + random 6000;
+        private _infestation = missionNamespace getVariable ["Infestation", 50];
+        private _hours = (4 - (_infestation / 25)) max 0.5;
+        private _interval = _hours * 3600;
+        private _delay = _interval + random (_interval * 0.25);
         sleep _delay;
         [] spawn portalStorm_fnc_start;
     };

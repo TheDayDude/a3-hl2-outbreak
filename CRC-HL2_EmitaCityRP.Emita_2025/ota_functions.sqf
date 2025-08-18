@@ -75,3 +75,17 @@ OTA_fnc_join = {
 };
 publicVariable "OTA_fnc_join";
 publicVariable "OTA_fnc_cinematic";
+
+// monitor OTA armory for unauthorized players
+[] spawn {
+    waitUntil {!isNil "ota_armory"};
+    while {true} do {
+        private _current = missionNamespace getVariable ["OTA_current", objNull];
+        {
+            if (_x != _current && {isPlayer _x}) then {
+                _x setPos (getMarkerPos "OTA_Reject");
+            };
+        } forEach (list ota_armory);
+        sleep 1;
+    };
+};

@@ -8,12 +8,12 @@ portalStorm_fnc_start = {
         "WBK_ClassicZombie_HLA_9",
         "WBK_Zombine_HLA_2",
 		"WBK_Headcrab_Normal"
-    ];
-	["<t color='#9ACD32' size='2'>PORTAL STORM INCOMING!</t>", "PLAIN", 1, true, true] remoteExec ["cutText", 0];  
+    ];  
 	["Alert: Nonstandard Exogen activity detected. Execute containment procedure and report."] remoteExec ["systemChat", 0];
 	["Fprisonnonstandardexogen"] remoteExec ["playSound", 0];
 
     sleep 150;
+	missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) + 2, true];
 	
 {
     private _player = _x;
