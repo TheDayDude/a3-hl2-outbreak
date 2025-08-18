@@ -32,7 +32,13 @@
     };
 };
 
-sleep 5;
+sleep 2;
+
+// Initialise bank balance for the player
+["INIT",0,player] remoteExec ["MRC_fnc_bankServer",2];
+
+
+sleep 2;
 
 [] spawn {
     while {true} do {

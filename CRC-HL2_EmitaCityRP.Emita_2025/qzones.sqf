@@ -35,7 +35,7 @@ if (isNil "XEN_fnc_clearAnchorServer") then {
             remoteExec ["hintSilent", _caller];			
         };
         deleteVehicle _anchor;
-        missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) - 1, true];
+        missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) - 0.2, true];
     };
     publicVariable "XEN_fnc_clearAnchorServer";
 };
@@ -284,7 +284,7 @@ if (isNil "XEN_fnc_clearAnchorServer") then {
                     private _anchor = createVehicle ["xen_anchor", getMarkerPos _m, [], 0, "NONE"];
                     _active pushBack [_m, _anchor];
                     [_anchor] remoteExec ["XEN_fnc_addAnchorAction", 0, true];
-                    missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) + 1, true];
+                    missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) + 0.1, true];
                 };
             } forEach _markers;
             sleep (300 + random 120);

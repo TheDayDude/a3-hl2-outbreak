@@ -21,36 +21,41 @@ CID_Malcompliance = createHashMap;
 [] execVM "ota_functions.sqf";
 [] execVM "sociostability.sqf";
 [] execVM "infestation.sqf";
-
-if (isNil { missionNamespace getVariable "RationStock" }) then {
-    missionNamespace setVariable ["RationStock", 5, true]; // true = publicVariable
-};
-
-if (isNil { missionNamespace getVariable "Biomass" }) then {
-    missionNamespace setVariable ["Biomass", 5, true];
-};
-
-if (isNil { missionNamespace getVariable "Stims" }) then {
-    missionNamespace setVariable ["Stims", 5, true];
-};
-
-if (isNil { missionNamespace getVariable "Armor" }) then {
-    missionNamespace setVariable ["Armor", 5, true];
-};
-
-if (isNil { missionNamespace getVariable "PlasmaLevel" }) then {
-    missionNamespace setVariable ["PlasmaLevel", 5, true];
-};
-
-if (isNil { missionNamespace getVariable "Infestation" }) then {
-    missionNamespace setVariable ["Infestation", 50, true];
-};
-
-if (isNil { missionNamespace getVariable "Sociostability" }) then {
-    missionNamespace setVariable ["Sociostability", 50, true];
-};
+[] execVM "bank.sqf";
 
 call compile preprocessFileLineNumbers "portalStorm.sqf";
+
+private _defaults = [
+    ["RationStock", 10],
+    ["Biomass", 5],
+    ["PlasmaLevel", 5],
+    ["Infestation", 50],
+    ["Sociostability", 50]
+];
+
+{
+    missionNamespace setVariable [
+        _x select 0,
+        profileNamespace getVariable [_x select 0, _x select 1],
+        true
+    ];
+} forEach _defaults;
+
+// === Persistence save loop ===
+[] spawn {
+    while {true} do {
+        {
+            profileNamespace setVariable [
+                _x,
+                missionNamespace getVariable [_x, 0]
+            ];
+        } forEach ["RationStock", "Biomass", "PlasmaLevel", "Infestation", "Sociostability"];
+
+        saveProfileNamespace;
+        sleep 30;
+    };
+};
+
 
 [] spawn {
     while {true} do {
