@@ -242,6 +242,8 @@ case 2: {
         private _pos = [getMarkerPos _mkr, 0, 150, 0, 0, 20, 0] call BIS_fnc_findSafePos;
         private _grp = createGroup civilian;
         private _civ = _grp createUnit [selectRandom _civClasses, _pos, [], 0, "FORM"];
+        _grp setBehaviour "SAFE";
+        _grp setSpeedMode "LIMITED";
         _civs pushBack _civ;
         _civ setVariable ["rr_state", "pending", true];
 

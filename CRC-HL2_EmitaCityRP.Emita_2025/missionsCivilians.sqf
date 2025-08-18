@@ -581,7 +581,7 @@ case 4: {
             _target playMoveNow "Acts_CivilListening_1";
             uiSleep 8;
             _target switchMove "";
-            if (random 1 < 0.5) then {
+            if (random 1 < 0.62) then {
                 [_target, "rebel_announcekill_07"] remoteExecCall ["say3D", 0];
                 _target setVariable ["prop_result", 1, true];
                 ["Citizen: You're right, if we just keep our heads down and work hard, the Union will reward us."] remoteExec ["systemChat", owner _caller];
@@ -620,13 +620,15 @@ case 4: {
                 ["Citizen: I'm reporting you to Civil Protection!"] remoteExec ["systemChat", owner _caller];
                 if (random 1 < 0.7) then {
                     [_caller] joinSilent createGroup east;
-                    private _huntPos = position _caller;
+                    private _callerPos = position _caller;
+                    private _huntPos = [_callerPos, 200, 200, 0, 0, 20, 0] call BIS_fnc_findSafePos;
                     private _huntGrp = createGroup west;
-                    for "_i" from 1 to (3 + floor random 3) do {
+                    for "_i" from 1 to (2 + floor random 2) do {
                         _huntGrp createUnit [selectRandom ["WBK_Combine_CP_P","WBK_Combine_CP_SMG"], _huntPos, [], 5, "FORM"];
                     };
                     _huntGrp setBehaviour "COMBAT";
                     _huntGrp setCombatMode "RED";
+                     _huntGrp move _callerPos;
                     [_huntGrp,_caller] spawn {
                         params ["_grp","_tgt"];
                         while {alive _tgt && {count units _grp > 0}} do {
@@ -663,6 +665,8 @@ case 4: {
         private _pos = [_center, 5, 80, 0, 0, 20, 0] call BIS_fnc_findSafePos;
         private _grp = createGroup civilian;
         private _c = _grp createUnit ["CombainCIV_Uniform_1_Body", _pos, [], 0, "FORM"];
+        _grp setBehaviour "SAFE";
+        _grp setSpeedMode "LIMITED";
         _c setVariable ["prop_result", 0, true];
         [_c] remoteExec ["CIV_fnc_addPropagandaAction", 0, true];
         [_grp, _center, 40] call BIS_fnc_taskPatrol;
