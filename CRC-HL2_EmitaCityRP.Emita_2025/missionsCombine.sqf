@@ -392,7 +392,7 @@ case 4: {
             uiSleep 8;
             _target switchMove "";
 
-            if (random 1 < 0.4) then {
+            if (random 1 < 0.3) then {
                 // Resist: becomes OpFor
                 missionNamespace setVariable ["cd_failed", (missionNamespace getVariable ['cd_failed',0]) + 1];
                 [_target] joinSilent createGroup east;
@@ -469,7 +469,7 @@ case 4: {
     missionNamespace setVariable ["cd_recruited", 0];
     missionNamespace setVariable ["cd_failed", 0];
 
-    private _spawnCount = 15 + floor random 6; // 15–20 civilians
+    private _spawnCount = 10;
     private _civClasses = ["CombainCIV_Uniform_1_Body"];
     private _civs = [];
 
@@ -502,7 +502,7 @@ case 4: {
 
     private _taskId = format ["task_conscription_%1", diag_tickTime];
     [west, _taskId,
-        ["Conscript workers throughout the city (Districts 1-3). Recruit at least ten to join you.","Conscription Drive",""],
+        ["Conscript workers throughout the city. Recruit at least five to join you.","Conscription Drive",""],
         getMarkerPos _cityMarker, true
     ] call BIS_fnc_taskCreate;
 
@@ -511,15 +511,15 @@ case 4: {
         private _deadline = time + 2700; // 1 hour
         waitUntil {
             sleep 3;
-            (missionNamespace getVariable ["cd_recruited",0] >= 10) ||
-            (missionNamespace getVariable ["cd_failed",0] >= 15) ||
+            (missionNamespace getVariable ["cd_recruited",0] >= 5) ||
+            (missionNamespace getVariable ["cd_failed",0] >= 6) ||
             (time > _deadline)
         };
 
         private _recruited = missionNamespace getVariable ["cd_recruited",0];
         private _failed = missionNamespace getVariable ["cd_failed",0];
 
-        if (_recruited >= 10) then {
+        if (_recruited >= 5) then {
             [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
             ["Enough citizens have been conscripted!"] remoteExec ["systemChat", (allPlayers select { side _x == west }) apply { owner _x }];
             missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];

@@ -659,7 +659,7 @@ case 4: {
         _center, true
     ] call BIS_fnc_taskCreate;
 
-    private _cnt = 10 + floor random 6; // 10–15 civilians
+    private _cnt = 10;
     private _civs = [];
     for "_i" from 1 to _cnt do {
         private _pos = [_center, 5, 80, 0, 0, 20, 0] call BIS_fnc_findSafePos;
@@ -676,13 +676,14 @@ case 4: {
     private _deadline = time + 1800; // 30 minutes
     private _posCount = 0;
     private _negCount = 0;
-    while { time < _deadline && (_posCount + _negCount) < _cnt } do {
+    waitUntil {
         sleep 5;
         _posCount = missionNamespace getVariable ["CIV_Prop_PosCount",0];
         _negCount = missionNamespace getVariable ["CIV_Prop_NegCount",0];
+        (_posCount >= 5) || (_negCount >= 6) || (time > _deadline)
     };
 
-    if (_posCount > _negCount) then {
+    if (_posCount > 5) then {
         [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
         missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
         private _amt = 2 + floor random 3; // 2–4 tokens

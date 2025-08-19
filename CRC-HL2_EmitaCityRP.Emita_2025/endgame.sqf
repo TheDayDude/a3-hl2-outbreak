@@ -6,12 +6,11 @@ endgame_fnc_finish = {
 
     // Display victory message
     private _msg = switch (_winner) do {
-        case "Combine": {"Combine Victory: Sociostability has reached 100%. This sector has been fully assimilated."};
         case "Rebels": {"Rebel victory: Sociostability has collapsed to 0%. This sector has broken free from Combine control!"};
         case "Xenians": {"Xenian victory: Infestation has reached 100%. This sector has become uninhabitable..."};
         default {"Mission complete"};
     };
-    [_msg"] remoteExec ["hint", 0];
+    [_msg] remoteExec ["hint", 0];
     ["The game has ended, resetting stats..."] remoteExec ["systemChat", 0];
     ["WBK_hl_singularity"] remoteExec ["playSound", 0];
 
@@ -60,7 +59,6 @@ endgame_fnc_finish = {
         private _socio = missionNamespace getVariable ["Sociostability", 50];
         private _inf = missionNamespace getVariable ["Infestation", 50];
 
-        if (_socio >= 100) exitWith { ["Combine"] call endgame_fnc_finish; };
         if (_socio <= 0) exitWith { ["Rebels"] call endgame_fnc_finish; };
         if (_inf >= 100) exitWith { ["Xenians"] call endgame_fnc_finish; };
 

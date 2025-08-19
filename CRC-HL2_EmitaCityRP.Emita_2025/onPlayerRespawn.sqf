@@ -1,15 +1,19 @@
+private _old = player getVariable ["CID_Number", nil];
+if (!isNil "_old") then {
+    CID_Loyalty deleteAt _old;
+    CID_Malcompliance deleteAt _old;
+    if !(isNil "Global_CID_Registry") then {
+        Global_CID_Registry = Global_CID_Registry - [_old];
+        publicVariable "Global_CID_Registry";
+    };
+};
+
 player setVariable ["HasCID", false, false];
 player setVariable ["CID_Number", nil, true];
 player setVariable ["isLoyalist", false, true];
 
-
-private _cid = player getVariable ["CID_Number", "Unknown"];
-
-if (!isNil "_cid" && {_cid != "Unknown"}) then {
-    CID_Loyalty set [_cid, 0];
-    CID_Malcompliance set [_cid, 0];
-};
-
-if (side player == east) then {    
-	[player] joinSilent createGroup civilian;
-}
+[player] joinSilent createGroup civilian;
+[player] remoteExec ["MRC_fnc_assignCID", 2];
+player setVariable ["WBK_CombineType","  rebel_",true];
+player setVariable ["WBK_HL_CustomArmour",0,true];
+player setVariable ["WBK_HL_CustomArmour_MAX",50,true];

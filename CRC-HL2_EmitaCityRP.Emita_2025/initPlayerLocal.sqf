@@ -27,6 +27,13 @@ if (isNil "MRC_fnc_applyPlayerState") then {
     [player] remoteExec ["MRC_fnc_restorePlayerState", 2];
 };
 
+[] spawn {
+    waitUntil { player getVariable ["MRC_stateRestored", false] };
+    if (isNil { player getVariable ["CID_Number", nil] }) then {
+        [player] remoteExec ["MRC_fnc_assignCID", 2];
+    };
+};
+
 
 [player] spawn {
     params ["_unit"];
@@ -76,8 +83,18 @@ sleep 2;
         private _inf = missionNamespace getVariable ["Infestation", 0];
         private _invTokens = { _x == "VRP_HL_Token_Item" } count (items player);
         private _bankTokens = player getVariable ["bankTokens", 0];
+        private _cidNum = player getVariable ["CID_Number", "-"];
+        private _prefix = switch (side player) do {
+            case civilian: {"CIT"};
+            case west: {"UNIT"};
+            case independent: {"???"};
+            case east: {"MAL"};
+            default {"???"};
+        };
+        private _cidText = format ["%1-%2", _prefix, _cidNum];
         private _text = format [
-            "<t size='0.5' color='#00D0FF' align='center' shadow='1' font='LCD14'>SOCIOSTABILITY: %1%% | INFESTATION: %2%% | TOKENS: %3 | BANK BALANCE: %4</t>",
+            "<t size='0.5' color='#00D0FF' align='center' shadow='1' font='LCD14'> %1 | SOCIOSTABILITY: %2%% | INFESTATION: %3%% | TOKENS: %4 | BANK: %5</t>",
+            _cidText,
             round _socio,
             round _inf,
             _invTokens,

@@ -1,15 +1,28 @@
+MRC_fnc_stateReady = {
+    params ["_unit"];
+    if (!(_unit getVariable ["MRC_stateRestored", false])) exitWith {false};
+    private _t = _unit getVariable ["MRC_stateRestoredTime", -1];
+    if (_t == -1) exitWith {
+        _unit setVariable ["MRC_stateRestoredTime", time];
+        false
+    };
+    (time - _t) > 10
+};
+
 //Escaping the city
 [] spawn {
     while {true} do {
         {
+            private _unit = _x;
+            if (!([_unit] call MRC_fnc_stateReady)) then { continue };
             if (
-                side _x == civilian &&
-                alive _x &&
-                damage _x < 0.9 &&
-				!captive _x &&
-                {!(_x inArea City18) && !(_x inArea nexus) && !(_x inArea slums)}
+                side _unit == civilian &&
+                alive _unit &&
+                damage _unit < 0.9 &&
+                                !captive _unit &&
+                {!(_unit inArea City18) && !(_unit inArea nexus) && !(_unit inArea slums)}
             ) then {
-                private _target = _x;
+                private _target = _unit;
                 [_target] joinSilent createGroup east;
 
                 hint format ["%1 is now malcompliant. Reason: Evasion Behavior.", name _target];
@@ -71,6 +84,7 @@
     while {true} do {
         {
             private _civ = _x;
+            if (!([_civ] call MRC_fnc_stateReady)) then { continue; };
 
             if (
                 side _civ == civilian &&
@@ -147,11 +161,12 @@
     while {true} do {
         {
             private _civ = _x;
+            if (!([_civ] call MRC_fnc_stateReady)) then { continue; };
 
             if (
                 side _civ == civilian &&
                 alive _civ &&
-				!captive _civ &&
+                                !captive _civ &&
                 damage _civ < 0.9 // Skip downed/incapacitated units
             ) then {
 
@@ -215,18 +230,19 @@
     while {true} do {
         {
             private _civ = _x;
+            if (!([_civ] call MRC_fnc_stateReady)) then { continue; };
 
             if (
                 side _civ == civilian &&
                 alive _civ &&
-				!captive _x &&
+                                !captive _civ &&
                 damage _civ < 0.9 &&
                 isNil {_civ getVariable "firedEHAdded"}
             ) then {
                 _civ setVariable ["firedEHAdded", true];
 
                 _civ addEventHandler ["Fired", {
-                    params ["_unit", "_weapon", "_muzzle", "_mode", "_ammo", "_magazine", "_projectile"];
+                    params ["_unit"];
 
                     // Ensure unit is still civilian when firing
                     if (side _unit != civilian) exitWith {};
@@ -298,6 +314,7 @@
 
     while {true} do {
         private _targets = allPlayers select {
+            [_x] call MRC_fnc_stateReady &&
             side _x == east &&
             alive _x &&
             (_x inArea City18)

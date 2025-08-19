@@ -142,21 +142,14 @@ if (!isServer) exitWith {};
                 _smug addItemToBackpack "U_C18_Uniform_8";
             };
 
-            if (isNil "Global_CID_Registry") then {
-                Global_CID_Registry = [];
-                publicVariable "Global_CID_Registry";
+            private _cid = [_plr] call MRC_fnc_assignCID;
+            private _prefix = switch (side _plr) do {
+                case civilian: {"CIT-"};
+                case west: {"UNIT-"};
+                case independent: {"???-"};
+                case east: {"MAL-"};
+                default {"???"};
             };
-            private _cid = "";
-            private _unique = false;
-            while { !_unique } do {
-                _cid = format ["CID-%1", floor (random [1000, 9999, 9999])];
-                _unique = !(_cid in Global_CID_Registry);
-            };
-            Global_CID_Registry pushBack _cid;
-            publicVariable "Global_CID_Registry";
-
-            _plr setVariable ["CID_Number", _cid, true];
-            _plr setVariable ["HasCID", true, false];
 
             private _msg = format ["Fake CID purchased. New CID: %1", _cid];
             if (_wasCPF) then {
