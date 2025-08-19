@@ -24,6 +24,7 @@ CID_Malcompliance = createHashMap;
 [] execVM "bank.sqf";
 [] execVM "timeSkip.sqf";
 [] execVM "endgame.sqf";
+[] execVM "playerPersistence.sqf";
 
 call compile preprocessFileLineNumbers "portalStorm.sqf";
 

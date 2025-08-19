@@ -1,3 +1,33 @@
+if (isNil "MRC_fnc_applyPlayerState") then {
+    MRC_fnc_applyPlayerState = {
+        params ["_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFakeID"];
+        [_pos, _loadout, _combine, _arm, _armMax, _isOTA, _canFakeID] spawn {
+            params ["_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFakeID"];
+            hint "Restoring position";
+            player setPosATL _pos;
+            sleep 1;
+            hint "Restoring loadout";
+            player setUnitLoadout _loadout;
+            sleep 1;
+            hint "Restoring WBK variables";
+            player setVariable ["WBK_CombineType", _combine, true];
+            player setVariable ["WBK_HL_CustomArmour", _arm, true];
+            player setVariable ["WBK_HL_CustomArmour_Max", _armMax, true];
+            player setVariable ["isOTA", _isOTA, true];
+            player setVariable ["CanBuyFakeID", _canFakeID, true];
+            sleep 1;
+            hint "State restore complete";
+        };
+    };
+};
+
+[] spawn {
+    waitUntil {sleep 1; !isNull player};
+    hint "Requesting saved state";
+    [player] remoteExec ["MRC_fnc_restorePlayerState", 2];
+};
+
+
 [player] spawn {
     params ["_unit"];
 
@@ -53,7 +83,7 @@ sleep 2;
             _invTokens,
             _bankTokens
         ];
-        [_text, safeZoneX + safeZoneW / 2, safeZoneY + 0.02, 30, 0, 0] spawn BIS_fnc_dynamicText;
+        [_text, safeZoneX + safeZoneW / 2 - 0.7, safeZoneY + 0.02, 30, 0, 0] spawn BIS_fnc_dynamicText;
         sleep 2;
     };
 };
