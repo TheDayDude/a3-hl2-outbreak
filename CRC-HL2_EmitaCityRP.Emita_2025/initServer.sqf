@@ -263,3 +263,14 @@ if (isServer) then {
         sleep 5;
     };
 };
+
+[] spawn {
+    while {true} do {
+        {
+            if (count units _x == 0) then {
+                deleteGroup _x;
+            };
+        } forEach allGroups;
+    sleep 30;
+    }
+}
