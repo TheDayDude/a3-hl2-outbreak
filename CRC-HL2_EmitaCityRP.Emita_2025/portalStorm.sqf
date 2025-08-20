@@ -29,6 +29,7 @@ portalStorm_fnc_start = {
 		
 		_unit addEventHandler ["Killed", {
 			params ["_dead", "_killer"];
+			missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) - 0.01, true];
 			private _meatCount = selectRandom [0,1,1,2];
 			for "_i" from 1 to _meatCount do {
 				private _item = createVehicle ["GroundWeaponHolder", getPosATL _dead, [], 0, "NONE"];

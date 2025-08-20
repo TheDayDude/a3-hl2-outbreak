@@ -197,7 +197,7 @@ case 2: {
             _target playMoveNow "Acts_CivilListening_1";
             uiSleep 8;
             _target switchMove "";
-            if (random 1 < 0.67) then {
+            if (random 1 < 0.7) then {
                 _target removeEventHandler ["Killed", _target getVariable ["rr_killEh",-1]];
 				[_target] joinSilent createGroup east;
 				sleep 1;
@@ -233,7 +233,7 @@ case 2: {
     missionNamespace setVariable ["rr_recruited", 0];
     missionNamespace setVariable ["rr_failed", 0];
 
-    private _spawnCount = 15 + floor random 6; // 15–20 civilians
+    private _spawnCount = 10;
     private _civClasses = ["HL_CIV_Man_01","HL_CIV_Man_02","CombainCIV_Uniform_1_Body"];
     private _civs = [];
 
@@ -259,7 +259,7 @@ case 2: {
 
     private _taskId = format ["task_rallyRebels_%1", diag_tickTime];
     [east, _taskId,
-        ["Rally citizens in the slums. Recruit at least ten to join the fight.","Rally Rebels",""],
+        ["Rally citizens in the slums. Recruit at least five to join the fight.","Rally Rebels",""],
         getMarkerPos (selectRandom _slumMarkers), true
     ] call BIS_fnc_taskCreate;
 
@@ -268,8 +268,8 @@ case 2: {
         private _deadline = time + 3600; // 1 hour
         waitUntil {
             sleep 3;
-            (missionNamespace getVariable ["rr_recruited",0] >= 10) ||
-            (missionNamespace getVariable ["rr_failed",0] >= 15) ||
+            (missionNamespace getVariable ["rr_recruited",0] >= 5) ||
+            (missionNamespace getVariable ["rr_failed",0] >= 6) ||
             (time > _deadline)
         };
 

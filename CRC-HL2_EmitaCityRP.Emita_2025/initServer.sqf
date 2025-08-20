@@ -17,13 +17,68 @@ CID_Malcompliance = createHashMap;
 [] execVM "smuggler.sqf";
 [] execVM "judgementWaiver.sqf";
 [] execVM "quartermaster.sqf";
+[] execVM "recruiter.sqf";
 [] execVM "civies.sqf";
 [] execVM "ota_functions.sqf";
 [] execVM "sociostability.sqf";
 [] execVM "infestation.sqf";
 [] execVM "bank.sqf";
+[] execVM "timeSkip.sqf";
+[] execVM "endgame.sqf";
+[] execVM "playerPersistence.sqf";
 
 call compile preprocessFileLineNumbers "portalStorm.sqf";
+
+if (isNil "Global_CID_Registry") then {
+    Global_CID_Registry = [];
+    publicVariable "Global_CID_Registry";
+};
+
+if (isNil "MRC_fnc_generateCID") then {
+    MRC_fnc_generateCID = {
+        if (isNil "Global_CID_Registry") then {
+            Global_CID_Registry = [];
+            publicVariable "Global_CID_Registry";
+        };
+        private _cid = -1;
+        private _unique = false;
+        while { !_unique } do {
+            _cid = floor (random [1000, 9999, 9999]);
+            _unique = !(_cid in Global_CID_Registry);
+        };
+        Global_CID_Registry pushBack _cid;
+        publicVariable "Global_CID_Registry";
+        _cid
+    };
+    publicVariable "MRC_fnc_generateCID";
+};
+
+if (isNil "MRC_fnc_assignCID") then {
+    MRC_fnc_assignCID = {
+        params ["_unit"];
+        private _old = _unit getVariable ["CID_Number", nil];
+        if (!isNil "_old") then {
+            CID_Loyalty deleteAt _old;
+            CID_Malcompliance deleteAt _old;
+            if !(isNil "Global_CID_Registry") then {
+                Global_CID_Registry = Global_CID_Registry - [_old];
+                publicVariable "Global_CID_Registry";
+            };
+        };
+        private _new = call MRC_fnc_generateCID;
+        _unit setVariable ["CID_Number", _new, true];
+        _unit setVariable ["HasCID", true, false];
+        CID_Loyalty set [_new, 0];
+        CID_Malcompliance set [_new, 0];
+        _new
+    };
+    publicVariable "MRC_fnc_assignCID";
+};
+
+private _savedDate = profileNamespace getVariable ["SavedDate", []];
+if !(_savedDate isEqualTo []) then {
+    setDate _savedDate;
+};
 
 private _defaults = [
     ["RationStock", 10],
@@ -50,7 +105,7 @@ private _defaults = [
                 missionNamespace getVariable [_x, 0]
             ];
         } forEach ["RationStock", "Biomass", "PlasmaLevel", "Infestation", "Sociostability"];
-
+		profileNamespace setVariable ["SavedDate", date];
         saveProfileNamespace;
         sleep 30;
     };
@@ -84,7 +139,20 @@ private _defaults = [
             Biomass = Biomass + 1;
             publicVariable "Biomass";
         };
-        sleep 300; 
+        sleep 300;
+    };
+};
+
+// NPC ration distribution every hour
+[] spawn {
+    while {true} do {
+        sleep 3600;
+
+        private _stock = missionNamespace getVariable ["RationStock", 0];
+        private _deduct = 5 + floor (random 11); // 5-15
+        private _newStock = (_stock - _deduct) max 0;
+
+        missionNamespace setVariable ["RationStock", _newStock, true];
     };
 };
 
@@ -256,3 +324,14 @@ if (isServer) then {
         sleep 5;
     };
 };
+
+[] spawn {
+    while {true} do {
+        {
+            if (count units _x == 0) then {
+                deleteGroup _x;
+            };
+        } forEach allGroups;
+    sleep 30;
+    }
+}

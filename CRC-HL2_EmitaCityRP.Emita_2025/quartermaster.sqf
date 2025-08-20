@@ -79,29 +79,6 @@ if (isNil "MRC_fnc_addQuartermasterActions") then {
             ];
         } forEach _entries;
 
-        _qm addAction [
-            "<t color='#88CCFF'>Check Token Balance</t>",
-            {
-                params ["_t","_caller"];
-                private _c = { _x == 'VRP_HL_Token_Item' } count (items _caller);
-                hintSilent format ["You have %1 token(s).", _c];
-            },
-            nil, 1.5, true, true, "",
-            "_this distance _target < 4 && side _this == west"
-        ];
-
-        _qm addAction [
-            "<t color='#A0FFA0'>Access Supply Crate</t>",
-            {
-                params ["_t","_caller"];
-                private _crate = missionNamespace getVariable ["quartermaster_crate", objNull];
-                if (!isNull _crate) then {
-                    _caller action ["Gear", _crate];
-                };
-            },
-            nil, 1.5, true, true, "",
-            "_this distance _target < 4 && side _this == west"
-        ];
     };
     publicVariable "MRC_fnc_addQuartermasterActions";
 };

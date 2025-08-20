@@ -2,6 +2,14 @@
 // Simple banking system for token storage with persistence
 if (!isServer) exitWith {};
 
+if (isNil "MRC_fnc_facePlayer") then {
+    MRC_fnc_facePlayer = {
+        params ["_npc", "_caller"];
+        if (isNull _npc || isNull _caller) exitWith {};
+        _npc setDir ([_npc, _caller] call BIS_fnc_dirTo);
+    };
+};
+
 // --- Server-side balance handler ---
 if (isNil "MRC_fnc_bankServer") then {
     MRC_fnc_bankServer = {
@@ -67,6 +75,7 @@ if (isNil "MRC_fnc_addBankActions") then {
                 {
                     params ["_t","_caller","","_args"];
                     _args params ["_op","_amt"];
+                    [_t, _caller] remoteExecCall ["MRC_fnc_facePlayer", 2];
                     [_op, _amt, _caller] remoteExecCall ["MRC_fnc_bankServer", 2];
                 },
                 [_op,_amt],
@@ -76,7 +85,11 @@ if (isNil "MRC_fnc_addBankActions") then {
         } forEach _acts;
         _npc addAction [
             "<t color='#A0FFA0'>Check Bank Balance</t>",
-            { params ["_t","_caller"]; ["BALANCE",0,_caller] remoteExecCall ["MRC_fnc_bankServer",2]; },
+            {
+                params ["_t","_caller"];
+                [_t, _caller] remoteExecCall ["MRC_fnc_facePlayer", 2];
+                ["BALANCE",0,_caller] remoteExecCall ["MRC_fnc_bankServer",2];
+            },
             nil, 1.5, true, true, "",
             "_this distance _target < 4"
         ];
@@ -87,27 +100,64 @@ if (isNil "MRC_fnc_addBankActions") then {
 // --- Spawner ---
 [] spawn {
     waitUntil { !isNil "MRC_fnc_addBankActions" && !isNil "MRC_fnc_bankServer" };
-    private _markers = allMapMarkers select { (_x find "bank_") == 0 };
-    {
-        private _pos = getMarkerPos _x;
-        if !(_pos isEqualTo [0,0,0]) then {
-            private _grp = createGroup civilian;
-            private _npc = _grp createUnit ["HL_CIV_Man_01", _pos, [], 0, "NONE"];
-            _npc setPosATL (_pos vectorAdd [0,0,1]);
-            _npc disableAI "MOVE";
-            _npc disableAI "PATH";
-            _npc disableAI "TARGET";
-            _npc disableAI "AUTOTARGET";
-            _npc allowFleeing 0;
-            _npc setUnitPos "UP";
-            _npc setBehaviour "SAFE";
-            _npc setCaptive true;
-            removeAllWeapons _npc;
-            removeBackpack _npc;
-            removeUniform _npc;
-            removeHeadgear _npc;
-            _npc forceAddUniform "U_C_FOrmalSuit_01_khaki_F";
-            [_npc] remoteExec ["MRC_fnc_addBankActions", 0, _npc];
-        };
-    } forEach _markers;
+    private _npcClass     = "HL_CIV_Man_01";
+    private _spawnRadius  = 150;      // meters
+    private _despawnGrace = 180;      // seconds without players before despawn
+
+    // Live banker registry: [markerName, unit, lastSeenTime]
+    private _live = [];
+
+    while { true } do {
+        private _markers = allMapMarkers select { toLower _x find "bank_" == 0 };
+        {
+            private _m   = _x;
+            private _pos = getMarkerPos _m;
+            private _near = allPlayers select { alive _x && (_x distance2D _pos) < _spawnRadius };
+
+            private _idx = -1;
+            {
+                if ((_x select 0) == _m) exitWith { _idx = _forEachIndex };
+            } forEach _live;
+            private _has = _idx >= 0;
+
+            // Spawn if players are nearby and banker not present
+            if ((count _near) > 0 && !_has) then {
+                private _grp = createGroup civilian;
+                private _npc = _grp createUnit [_npcClass, _pos, [], 0, "NONE"];
+                _npc setPosATL (_pos vectorAdd [0,0,1]);
+                _npc disableAI "MOVE";
+                _npc disableAI "PATH";
+                _npc disableAI "TARGET";
+                _npc disableAI "AUTOTARGET";
+                _npc allowFleeing 0;
+                _npc setUnitPos "UP";
+                _npc setBehaviour "SAFE";
+                _npc setCaptive true;
+                removeAllWeapons _npc;
+                removeBackpack _npc;
+                removeUniform _npc;
+                removeHeadgear _npc;
+                _npc forceAddUniform "U_C_FOrmalSuit_01_khaki_F";
+                [_npc] remoteExec ["MRC_fnc_addBankActions", 0, _npc];
+                _live pushBack [_m, _npc, time];
+            };
+
+            // Update last seen when players nearby
+            if ((count _near) > 0 && _has) then {
+                (_live select _idx) set [2, time];
+            };
+
+            // Despawn if no players for grace period
+            if ((count _near) == 0 && _has) then {
+                private _entry = _live select _idx;
+                if ((time - (_entry select 2)) > _despawnGrace) then {
+                    private _u = _entry select 1;
+                    if (!isNull _u) then { deleteVehicle _u };
+                    _live deleteAt _idx;
+                };
+            };
+        } forEach _markers;
+
+        sleep 5;
+    };
 };

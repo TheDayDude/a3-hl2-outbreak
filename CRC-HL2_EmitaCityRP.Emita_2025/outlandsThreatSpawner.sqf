@@ -123,6 +123,7 @@
                                             _u setBehaviour "AWARE"; _u setCombatMode "RED";
                                             _u addEventHandler ["Killed", {
                                                 params ["_dead"];
+                                                missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) - 0.01, true];
                                                 for "_k" from 1 to selectRandom [0,0,1,1] do {
                                                     private _item = createVehicle ["GroundWeaponHolder", getPosATL _dead, [], 0, "NONE"];
                                                     _item addItemCargoGlobal ["VRP_StrangeMeat", 1];
@@ -136,6 +137,7 @@
                                             _u setBehaviour "AWARE"; _u setCombatMode "RED";
                                             _u addEventHandler ["Killed", {
                                                 params ["_dead"];
+                                                missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) - 0.01, true];
                                                 for "_k" from 1 to selectRandom [0,1,1,2] do {
                                                     private _item = createVehicle ["GroundWeaponHolder", getPosATL _dead, [], 0, "NONE"];
                                                     _item addItemCargoGlobal ["VRP_StrangeMeat", 1];
@@ -180,6 +182,7 @@
                                         _u setBehaviour "AWARE"; _u setCombatMode "RED";
                                         _u addEventHandler ["Killed", {
                                             params ["_dead"];
+                                            missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) - 0.01, true];
                                             for "_k" from 1 to selectRandom [0,0,1,1] do {
                                                 private _item = createVehicle ["GroundWeaponHolder", getPosATL _dead, [], 0, "NONE"];
                                                 _item addItemCargoGlobal ["VRP_StrangeMeat", 1];
@@ -193,6 +196,7 @@
                                         _u setBehaviour "AWARE"; _u setCombatMode "RED";
                                         _u addEventHandler ["Killed", {
                                             params ["_dead"];
+                                            missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) - 0.01, true];
                                             for "_k" from 1 to selectRandom [0,1,1,2] do {
                                                 private _item = createVehicle ["GroundWeaponHolder", getPosATL _dead, [], 0, "NONE"];
                                                 _item addItemCargoGlobal ["VRP_StrangeMeat", 1];
