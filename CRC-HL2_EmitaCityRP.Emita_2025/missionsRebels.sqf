@@ -396,8 +396,7 @@ case 3: {
         if (_success) then {
             [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
 
-            // Optional reward for EAST
-            private _amt = 2 + floor random 4; // 2–5 tokens
+            private _amt = 4 + floor random 4;
             {
                 if (side _x == east && alive _x) then {
                     for "_i" from 1 to _amt do { _x addItem "VRP_HL_Token_Item"; };
@@ -595,6 +594,14 @@ case 4: {
             missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 1, true];
             [_rogue] joinSilent _rebelGrp;
             [_markerName] remoteExec ["RRU_fnc_deleteMarker",0];
+            private _amt = 4 + floor random 4;
+            {
+                if (side _x == east && alive _x) then {
+                    for "_i" from 1 to _amt do { _x addItem "VRP_HL_Token_Item"; };
+                };
+            } forEach allPlayers;
+            [format ["Rogue Unit Extracted! He contributes %1 Tokens to your cause.", _amt]]
+                remoteExec ["hintSilent", (allPlayers select { side _x == east }) apply { owner _x }];
         } else {
             if (time > _deadline && alive _rogue && captive _rogue) then { _rogue setDamage 1; };
             [_taskId,"FAILED",true] call BIS_fnc_taskSetState;

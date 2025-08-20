@@ -684,7 +684,7 @@ case 4: {
     if (_posCount >= 5) then {
         [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
         missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
-        private _amt = 2 + floor random 3; // 2–4 tokens
+        private _amt = 5 + floor random 4;
         {
             if (side _x == civilian && alive _x) then {
                 for "_i" from 1 to _amt do { _x addItem "VRP_HL_Token_Item"; };

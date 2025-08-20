@@ -92,7 +92,7 @@ case 1: {
             missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
 
             // Reward BLUFOR (2–5 tokens each)
-            private _amount  = 2 + floor random 5;
+            private _amount  = 4 + floor random 5;
             private _targets = allPlayers select { side _x == west && alive _x };
             {
                 for "_i" from 1 to _amount do { _x addItem "VRP_HL_Token_Item"; };
@@ -380,6 +380,21 @@ case 4: {
         publicVariable "CMB_fnc_removeConscriptAction";
     };
 
+    if (isNil "CMB_fnc_monitorBarracks") then {
+        CMB_fnc_monitorBarracks = {
+            params ["_taskId"];
+            [_taskId] spawn {
+                params ["_tid"];
+                waitUntil {
+                    sleep 3;
+                    player distance (getMarkerPos "conscript_barracks") < 10
+                };
+                [_tid, "SUCCEEDED", true] call BIS_fnc_taskSetState;
+            };
+        };
+        publicVariable "CMB_fnc_monitorBarracks";
+    };
+
     if (isNil "CMB_fnc_conscriptServer") then {
         CMB_fnc_conscriptServer = {
             params ["_target","_caller"];
@@ -441,6 +456,7 @@ case 4: {
                     _target setVariable ["wasConscript", true, true];
                     private _tid = format ["task_report_%1", getPlayerUID _target];
                     [_target, _tid, ["Report to conscript barracks and suit up.","Report to Barracks",""], getMarkerPos "conscript_barracks", true] remoteExec ["BIS_fnc_taskCreate", _target];
+                    [_tid] remoteExec ["CMB_fnc_monitorBarracks", _target];
                 } else {
                     deleteVehicle _target;
                     private _conClasses = ["WBK_HL_Conscript_1","WBK_HL_Conscript_2","WBK_HL_Conscript_3"];
