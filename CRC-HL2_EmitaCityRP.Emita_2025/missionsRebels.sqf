@@ -199,16 +199,19 @@ case 2: {
             _target switchMove "";
             if (random 1 < 0.7) then {
                 _target removeEventHandler ["Killed", _target getVariable ["rr_killEh",-1]];
-				[_target] joinSilent createGroup east;
-				sleep 1;
-                [_target] joinSilent (group _caller);
-                removeAllWeapons _target;
-                _target addWeapon "WBK_CP_HeavySmg_Resist";
-                for "_m" from 1 to 3 do { _target addMagazine "HLB_HSMG_Mag"; };
-                _target selectWeapon "WBK_CP_HeavySmg_Resist";
+                private _pos = getPos _target;
+                private _dir = getDir _target;
+                private _grp = group _caller;
+                deleteVehicle _target;
+                private _rebelClasses = [
+                    "WBK_Rebel_Rifleman_1","WBK_Rebel_Rifleman_2","WBK_Rebel_Rifleman_3",
+                    "WBK_Rebel_SMG_1","WBK_Rebel_Shotgunner_2","WBK_Rebel_Medic_1"
+                ];
+                private _new = _grp createUnit [selectRandom _rebelClasses, _pos, [], 0, "FORM"];
+                _new setDir _dir;
                 missionNamespace setVariable ["rr_recruited", (missionNamespace getVariable ["rr_recruited",0]) + 1];
                 ["You're right. We can't just sit here and do nothing."] remoteExec ["systemChat", owner _caller];
-                [_target, "rebel_announcekill_01"] remoteExecCall ["say3D", 0];
+                [_new, "rebel_announcekill_01"] remoteExecCall ["say3D", 0];
             } else {
                 _target removeEventHandler ["Killed", _target getVariable ["rr_killEh",-1]];
                 missionNamespace setVariable ["rr_failed", (missionNamespace getVariable ["rr_failed",0]) + 1];

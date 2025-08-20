@@ -430,28 +430,30 @@ case 4: {
             } else {
                 // Success: joins Combine
                 missionNamespace setVariable ["cd_recruited", (missionNamespace getVariable ['cd_recruited',0]) + 1];
-				[_target] joinSilent createGroup west;
-				sleep 1;
-                [_target] joinSilent (group _caller);
-                _target setVariable ["cd_state","recruited", true];
-				[_target, "G_HECU_announcekill_04"] remoteExecCall ["say3D", 0];
-
+                _target removeEventHandler ["Killed", _target getVariable ["cd_killEh",-1]];
+                private _pos = getPos _target;
+                private _dir = getDir _target;
+                private _grp = group _caller;
                 if (isPlayer _target) then {
+                    [_target] joinSilent createGroup west;
+                    sleep 1;
+                    [_target] joinSilent _grp;
+                    _target setVariable ["cd_state","recruited", true];
+                    [_target, "G_HECU_announcekill_04"] remoteExecCall ["say3D", 0];
                     _target setVariable ["wasConscript", true, true];
                     private _tid = format ["task_report_%1", getPlayerUID _target];
                     [_target, _tid, ["Report to conscript barracks and suit up.","Report to Barracks",""], getMarkerPos "conscript_barracks", true] remoteExec ["BIS_fnc_taskCreate", _target];
                 } else {
-                    removeAllWeapons _target;
-                    removeUniform _target;
-                    removeHeadgear _target;
-                    removeGoggles _target;
-                    _target forceAddUniform "U_BDU_Raid_od7";
-                    _target addHeadgear "H_combine_helmet_low";
-                    _target addGoggles "G_Balaclava_cloth_blk_F";
-                    _target addWeapon "hlc_rifle_G36C";
-                    for "_m" from 1 to 4 do { _target addMagazine "hlc_30rnd_556x45_EPR_G36"; };
-                    _target selectWeapon "hlc_rifle_G36C";
-					_target setVariable ["WBK_CombineType"," g_hecu_",true];	
+                    deleteVehicle _target;
+                    private _conClasses = ["WBK_HL_Conscript_1","WBK_HL_Conscript_2","WBK_HL_Conscript_3"];
+                    private _new = _grp createUnit [selectRandom _conClasses, _pos, [], 0, "FORM"];
+                    _new setDir _dir;
+                    _new setVariable ["cd_state","recruited", true];
+                    removeAllWeapons _new;
+                    _new addWeapon "hlc_rifle_G36C";
+                    for "_m" from 1 to 4 do { _new addMagazine "hlc_30rnd_556x45_EPR_G36"; };
+                    _new selectWeapon "hlc_rifle_G36C";
+                    [_new, "G_HECU_announcekill_04"] remoteExecCall ["say3D", 0];
                 };
             };
         };
