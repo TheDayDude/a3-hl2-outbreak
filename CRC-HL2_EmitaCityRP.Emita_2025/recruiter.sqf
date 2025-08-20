@@ -62,26 +62,56 @@ if (isNil "CPF_fnc_recruitServer") then {
 [] spawn {
     waitUntil { !isNil "CPF_fnc_addRecruiterAction" && !isNil "CPF_fnc_recruitServer" };
 
-    private _pos = getMarkerPos "recruiter";
-    if (_pos isEqualTo [0,0,0]) exitWith { diag_log "[RECRUITER] Marker 'recruiter' not found."; };
+    private _marker = "recruiter";
+    private _spawnRadius  = 100;
+    private _despawnGrace = 30;
+    private _rec = objNull;
+    private _lastSeen = 0;
 
-    private _grp = createGroup west;
-    private _r   = _grp createUnit ["WBK_Combine_CP_P", _pos, [], 0, "NONE"];
-    _r setPosATL (_pos vectorAdd [0,0,1]);
-    _r disableAI "MOVE";
-    _r disableAI "PATH";
-    _r disableAI "TARGET";
-    _r disableAI "AUTOTARGET";
-    _r allowFleeing 0;
-    _r setUnitPos "UP";
-    _r setBehaviour "SAFE";
-    _r setCaptive true;
-    removeAllWeapons _r;
-    removeBackpack _r;
-    removeUniform _r;
-    removeHeadgear _r;
-    _r forceAddUniform "Z_C18_Uniform_7";
-    _r addHeadgear "H_SM_CMBMask";
+        private _spawnRecruiter = {
+        private _pos = getMarkerPos _marker;
+        if (_pos isEqualTo [0,0,0]) exitWith { diag_log "[RECRUITER] Marker 'recruiter' not found."; objNull };
 
-    [_r] remoteExec ["CPF_fnc_addRecruiterAction", 0, true];
+        private _grp = createGroup west;
+        private _r   = _grp createUnit ["WBK_Combine_CP_P", _pos, [], 0, "NONE"];
+        _r setPosATL (_pos vectorAdd [0,0,1]);
+        _r disableAI "MOVE";
+        _r disableAI "PATH";
+        _r disableAI "TARGET";
+        _r disableAI "AUTOTARGET";
+        _r allowFleeing 0;
+        _r setUnitPos "UP";
+        _r setBehaviour "SAFE";
+        _r setCaptive true;
+        removeAllWeapons _r;
+        removeBackpack _r;
+        removeUniform _r;
+        removeHeadgear _r;
+        _r forceAddUniform "Z_C18_Uniform_7";
+        _r addHeadgear "H_SM_CMBMask";
+
+        [_r] remoteExec ["CPF_fnc_addRecruiterAction", 0, true];
+        _r
+    };
+
+    while { true } do {
+        private _pos = getMarkerPos _marker;
+        private _near = allPlayers select { alive _x && (_x distance2D _pos) < _spawnRadius };
+
+        if ((count _near) > 0) then {
+            if (isNull _rec) then {
+                _rec = call _spawnRecruiter;
+            };
+            _lastSeen = time;
+        } else {
+            if (!isNull _rec && { (time - _lastSeen) > _despawnGrace }) then {
+                private _grp = group _rec;
+                deleteVehicle _rec;
+                deleteGroup _grp;
+                _rec = objNull;
+            };
+        };
+
+        sleep 5;
+    };
 };

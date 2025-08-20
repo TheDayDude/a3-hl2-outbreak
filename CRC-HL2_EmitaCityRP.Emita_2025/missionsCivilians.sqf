@@ -94,7 +94,7 @@ case 1: {
     [_taskId, _truck, _hcGrp, _hcList, _can] spawn {
         params ["_taskId","_truck","_hcGrp","_hcList","_can"];
 
-        private _deadline = time + 2700; // 1 hour
+        private _deadline = time + 2700;
         private _success  = false;
 
         waitUntil {
@@ -272,7 +272,7 @@ case 2: {
     // Monitor success/fail and clean up
     [_taskId,_patients,_grp] spawn {
         params ["_taskId","_patients","_grp"];
-        private _deadline = time + 2700; // 1 hour
+        private _deadline = time + 2700;
 
         waitUntil {
             sleep 3;
@@ -673,17 +673,15 @@ case 4: {
         _civs pushBack _c;
     };
 
-    private _deadline = time + 1800; // 30 minutes
+    private _deadline = time + 2700;
     private _posCount = 0;
-    private _negCount = 0;
     waitUntil {
         sleep 5;
         _posCount = missionNamespace getVariable ["CIV_Prop_PosCount",0];
-        _negCount = missionNamespace getVariable ["CIV_Prop_NegCount",0];
-        (_posCount >= 5) || (_negCount >= 6) || (time > _deadline)
+        (_posCount >= 5) || (time > _deadline)
     };
 
-    if (_posCount > 5) then {
+    if (_posCount >= 5) then {
         [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
         missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
         private _amt = 2 + floor random 3; // 2–4 tokens

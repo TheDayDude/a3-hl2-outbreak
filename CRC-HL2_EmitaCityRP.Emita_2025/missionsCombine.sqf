@@ -394,7 +394,6 @@ case 4: {
 
             if (random 1 < 0.3) then {
                 // Resist: becomes OpFor
-                missionNamespace setVariable ["cd_failed", (missionNamespace getVariable ['cd_failed',0]) + 1];
                 [_target] joinSilent createGroup east;
                 _target setVariable ["cd_state","resisted", true];
 				[_target, "rebel_squadmemberlost_01"] remoteExecCall ["say3D", 0];
@@ -430,7 +429,6 @@ case 4: {
             } else {
                 // Success: joins Combine
                 missionNamespace setVariable ["cd_recruited", (missionNamespace getVariable ['cd_recruited',0]) + 1];
-                _target removeEventHandler ["Killed", _target getVariable ["cd_killEh",-1]];
                 private _pos = getPos _target;
                 private _dir = getDir _target;
                 private _grp = group _caller;
@@ -485,11 +483,6 @@ case 4: {
         _civs pushBack _civ;
         _civ setVariable ["cd_state", "pending", true];
 
-        private _eh = _civ addEventHandler ["Killed", {
-            missionNamespace setVariable ["cd_failed", (missionNamespace getVariable ["cd_failed",0]) + 1];
-        }];
-        _civ setVariable ["cd_killEh", _eh];
-
         [_grp, _pos, 80] call BIS_fnc_taskPatrol;
 
         [_civ] remoteExec ["CMB_fnc_addConscriptAction", 0, true];
@@ -514,12 +507,10 @@ case 4: {
         waitUntil {
             sleep 3;
             (missionNamespace getVariable ["cd_recruited",0] >= 5) ||
-            (missionNamespace getVariable ["cd_failed",0] >= 6) ||
             (time > _deadline)
         };
 
         private _recruited = missionNamespace getVariable ["cd_recruited",0];
-        private _failed = missionNamespace getVariable ["cd_failed",0];
 
         if (_recruited >= 5) then {
             [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;

@@ -107,7 +107,7 @@ case 1: {
     [_taskId, _ordinal, _spawnedGroups, _spawnedUnits, _props] spawn {
         params ["_taskId","_ordinal","_groups","_units","_props"];
 
-        private _deadline = time + 3600; // 1 hour fallback
+        private _deadline = time + 2700;
 
         waitUntil {
             sleep 3;
@@ -198,7 +198,6 @@ case 2: {
             uiSleep 8;
             _target switchMove "";
             if (random 1 < 0.7) then {
-                _target removeEventHandler ["Killed", _target getVariable ["rr_killEh",-1]];
                 private _pos = getPos _target;
                 private _dir = getDir _target;
                 private _grp = group _caller;
@@ -213,8 +212,6 @@ case 2: {
                 ["You're right. We can't just sit here and do nothing."] remoteExec ["systemChat", owner _caller];
                 [_new, "rebel_announcekill_01"] remoteExecCall ["say3D", 0];
             } else {
-                _target removeEventHandler ["Killed", _target getVariable ["rr_killEh",-1]];
-                missionNamespace setVariable ["rr_failed", (missionNamespace getVariable ["rr_failed",0]) + 1];
                 ["Are you crazy? Get out of here!"] remoteExec ["systemChat", owner _caller];
 				[_target, "rebel_squadmemberlost_01"] remoteExecCall ["say3D", 0];
                 private _runPos = _target getPos [100, _target getDir _caller];
@@ -234,7 +231,6 @@ case 2: {
     };
 
     missionNamespace setVariable ["rr_recruited", 0];
-    missionNamespace setVariable ["rr_failed", 0];
 
     private _spawnCount = 10;
     private _civClasses = ["HL_CIV_Man_01","HL_CIV_Man_02","CombainCIV_Uniform_1_Body"];
@@ -250,11 +246,6 @@ case 2: {
         _civs pushBack _civ;
         _civ setVariable ["rr_state", "pending", true];
 
-        private _eh = _civ addEventHandler ["Killed", {
-            missionNamespace setVariable ["rr_failed", (missionNamespace getVariable ["rr_failed",0]) + 1];
-        }];
-        _civ setVariable ["rr_killEh", _eh];
-
         [_grp, _pos, 80] call BIS_fnc_taskPatrol;
 
         [_civ] remoteExec ["RBL_fnc_addRecruitAction", 0, true];
@@ -268,18 +259,17 @@ case 2: {
 
     [_taskId, _civs] spawn {
         params ["_taskId","_civs"];
-        private _deadline = time + 3600; // 1 hour
+        private _deadline = time + 2700;
         waitUntil {
             sleep 3;
             (missionNamespace getVariable ["rr_recruited",0] >= 5) ||
-            (missionNamespace getVariable ["rr_failed",0] >= 6) ||
             (time > _deadline)
         };
 
         private _recruited = missionNamespace getVariable ["rr_recruited",0];
         private _failed = missionNamespace getVariable ["rr_failed",0];
 
-        if (_recruited >= 10) then {
+        if (_recruited >= 5) then {
             [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
             ["Enough citizens have joined the cause!"] remoteExec ["systemChat", (allPlayers select { side _x == east }) apply { owner _x }];
             missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 1, true];
@@ -394,7 +384,7 @@ case 3: {
     [_taskId, _truck, _truckPos, _groups, _units, _props] spawn {
         params ["_taskId","_truck","_spawnPos","_groups","_units","_props"];
 
-        private _deadline = time + 3600; // 1 hour
+        private _deadline = time + 2700;
         private _success  = false;
 
         waitUntil {

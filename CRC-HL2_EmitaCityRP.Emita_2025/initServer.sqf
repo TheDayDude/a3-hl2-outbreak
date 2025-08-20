@@ -159,7 +159,6 @@ private _defaults = [
 //garbagio cleanup
 [] spawn {
     while {true} do {
-        // Wait 55 minutes (6600 seconds)
         sleep 6600;
 
         // 5-minute warning
@@ -215,7 +214,7 @@ TAG_fnc_requestCivMission = {
 
     private _last = missionNamespace getVariable ["lastMissionRequestCivilian", -99999];
 
-    if (time - _last < 1200) exitWith {
+    if (time - _last < 900) exitWith {
         ["No missions ready. Come back later."] remoteExec ["hintSilent", _caller];
     };
 
@@ -232,7 +231,7 @@ TAG_fnc_requestRebelsMission = {
 
     private _last = missionNamespace getVariable ["lastMissionRequestRebels", -99999];
 
-    if (time - _last < 1200) exitWith {
+    if (time - _last < 900) exitWith {
         ["No missions ready. Come back later."] remoteExec ["hintSilent", _caller];
     };
 
@@ -248,7 +247,7 @@ TAG_fnc_requestCombineMission = {
 
     private _last = missionNamespace getVariable ["lastMissionRequestCombine", -99999];
 
-    if (time - _last < 1200) exitWith {
+    if (time - _last < 900) exitWith {
         ["No missions ready. Come back later."] remoteExec ["hintSilent", _caller];
     };
 
