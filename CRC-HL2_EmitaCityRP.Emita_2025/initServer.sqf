@@ -85,7 +85,8 @@ private _defaults = [
     ["Biomass", 5],
     ["PlasmaLevel", 5],
     ["Infestation", 50],
-    ["Sociostability", 50]
+    ["Sociostability", 50],
+    ["PortalStormTimer", 0]
 ];
 
 {
@@ -114,12 +115,21 @@ private _defaults = [
 
 [] spawn {
     while {true} do {
-        private _infestation = missionNamespace getVariable ["Infestation", 50];
-        private _hours = (4 - (_infestation / 25)) max 0.5;
-        private _interval = _hours * 3600;
-        private _delay = _interval + random (_interval * 0.25);
-        sleep _delay;
+        private _timer = missionNamespace getVariable ["PortalStormTimer", 0];
+        if (_timer <= 0) then {
+            private _infestation = missionNamespace getVariable ["Infestation", 50];
+            private _hours = (4 - (_infestation / 25)) max 0.5;
+            private _interval = _hours * 3600;
+            _timer = _interval + random (_interval * 0.25);
+            missionNamespace setVariable ["PortalStormTimer", _timer, true];
+        };
+        while {_timer > 0} do {
+            sleep 30;
+            _timer = _timer - 30;
+            missionNamespace setVariable ["PortalStormTimer", _timer, true];
+        };
         [] spawn portalStorm_fnc_start;
+        missionNamespace setVariable ["PortalStormTimer", 0, true];
     };
 };
 

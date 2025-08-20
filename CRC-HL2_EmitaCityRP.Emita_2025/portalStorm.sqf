@@ -17,43 +17,45 @@ portalStorm_fnc_start = {
 	
 {
     private _player = _x;
-    private _pos = getPos _player;
-    private _dir = random 360;
-    private _spawnPos = _pos vectorAdd [100 * cos _dir, 100 * sin _dir, 0];
+    for "_g" from 1 to 2 do {
+        private _pos = getPos _player;
+        private _dir = random 360;
+        private _spawnPos = _pos vectorAdd [100 * cos _dir, 100 * sin _dir, 0];
 
-    private _grp = createGroup resistance;
+        private _grp = createGroup resistance;
 
-    for "_i" from 1 to (3 + floor random 5) do {
-        private _type = selectRandom _xenClassnames;
-        private _unit = _grp createUnit [_type, _spawnPos, [], 0, "FORM"];
-		
-		_unit addEventHandler ["Killed", {
-			params ["_dead", "_killer"];
-			missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) - 0.01, true];
-			private _meatCount = selectRandom [0,1,1,2];
-			for "_i" from 1 to _meatCount do {
-				private _item = createVehicle ["GroundWeaponHolder", getPosATL _dead, [], 0, "NONE"];
-				_item addItemCargoGlobal ["VRP_StrangeMeat", 1];
-		};
-	}];
-		
-		private _soundSource = createSoundSource ["XenTele", _spawnPos, [], 0];
+        for "_i" from 1 to (3 + floor random 5) do {
+            private _type = selectRandom _xenClassnames;
+            private _unit = _grp createUnit [_type, _spawnPos, [], 0, "FORM"];
 
-		private _light = "#lightpoint" createVehicleLocal _spawnPos;
-		_light setLightColor [0.2, 1, 0.6];
-		_light setLightBrightness 10;
-		_light setLightAmbient [0.1, 0.6, 0.3];
-		_light setLightAttenuation [0.5, 0, 100, 130];
-		_light setLightDayLight true;
+            _unit addEventHandler ["Killed", {
+                params ["_dead", "_killer"];
+                missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) - 0.01, true];
+                private _meatCount = selectRandom [0,1,1,2];
+                for "_i" from 1 to _meatCount do {
+                    private _item = createVehicle ["GroundWeaponHolder", getPosATL _dead, [], 0, "NONE"];
+                    _item addItemCargoGlobal ["VRP_StrangeMeat", 1];
+                };
+            }];
+        };
 
-		[_light] spawn {
-			sleep 5;
-			deleteVehicle (_this select 0);
-		};
-		[_soundSource] spawn {
-			sleep 5;
-			deleteVehicle (_this select 0);
-		};
+        private _soundSource = createSoundSource ["XenTele", _spawnPos, [], 0];
+
+        private _light = "#lightpoint" createVehicleLocal _spawnPos;
+        _light setLightColor [0.2, 1, 0.6];
+        _light setLightBrightness 10;
+        _light setLightAmbient [0.1, 0.6, 0.3];
+        _light setLightAttenuation [0.5, 0, 100, 130];
+        _light setLightDayLight true;
+
+        [_light] spawn {
+            sleep 5;
+            deleteVehicle (_this select 0);
+        };
+        [_soundSource] spawn {
+            sleep 5;
+            deleteVehicle (_this select 0);
+        };
     };
 } forEach allPlayers;
 
