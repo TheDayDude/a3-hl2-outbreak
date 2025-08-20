@@ -25,7 +25,7 @@ if (isNil "MRC_fnc_savePlayerState") then {
             _unit getVariable ["CID_Number", nil]
         ]];
         saveProfileNamespace;
-        ["State saved"] remoteExec ["hint", _unit];
+        ["Autosave Complete."] remoteExec ["systemChat", owner _unit];
     };
 };
 
