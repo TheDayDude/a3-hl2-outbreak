@@ -56,7 +56,9 @@ if (isNil "MRC_fnc_restorePlayerState") then {
                 [_unit] joinSilent createGroup _side;
             };
             ["Applying saved data"] remoteExec ["hint", _unit];
-            [_pos, _loadout, _combine, _arm, _armMax, _isOTA, _canFake] remoteExec ["MRC_fnc_applyPlayerState", _unit];
+            _unit setVariable ["HasCID", _hasCID, true];
+            _unit setVariable ["CID_Number", _cid, true];
+            [_pos, _loadout, _combine, _arm, _armMax, _isOTA, _canFake, _hasCID, _cid] remoteExec ["MRC_fnc_applyPlayerState", _unit];
         };
         _unit setVariable ["MRC_stateRestored", true];
         ["Restore complete"] remoteExec ["hint", _unit];

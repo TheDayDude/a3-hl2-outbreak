@@ -1,8 +1,8 @@
 if (isNil "MRC_fnc_applyPlayerState") then {
     MRC_fnc_applyPlayerState = {
-        params ["_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFakeID"];
-        [_pos, _loadout, _combine, _arm, _armMax, _isOTA, _canFakeID] spawn {
-            params ["_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFakeID"];
+        params ["_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFakeID", "_hasCID", "_cid"];
+        [_pos, _loadout, _combine, _arm, _armMax, _isOTA, _canFakeID, _hasCID, _cid] spawn {
+            params ["_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFakeID", "_hasCID", "_cid"];
             hint "Restoring position";
             player setPosATL _pos;
             sleep 1;
@@ -15,6 +15,8 @@ if (isNil "MRC_fnc_applyPlayerState") then {
             player setVariable ["WBK_HL_CustomArmour_Max", _armMax, true];
             player setVariable ["isOTA", _isOTA, true];
             player setVariable ["CanBuyFakeID", _canFakeID, true];
+            player setVariable ["HasCID", _hasCID, true];
+            player setVariable ["CID_Number", _cid, true];            
             sleep 1;
             hint "State restore complete";
         };
@@ -31,7 +33,10 @@ if (isNil "MRC_fnc_applyPlayerState") then {
 [] spawn {
     waitUntil { player getVariable ["MRC_stateRestored", false] };
     if (isNil { player getVariable ["CID_Number", nil] }) then {
-        [player] remoteExec ["MRC_fnc_assignCID", 2];
+        sleep 1;
+        if (isNil { player getVariable ["CID_Number", nil] }) then {
+            [player] remoteExec ["MRC_fnc_assignCID", 2];
+        };
     };
 };
 

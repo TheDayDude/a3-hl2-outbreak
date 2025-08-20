@@ -24,7 +24,7 @@ if (_cityMarkers isEqualTo []) exitWith {};
             if (_near) then {
                 if (_idx < 0) then {
                     private _grp  = createGroup civilian;
-                    private _cnt  = 1 + floor random 3;
+                    private _cnt  = 1 + floor random 2;
                     for "_i" from 1 to _cnt do {
                         private _sp = [_pos, 5, 30, 0, 0, 20, 0] call BIS_fnc_findSafePos;
                         private _u  = _grp createUnit [selectRandom _civTypes, _sp, [], 0, "FORM"];
