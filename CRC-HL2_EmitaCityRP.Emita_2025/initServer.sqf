@@ -139,7 +139,20 @@ private _defaults = [
             Biomass = Biomass + 1;
             publicVariable "Biomass";
         };
-        sleep 300; 
+        sleep 300;
+    };
+};
+
+// NPC ration distribution every hour
+[] spawn {
+    while {true} do {
+        sleep 3600;
+
+        private _stock = missionNamespace getVariable ["RationStock", 0];
+        private _deduct = 5 + floor (random 11); // 5-15
+        private _newStock = (_stock - _deduct) max 0;
+
+        missionNamespace setVariable ["RationStock", _newStock, true];
     };
 };
 

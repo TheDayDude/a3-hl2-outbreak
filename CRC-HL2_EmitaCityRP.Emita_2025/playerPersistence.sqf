@@ -44,29 +44,19 @@ if (isNil "MRC_fnc_restorePlayerState") then {
             [_unit] call MRC_fnc_assignCID;
         } else {
             _data params ["_sideStr", "_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFake", "_hasCID", "_cid"];
-            private _side = missionNamespace getVariable [toLower _sideStr, civilian];
+            private _side = switch (_sideStr) do {
+                case "WEST": {west};
+                case "EAST": {east};
+                case "GUER": {independent};
+                case "CIV": {civilian};
+                default {civilian};
+            };
             if (side _unit != _side) then {
                 ["Switching side"] remoteExec ["hint", _unit];
                 [_unit] joinSilent createGroup _side;
             };
             ["Applying saved data"] remoteExec ["hint", _unit];
             [_pos, _loadout, _combine, _arm, _armMax, _isOTA, _canFake] remoteExec ["MRC_fnc_applyPlayerState", _unit];
-                        if (_hasCID && !isNil "_cid") then {
-                _unit setVariable ["HasCID", true, true];
-                _unit setVariable ["CID_Number", _cid, true];
-                if (isNil "Global_CID_Registry") then {
-                    Global_CID_Registry = [];
-                    publicVariable "Global_CID_Registry";
-                };
-                if !(_cid in Global_CID_Registry) then {
-                    Global_CID_Registry pushBack _cid;
-                    publicVariable "Global_CID_Registry";
-                };
-                CID_Loyalty set [_cid, CID_Loyalty getOrDefault [_cid, 0]];
-                CID_Malcompliance set [_cid, CID_Malcompliance getOrDefault [_cid, 0]];
-            } else {
-                [_unit] call MRC_fnc_assignCID;
-            };
         };
         _unit setVariable ["MRC_stateRestored", true];
         ["Restore complete"] remoteExec ["hint", _unit];

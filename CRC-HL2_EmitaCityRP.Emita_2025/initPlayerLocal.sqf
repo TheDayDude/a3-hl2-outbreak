@@ -21,6 +21,7 @@ if (isNil "MRC_fnc_applyPlayerState") then {
     };
 };
 
+
 [] spawn {
     waitUntil {sleep 1; !isNull player};
     hint "Requesting saved state";
@@ -100,7 +101,7 @@ sleep 2;
             _invTokens,
             _bankTokens
         ];
-        [_text, safeZoneX + safeZoneW / 2 - 0.7, safeZoneY + 0.02, 30, 0, 0] spawn BIS_fnc_dynamicText;
+        [_text, safeZoneX + safeZoneW / 2 - 0.5, safeZoneY + 0.02, 30, 0, 0] spawn BIS_fnc_dynamicText;
         sleep 2;
     };
 };
