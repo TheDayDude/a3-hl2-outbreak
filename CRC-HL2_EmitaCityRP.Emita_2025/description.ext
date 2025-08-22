@@ -25,6 +25,12 @@ class CfgSounds
   sound[] = {"\breencastc18.ogg", 100, 1, 1};
   titles[] = {};
  };
+  class Void
+ {
+  name = "Void";
+  sound[] = {"\void.ogg", 100, 1, 1};
+  titles[] = {};
+ };
 };
 
 class CfgSFX
@@ -50,6 +56,13 @@ class CfgSFX
 		sfxsound[] = { "\Xentele.ogg", 10, 1, 500, 1, 1, 2, 3};
 		empty[] = {"", 0, 0, 0, 0, 0, 0, 0,};
 	};
+	class Void
+	{
+		name="Void";
+		sounds[]= {"sfxsound"};
+		sfxsound[] = { "\Void.ogg", 10, 1, 500, 1, 1, 2, 3};
+		empty[] = {"", 0, 0, 0, 0, 0, 0, 0,};
+	};
 };
 
 class CfgVehicles
@@ -61,5 +74,9 @@ class CfgVehicles
 	class judgement
 	{
 		sound = "judgement";
+	};
+		class Void
+	{
+		sound = "Void";
 	};
 };
