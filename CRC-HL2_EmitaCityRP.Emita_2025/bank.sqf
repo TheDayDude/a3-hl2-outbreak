@@ -22,6 +22,9 @@ if (isNil "MRC_fnc_bankServer") then {
         switch (_op) do {
             case "DEPOSIT": {
                 private _have = { _x == "VRP_HL_Token_Item" } count (items _caller);
+                if (_amt <= 0) exitWith {
+                    ["No tokens to deposit."] remoteExec ["hintSilent", owner _caller];
+                };
                 if (_have < _amt) exitWith {
                     ["Not enough tokens."] remoteExec ["hintSilent", owner _caller];
                 };
@@ -83,6 +86,20 @@ if (isNil "MRC_fnc_addBankActions") then {
                 "_this distance _target < 4"
             ];
         } forEach _acts;
+        _npc addAction [
+            "<t color='#FFD700'>Deposit All Tokens</t>",
+            {
+                params ["_t","_caller"];
+                [_t, _caller] remoteExecCall ["MRC_fnc_facePlayer", 2];
+                private _have = { _x == "VRP_HL_Token_Item" } count (items _caller);
+                if (_have <= 0) exitWith {
+                    ["No tokens to deposit."] remoteExec ["hintSilent", owner _caller];
+                };
+                ["DEPOSIT", _have, _caller] remoteExecCall ["MRC_fnc_bankServer", 2];
+            },
+            nil, 1.5, true, true, "",
+            "_this distance _target < 4"
+        ];
         _npc addAction [
             "<t color='#A0FFA0'>Check Bank Balance</t>",
             {

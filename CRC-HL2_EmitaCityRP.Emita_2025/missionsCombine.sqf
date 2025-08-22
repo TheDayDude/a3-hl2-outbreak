@@ -316,7 +316,17 @@ case 3: {
             if (!isNull _hive) then { deleteVehicle _hive; };
             missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) - 1, true];
 
-            // grace period then cleanup any surviving ants
+            // Reward BLUFOR (6–10 tokens each)
+            private _amount  = 6 + floor random 5;
+            private _targets = allPlayers select { side _x == west && alive _x };
+            {
+                for "_i" from 1 to _amount do { _x addItem "VRP_HL_Token_Item"; };
+            } forEach _targets;
+
+            [format ["Hive destroyed. You received %1 tokens for your service.", _amount]]
+                remoteExec ["hintSilent", _targets apply { owner _x }];
+
+            // Grace period then cleanup any surviving ants
             sleep 300;
             { if (!isNull _x) then { deleteVehicle _x }; } forEach _units;
 
@@ -464,9 +474,11 @@ case 4: {
                     _new setDir _dir;
                     _new setVariable ["cd_state","recruited", true];
                     removeAllWeapons _new;
-                    _new addWeapon "hlc_rifle_G36C";
+                    sleep 0.1;
                     for "_m" from 1 to 4 do { _new addMagazine "hlc_30rnd_556x45_EPR_G36"; };
+                    _new addWeapon "hlc_rifle_G36C";
                     _new selectWeapon "hlc_rifle_G36C";
+                    sleep 0.1;
                     [_new, "G_HECU_announcekill_04"] remoteExecCall ["say3D", 0];
                 };
             };
@@ -532,6 +544,16 @@ case 4: {
             [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
             ["Enough citizens have been conscripted!"] remoteExec ["systemChat", (allPlayers select { side _x == west }) apply { owner _x }];
             missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
+            
+            // Reward BLUFOR (4–8 tokens each)
+            private _amount  = 4 + floor random 5;
+            private _targets = allPlayers select { side _x == west && alive _x };
+            {
+                for "_i" from 1 to _amount do { _x addItem "VRP_HL_Token_Item"; };
+            } forEach _targets;
+
+            [format ["Conscription successful. You received %1 tokens.", _amount]]
+                remoteExec ["hintSilent", _targets apply { owner _x }];
         } else {
             [_taskId, "FAILED", true] call BIS_fnc_taskSetState;
             ["Too few citizens were conscripted. Mission failed."] remoteExec ["systemChat", (allPlayers select { side _x == west }) apply { owner _x }];
