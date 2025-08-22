@@ -390,16 +390,70 @@ case 4: {
         publicVariable "CMB_fnc_removeConscriptAction";
     };
 
+    if (isNil "CMB_fnc_spawnCPFResponse") then {
+        CMB_fnc_spawnCPFResponse = {
+            params ["_target"];
+            if (isNull _target) exitWith {};
+            private _types = ["WBK_Combine_CP_P","WBK_Combine_CP_SB","WBK_Combine_CP_SMG"];
+            private _grp = createGroup west;
+            private _units = [];
+            for "_i" from 1 to 3 do {
+                private _pos = _target getPos [50 + random 50, random 360];
+                private _u = _grp createUnit [selectRandom _types, _pos, [], 0, "FORM"];
+                if (!isNull _u) then { _units pushBack _u; };
+            };
+            _grp setBehaviour "AWARE";
+            _grp setCombatMode "RED";
+            [_grp, _target] spawn {
+                params ["_grp","_t"];
+                while { alive _t && {({alive _x} count units _grp) > 0} } do {
+                    _grp doMove (getPos _t);
+                    sleep 10;
+                };
+            };
+            [_grp, _units, _target] spawn {
+                params ["_grp","_units","_t"];
+                private _end = time + 300;
+                waitUntil {
+                    sleep 5;
+                    ({alive _x} count _units) == 0 || !alive _t || time > _end
+                };
+                sleep 30;
+                { if (!isNull _x) then { deleteVehicle _x }; } forEach _units;
+            };
+        };
+        publicVariable "CMB_fnc_spawnCPFResponse";
+    };
+
+    if (isNil "CMB_fnc_conscriptEvasion") then {
+        CMB_fnc_conscriptEvasion = {
+            params ["_player","_taskId"];
+            if (isNull _player) exitWith {};
+            [_taskId, "FAILED", true] remoteExec ["BIS_fnc_taskSetState", _player];
+            _player setVariable ["cd_state","evaded", true];
+            [_player] joinSilent createGroup east;
+            _player addRating -100000;
+            [_player] call CMB_fnc_spawnCPFResponse;
+        };
+        publicVariable "CMB_fnc_conscriptEvasion";
+    };
+
     if (isNil "CMB_fnc_monitorBarracks") then {
         CMB_fnc_monitorBarracks = {
-            params ["_taskId"];
-            [_taskId] spawn {
-                params ["_tid"];
+            params ["_taskId","_player"];
+            if (isNull _player) exitWith {};
+            [_taskId,_player] spawn {
+                params ["_tid","_plr"];
+                private _deadline = time + 600;
                 waitUntil {
                     sleep 3;
-                    player distance (getMarkerPos "conscript_barracks") < 10
+                    (_plr distance (getMarkerPos "conscript_barracks") < 10) || time > _deadline || !alive _plr
                 };
-                [_tid, "SUCCEEDED", true] call BIS_fnc_taskSetState;
+                if (_plr distance (getMarkerPos "conscript_barracks") < 10) then {
+                    [_tid, "SUCCEEDED", true] remoteExec ["BIS_fnc_taskSetState", _plr];
+                } else {
+                    [_plr, _tid] call CMB_fnc_conscriptEvasion;
+                };
             };
         };
         publicVariable "CMB_fnc_monitorBarracks";
@@ -417,57 +471,60 @@ case 4: {
             uiSleep 8;
             _target switchMove "";
 
-            if (random 1 < 0.3) then {
-                // Resist: becomes OpFor
-                [_target] joinSilent createGroup east;
-                _target setVariable ["cd_state","resisted", true];
-				[_target, "rebel_squadmemberlost_01"] remoteExecCall ["say3D", 0];
-				 // Spawn 0-2 additional melee rebels near the action caller
-                private _extraCount = floor random 3;
-                if (_extraCount > 0) then {
-                    private _meleeWeapons = [
-                        "Pipe_aluminium","Crowbar","FireAxe","WBK_survival_weapon_2","WBK_survival_weapon_1",
-                        "WBK_pipeStyledSword","Shovel_Russian","WBK_SmallHammer","Axe","WBK_ww1_Club"
-                    ];
-                    private _grp = createGroup east;
-                    for "_i" from 1 to _extraCount do {
-                        private _pos = _caller getPos [random 50, random 360];
-                        private _u = _grp createUnit ["WBK_Rebel_HL2_refugee_6", _pos, [], 2, "FORM"];
-                        removeAllWeapons _u;
-                        _u addWeapon (selectRandom _meleeWeapons);
-                        _u doMove (getPos _caller);
-                    };
-                    _grp setBehaviour "AWARE";
-                    _grp setCombatMode "RED";
-                };
-                if (random 1 < 0.7) then {
-                    removeAllWeapons _target;
-					_target addMagazine "HL_Revolver_Mag";
-                    _target addWeapon "WBK_Revolver_HL1_2";
-					_target addMagazine "HL_Revolver_Mag";
-                    _target selectWeapon "WBK_Revolver_HL1_2";
-                } else {
-                    private _runPos = _target getPos [100, random 360];
-                    _target doMove _runPos;
-                    [_target] spawn { params ["_c"]; sleep 30; if (alive _c) then { deleteVehicle _c; }; };
-                };
-            } else {
-                // Success: joins Combine
+            if (isPlayer _target) then {
                 missionNamespace setVariable ["cd_recruited", (missionNamespace getVariable ['cd_recruited',0]) + 1];
                 private _pos = getPos _target;
                 private _dir = getDir _target;
                 private _grp = group _caller;
-                if (isPlayer _target) then {
-                    [_target] joinSilent createGroup west;
-                    sleep 1;
-                    [_target] joinSilent _grp;
-                    _target setVariable ["cd_state","recruited", true];
-                    [_target, "G_HECU_announcekill_04"] remoteExecCall ["say3D", 0];
-                    _target setVariable ["wasConscript", true, true];
-                    private _tid = format ["task_report_%1", getPlayerUID _target];
-                    [_target, _tid, ["Report to conscript barracks and suit up.","Report to Barracks",""], getMarkerPos "conscript_barracks", true] remoteExec ["BIS_fnc_taskCreate", _target];
-                    [_tid] remoteExec ["CMB_fnc_monitorBarracks", _target];
+                [_target] joinSilent createGroup west;
+                sleep 1;
+                [_target] joinSilent _grp;
+                _target setVariable ["cd_state","recruited", true];
+                [_target, "G_HECU_announcekill_04"] remoteExecCall ["say3D", 0];
+                _target setVariable ["wasConscript", true, true];
+                private _tid = format ["task_report_%1", getPlayerUID _target];
+                [_target, _tid, ["Report to conscript barracks and suit up.","Report to Barracks",""], getMarkerPos "conscript_barracks", true] remoteExec ["BIS_fnc_taskCreate", _target];
+                [_tid, _target] remoteExec ["CMB_fnc_monitorBarracks", 2];
+            } else {
+                if (random 1 < 0.3) then {
+                    // Resist: becomes OpFor
+                    [_target] joinSilent createGroup east;
+                    _target setVariable ["cd_state","resisted", true];
+                    [_target, "rebel_squadmemberlost_01"] remoteExecCall ["say3D", 0];
+                    private _extraCount = floor random 3;
+                    if (_extraCount > 0) then {
+                        private _meleeWeapons = [
+                            "Pipe_aluminium","Crowbar","FireAxe","WBK_survival_weapon_2","WBK_survival_weapon_1",
+                            "WBK_pipeStyledSword","Shovel_Russian","WBK_SmallHammer","Axe","WBK_ww1_Club"
+                        ];
+                        private _grpE = createGroup east;
+                        for "_i" from 1 to _extraCount do {
+                            private _posE = _caller getPos [random 50, random 360];
+                            private _uE = _grpE createUnit ["WBK_Rebel_HL2_refugee_6", _posE, [], 2, "FORM"];
+                            removeAllWeapons _uE;
+                            _uE addWeapon (selectRandom _meleeWeapons);
+                            _uE doMove (getPos _caller);
+                        };
+                        _grpE setBehaviour "AWARE";
+                        _grpE setCombatMode "RED";
+                    };
+                    if (random 1 < 0.7) then {
+                        removeAllWeapons _target;
+                        _target addMagazine "HL_Revolver_Mag";
+                        _target addWeapon "WBK_Revolver_HL1_2";
+                        _target addMagazine "HL_Revolver_Mag";
+                        _target selectWeapon "WBK_Revolver_HL1_2";
+                    } else {
+                        private _runPos = _target getPos [100, random 360];
+                        _target doMove _runPos;
+                        [_target] spawn { params ["_c"]; sleep 30; if (alive _c) then { deleteVehicle _c; }; };
+                    };
                 } else {
+                    // Success: joins Combine (NPC)
+                    missionNamespace setVariable ["cd_recruited", (missionNamespace getVariable ['cd_recruited',0]) + 1];
+                    private _pos = getPos _target;
+                    private _dir = getDir _target;
+                    private _grp = group _caller;
                     deleteVehicle _target;
                     private _conClasses = ["WBK_HL_Conscript_1","WBK_HL_Conscript_2","WBK_HL_Conscript_3"];
                     private _new = _grp createUnit [selectRandom _conClasses, _pos, [], 0, "FORM"];

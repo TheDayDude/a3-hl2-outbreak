@@ -27,6 +27,12 @@ CID_Malcompliance = createHashMap;
 [] execVM "endgame.sqf";
 [] execVM "playerPersistence.sqf";
 
+if (isServer) then {
+    {
+        _x execVM "autoShieldDoor.sqf";
+    } forEach (allMissionObjects "Combine_Shield_wall_F");
+};
+
 call compile preprocessFileLineNumbers "portalStorm.sqf";
 
 if (isNil "Global_CID_Registry") then {

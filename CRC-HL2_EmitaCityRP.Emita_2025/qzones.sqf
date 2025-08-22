@@ -41,6 +41,62 @@ if (isNil "XEN_fnc_clearAnchorServer") then {
 };
 
 [] spawn {
+    private _zones = [qzone_1, qzone_2, qzone_3];
+    while {true} do {
+        {
+            private _zone = _x;
+            private _players = allPlayers select { alive _x && _x inArea _zone && side _x == civilian };
+            {
+                private _plr = _x;
+                if ("Civilain_IDCard_5" in magazines _plr) then {
+                    if !(_plr getVariable ["qzoneChanged", false]) then {
+                        _plr setVariable ["qzoneOrigGrp", group _plr];
+                        _plr setVariable ["qzoneChanged", true];
+                        [[_plr], createGroup west] remoteExec ["joinSilent", _plr];
+                        ["Civil Worker ID accepted. You have one hour inside the Quarantine Zone."] remoteExec ["hint", _plr];
+                        [_plr] spawn {
+                            params ["_u"];
+                            sleep 3600;
+                            if (alive _u) then { [_u, "Civilain_IDCard_5"] remoteExec ["removeItem", _u]; };
+                        };
+                    };
+                } else {
+                    if !(_plr getVariable ["qzoneWarned", false]) then {
+                        _plr setVariable ["qzoneWarned", true];
+                        ["Unauthorized access detected. Leave within 10 seconds!"] remoteExec ["hint", _plr];
+                        [_plr, _zone] spawn {
+                            params ["_u", "_z"];
+                            sleep 10;
+                            if (alive _u && side _u == civilian && _u inArea _z) then {
+                                _u setVariable ["qzoneOrigGrp", group _u];
+                                _u setVariable ["qzoneChanged", true];
+                                [[_u], createGroup east] remoteExec ["joinSilent", _u];
+                                ["You have been convicted of Access violation. Submit to your local Civil Protection Force."] remoteExec ["hint", _u];
+                            };
+                            _u setVariable ["qzoneWarned", false];
+                        };
+                    };
+                };
+            } forEach _players;
+        } forEach _zones;
+
+        {
+            if (_x getVariable ["qzoneChanged", false]) then {
+                if !(_x inArea qzone_1 || _x inArea qzone_2 || _x inArea qzone_3) then {
+                    private _grp = _x getVariable ["qzoneOrigGrp", grpNull];
+                    if (isNull _grp) then { _grp = createGroup civilian; };
+                    [[_x], _grp] remoteExec ["joinSilent", _x];
+                    _x setVariable ["qzoneChanged", false];
+                };
+            };
+        } forEach allPlayers;
+
+        sleep 1;
+    };
+};
+
+
+[] spawn {
     // === QZONE 1: Zombies, Headcrabs, Rare Bullsquid/Houndeye ===
     [] spawn {
         while {true} do {

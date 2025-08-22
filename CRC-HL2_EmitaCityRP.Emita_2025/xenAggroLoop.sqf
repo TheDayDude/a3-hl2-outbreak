@@ -29,15 +29,15 @@ while {true} do {
 
         if ((count _closeXenians) > 0) then {
             if (!(_civ getVariable ["isXenHostile", false])) then {
-                _civ addRating -10000;
+                [[_civ], createGroup west] remoteExec ["joinSilent", _civ];
                 _civ setVariable ["isXenHostile", true, false];
 
-                // Revert back to civilian after 10 seconds
+                // Revert back to civilian after 5 seconds
                 [_civ] spawn {
                     params ["_unit"]; 
-                    sleep 10;
+                    sleep 5;
                     if (alive _unit) then {
-                        _unit addRating 10000;
+                        [[_unit], createGroup civilian] remoteExec ["joinSilent", _unit];
                         _unit setVariable ["isXenHostile", false, false];
                     };
                 };
