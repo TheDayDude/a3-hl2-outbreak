@@ -116,11 +116,12 @@ case 1: {
                 remoteExec ["hintSilent", (allPlayers select { side _x == civilian }) apply { owner _x }];
                 missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
 
-            // Keep the truck; clean up creatures/prop after 5 min
+            // Clean up
             sleep 300;
             { if (!isNull _x) then { deleteVehicle _x } } forEach units _hcGrp;
             deleteGroup _hcGrp;
             if (!isNull _can) then { detach _can; deleteVehicle _can; };
+            if (!isNull _truck) then { deleteVehicle _truck; };
 
         } else {
             [_taskId, "FAILED", true] call BIS_fnc_taskSetState;

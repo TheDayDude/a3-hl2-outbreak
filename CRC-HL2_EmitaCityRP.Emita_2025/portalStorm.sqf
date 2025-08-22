@@ -57,7 +57,7 @@ portalStorm_fnc_start = {
                 _light setLightDayLight true;
 
                 private _ps = "#particlesource" createVehicleLocal _spawnPos;
-                _ps setParticleParams [["\A3\data_f\ParticleEffects\Universal\Universal",16,12,8,0],"","Billboard",1,3,[0,0,0],[0,0,0],1,1.2,1,0,[1,0],[[0,1,0,1],[0,1,0,0]],[0,1],1,0,"","",_spawnPos];
+                _ps setParticleParams [["\A3\data_f\ParticleEffects\Universal\Universal",16,12,8,0],"","Billboard",1,3,[0,0,0],[0,0,0],1,1.2,1,0,[10,0],[[0,1,0,1],[0,1,0,0]],[0,1],1,0,"","",_spawnPos];
                 _ps setParticleRandom [0,[0.2,0.2,0.2],[0,0,0],0,0.2,[0,0,0,0],0,0];
                 _ps setDropInterval 0.02;
 

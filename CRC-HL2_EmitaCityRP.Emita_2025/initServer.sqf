@@ -26,6 +26,7 @@ CID_Malcompliance = createHashMap;
 [] execVM "timeSkip.sqf";
 [] execVM "endgame.sqf";
 [] execVM "playerPersistence.sqf";
+[] execVM "redacted.sqf";
 
 if (isServer) then {
     {

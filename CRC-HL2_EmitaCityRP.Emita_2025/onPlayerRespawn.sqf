@@ -11,6 +11,7 @@ if (!isNil "_old") then {
 player setVariable ["HasCID", false, false];
 player setVariable ["CID_Number", nil, true];
 player setVariable ["isLoyalist", false, true];
+player setVariable ["Favor", 0, true];
 
 [player] joinSilent createGroup civilian;
 [player] remoteExec ["MRC_fnc_assignCID", 2];

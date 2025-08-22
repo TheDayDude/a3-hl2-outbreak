@@ -10,7 +10,6 @@ if (isNil "MRC_fnc_savePlayerState") then {
         if (_uid == "") exitWith {
             ["No UID - state not saved"] remoteExec ["hint", _unit];
         };
-        ["Saving state"] remoteExec ["hint", _unit];
         private _key = format ["PSTATE_%1", _uid];
         profileNamespace setVariable [_key, [
             str side _unit,
@@ -22,7 +21,8 @@ if (isNil "MRC_fnc_savePlayerState") then {
             _unit getVariable ["isOTA", false],
             _unit getVariable ["CanBuyFakeID", false],
             _unit getVariable ["HasCID", false],
-            _unit getVariable ["CID_Number", nil]
+            _unit getVariable ["CID_Number", nil],
+            _unit getVariable ["favor", 0]
         ]];
         saveProfileNamespace;
         ["Autosave Complete."] remoteExec ["systemChat", owner _unit];
@@ -42,8 +42,9 @@ if (isNil "MRC_fnc_restorePlayerState") then {
         if (_data isEqualTo []) then {
             ["No saved state found"] remoteExec ["hint", _unit];
             [_unit] call MRC_fnc_assignCID;
+            _unit setVariable ["favor", 0, true];
         } else {
-            _data params ["_sideStr", "_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFake", "_hasCID", "_cid"];
+            _data params ["_sideStr", "_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFake", "_hasCID", "_cid", "_favor"];
             private _side = switch (_sideStr) do {
                 case "WEST": {west};
                 case "EAST": {east};
@@ -58,6 +59,7 @@ if (isNil "MRC_fnc_restorePlayerState") then {
             ["Applying saved data"] remoteExec ["hint", _unit];
             _unit setVariable ["HasCID", _hasCID, true];
             _unit setVariable ["CID_Number", _cid, true];
+            _unit setVariable ["favor", _favor, true];
             [_pos, _loadout, _combine, _arm, _armMax, _isOTA, _canFake, _hasCID, _cid] remoteExec ["MRC_fnc_applyPlayerState", _unit];
         };
         _unit setVariable ["MRC_stateRestored", true];
