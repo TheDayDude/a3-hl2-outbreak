@@ -52,7 +52,7 @@ if (isNil "CPF_fnc_recruitServer") then {
             _p setVariable ["WBK_CombineType","  cp_",true];
             _p setVariable ["WBK_HL_CustomArmour",75,true];
             _p setVariable ["WBK_HL_CustomArmour_MAX",75,true];
-            ["Welcome to the Civil Protectio Force, unit. Suit up at the arsenal inside the station."] remoteExec ["hintSilent", owner _p];
+            ["Welcome to the Civil Protection Force, unit. Suit up at the arsenal inside the station."] remoteExec ["hintSilent", owner _p];
         };
     };
     publicVariable "CPF_fnc_recruitServer";

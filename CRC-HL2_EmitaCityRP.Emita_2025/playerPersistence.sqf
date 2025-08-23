@@ -17,7 +17,7 @@ if (isNil "MRC_fnc_savePlayerState") then {
             getUnitLoadout _unit,
             _unit getVariable ["WBK_CombineType", ""],
             _unit getVariable ["WBK_HL_CustomArmour", 0],
-            _unit getVariable ["WBK_HL_CustomArmour_Max", 0],
+            _unit getVariable ["WBK_HL_CustomArmour_MAX", 0],
             _unit getVariable ["isOTA", false],
             _unit getVariable ["CanBuyFakeID", false],
             _unit getVariable ["HasCID", false],
@@ -25,7 +25,7 @@ if (isNil "MRC_fnc_savePlayerState") then {
             _unit getVariable ["favor", 0]
         ]];
         saveProfileNamespace;
-        ["Autosave Complete."] remoteExec ["systemChat", owner _unit];
+        ["Autosave Complete."] remoteExec ["systemChat", _unit];
     };
 };
 
@@ -60,7 +60,7 @@ if (isNil "MRC_fnc_restorePlayerState") then {
             _unit setVariable ["HasCID", _hasCID, true];
             _unit setVariable ["CID_Number", _cid, true];
             _unit setVariable ["favor", _favor, true];
-            [_pos, _loadout, _combine, _arm, _armMax, _isOTA, _canFake, _hasCID, _cid] remoteExec ["MRC_fnc_applyPlayerState", _unit];
+            [_unit, _pos, _loadout, _combine, _arm, _armMax, _isOTA, _canFake, _hasCID, _cid] remoteExec ["MRC_fnc_applyPlayerState", _unit];
         };
         _unit setVariable ["MRC_stateRestored", true];
         ["Restore complete"] remoteExec ["hint", _unit];

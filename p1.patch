@@ -1,188 +1,88 @@
-diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/redacted.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/redacted.sqf
-index 5cda7f5eb43ef7c4cf4893c52e04245a2292ef5b..e114c9c194038fe767c60af552da3edc403cc873 100644
---- a/CRC-HL2_EmitaCityRP.Emita_2025/redacted.sqf
-+++ b/CRC-HL2_EmitaCityRP.Emita_2025/redacted.sqf
-@@ -1,86 +1,173 @@
-+if (isNil "XEN_fnc_ritualEffects") then {
-+    XEN_fnc_ritualEffects = {
-+        params ["_obj", "_caller"];
-+        if (!hasInterface) exitWith {};
-+
-+        private _pos = getPosATL _obj;
-+        private _ps = "#particlesource" createVehicleLocal _pos;
-+        _ps setParticleParams [["\A3\Data_F\ParticleEffects\Universal\Universal",16,12,8,0],"","Billboard",1,2,[0,0,0],[0,0,0],1,0.5,0.5,0.1,[1],[ [0,1,0,0.5] ],[0],1,0,"","",_obj];
-+        _ps setParticleRandom [0,[0.5,0.5,0.5],[0,0,0],0,0,[0,0,0,0],0,0];
-+        _ps setDropInterval 0.02;
-+        [_ps] spawn { params ["_p"]; sleep 5; deleteVehicle _p; };
-+        playSound3D ["XenTele", _obj, false, getPosASL _obj, 1, 1, 25];
-+        if (_caller isEqualTo player) then { player playMoveNow "ActsPsitMstpSnonWnonDnon"; };
-+    };
-+    publicVariable "XEN_fnc_ritualEffects";
-+};
-+
-+if (isNil "XEN_fnc_removeCommuneAction") then {
-+    XEN_fnc_removeCommuneAction = {
-+        params ["_obj"];
-+        private _id = _obj getVariable ["communeActionId", -1];
-+        if (_id >= 0) then { _obj removeAction _id; };
-+    };
-+    publicVariable "XEN_fnc_removeCommuneAction";
-+};
-+
-+if (isNil "XEN_fnc_removeForecastAction") then {
-+    XEN_fnc_removeForecastAction = {
-+        params ["_obj"];
-+        private _id = _obj getVariable ["forecastActionId", -1];
-+        if (_id >= 0) then { _obj removeAction _id; };
-+    };
-+    publicVariable "XEN_fnc_removeForecastAction";
-+};
-+
- if (isNil "XEN_fnc_addRitualActions") then {
-     XEN_fnc_addRitualActions = {
-         params ["_obj"];
-         if (isNull _obj) exitWith {};
+diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf
+index e49ece038b83886ad1d5b0b155bc22eb56ae8de7..a3569f7c58f5668529db2241aef4c498bb72e87e 100644
+--- a/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf
++++ b/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf
+@@ -1,80 +1,80 @@
+ if (!isServer) exitWith {};
  
--        _obj addAction [
--            "C o M m U n e",
--            {
--                params ["_target", "_caller"];
--                [_target, _caller] remoteExec ["XEN_fnc_communeServer", 2];
--            },
--            nil, 1.5, true, true, "", "_this distance _target < 4", 5, true
--        ];
-+        if (!(_obj getVariable ["communeUsed", false])) then {
-+            private _cId = _obj addAction [
-+                "C o M m U n e",
-+                {
-+                    params ["_target", "_caller"];
-+                    [_target, _caller] remoteExec ["XEN_fnc_communeServer", 2];
-+                },
-+                nil, 1.5, true, true, "", "_this distance _target < 4", 5, true
-+            ];
-+            _obj setVariable ["communeActionId", _cId];
-+        };
- 
--        _obj addAction [
-+        private _sId = _obj addAction [
-             "S u m M o N",
-             {
-                 params ["_target", "_caller"];
-                 [_target, _caller] remoteExec ["XEN_fnc_summonPortalServer", 2];
-             },
-             nil, 1.5, true, true, "", "_this distance _target < 4 && side _this == resistance", 5, true
-         ];
-+        _obj setVariable ["summonActionId", _sId];
-+
-+        if (!(_obj getVariable ["forecastUsed", false])) then {
-+            private _fId = _obj addAction [
-+                "F o R e C a S t",
-+                {
-+                    params ["_target", "_caller"];
-+                    [_target, _caller] remoteExec ["XEN_fnc_forecastServer", 2];
-+                },
-+                nil, 1.5, true, true, "", "_this distance _target < 4 && side _this == resistance", 5, true
-+            ];
-+            _obj setVariable ["forecastActionId", _fId];
-+        };
-     };
-     publicVariable "XEN_fnc_addRitualActions";
- };
- 
- // Server-side handling of communing
- if (isNil "XEN_fnc_communeServer") then {
-     XEN_fnc_communeServer = {
-         params ["_obj", "_caller"];
--        if (isNull _caller) exitWith {};
-+        if (isNull _caller || { _obj getVariable ["communeUsed", false] }) exitWith {};
-+
-+        _obj setVariable ["communeUsed", true, true];
-+        [_obj] remoteExec ["XEN_fnc_removeCommuneAction", 0, true];
-+        [_obj, _caller] remoteExec ["XEN_fnc_ritualEffects", 0];
- 
-         private _favor = _caller getVariable ["favor", 0];
-         _favor = _favor + 1;
-         _caller setVariable ["favor", _favor, true];
-         [format ["You commune with the Xen. Favor: %1", _favor]] remoteExec ["hint", _caller];
- 
-+        private _inf = missionNamespace getVariable ["Infestation", 0];
-+        missionNamespace setVariable ["Infestation", _inf + 1, true];
-+
-         if (_favor >= 5 && { side _caller != resistance }) then {
-             [[_caller], createGroup resistance] remoteExec ["joinSilent", _caller];
-             ["You have become a Xen Cultist!"] remoteExec ["hint", _caller];
+ if (isNil "MRC_fnc_savePlayerState") then {
+     MRC_fnc_savePlayerState = {
+         params ["_unit"];
+         if !(_unit getVariable ["MRC_stateRestored", false]) exitWith {
+             ["State not restored yet - skipping save"] remoteExec ["hint", _unit];
          };
- 
-         [_caller] remoteExec ["MRC_fnc_savePlayerState", 2];
-     };
-     publicVariable "XEN_fnc_communeServer";
- };
- 
- // Server-side handling of portal summoning
- if (isNil "XEN_fnc_summonPortalServer") then {
-     XEN_fnc_summonPortalServer = {
-         params ["_obj", "_caller"];
-         if (side _caller != resistance) exitWith {};
- 
-+        private _last = missionNamespace getVariable ["XEN_lastSummon", 0];
-+        if ((serverTime - _last) < 1800) exitWith {
-+            ["The rift resists your call. Try again later."] remoteExec ["hint", _caller];
-+        };
-+        missionNamespace setVariable ["XEN_lastSummon", serverTime, true];
-+
-+        [_obj, _caller] remoteExec ["XEN_fnc_ritualEffects", 0];
-+
-         private _pos = getPosATL _obj;
-         private _grp = group _caller;
-         private _types = [
-             "WBK_Zombine_HLA_1",
-             "WBK_Antlion_1",
-             "WBK_Houndeye_1",
-             "WBK_Bullsquid_1"
-         ];
-         private _count = 3 + floor random 2;
- 
-         private _soundSource = createSoundSource ["XenTele", _pos, [], 0];
-         [_soundSource] spawn { params ["_s"]; sleep 10; deleteVehicle _s; };
- 
-         for "_i" from 1 to _count do {
-             private _unitPos = _pos getPos [3 + random 3, random 360];
-             private _u = _grp createUnit [selectRandom _types, _unitPos, [], 0, "FORM"];
-             _u setBehaviour "AWARE";
-             _u setCombatMode "RED";
+         private _uid = getPlayerUID _unit;
+         if (_uid == "") exitWith {
+             ["No UID - state not saved"] remoteExec ["hint", _unit];
          };
-+
-+        private _inf = missionNamespace getVariable ["Infestation", 0];
-+        missionNamespace setVariable ["Infestation", _inf + 3, true];
+         private _key = format ["PSTATE_%1", _uid];
+         profileNamespace setVariable [_key, [
+             str side _unit,
+             getPosATL _unit,
+             getUnitLoadout _unit,
+             _unit getVariable ["WBK_CombineType", ""],
+             _unit getVariable ["WBK_HL_CustomArmour", 0],
+-            _unit getVariable ["WBK_HL_CustomArmour_Max", 0],
++            _unit getVariable ["WBK_HL_CustomArmour_MAX", 0],
+             _unit getVariable ["isOTA", false],
+             _unit getVariable ["CanBuyFakeID", false],
+             _unit getVariable ["HasCID", false],
+             _unit getVariable ["CID_Number", nil],
+             _unit getVariable ["favor", 0]
+         ]];
+         saveProfileNamespace;
+-        ["Autosave Complete."] remoteExec ["systemChat", owner _unit];
++        ["Autosave Complete."] remoteExec ["systemChat", _unit];
      };
-     publicVariable "XEN_fnc_summonPortalServer";
  };
  
-+// Server-side handling of portal storm forecasting
-+if (isNil "XEN_fnc_forecastServer") then {
-+    XEN_fnc_forecastServer = {
-+        params ["_obj", "_caller"];
-+        if (_obj getVariable ["forecastUsed", false]) exitWith {};
-+
-+        _obj setVariable ["forecastUsed", true, true];
-+        [_obj] remoteExec ["XEN_fnc_removeForecastAction", 0, true];
-+        [_obj, _caller] remoteExec ["XEN_fnc_ritualEffects", 0];
-+
-+        private _timer = missionNamespace getVariable ["PortalStormTimer", 0];
-+        private _prediction = (_timer + (random 900) - (random 900)) max 0;
-+        private _mins = floor (_prediction / 60);
-+        [format ["You foresee the storm in about %1 minutes.", _mins]] remoteExec ["hint", _caller];
-+    };
-+    publicVariable "XEN_fnc_forecastServer";
-+};
-+
- // Spawn ritual objects at markers
+ if (isNil "MRC_fnc_restorePlayerState") then {
+     MRC_fnc_restorePlayerState = {
+         params ["_unit"];
+         ["Restoring state"] remoteExec ["hint", _unit];
+         private _uid = getPlayerUID _unit;
+         if (_uid == "") exitWith {
+             ["No UID - restore aborted"] remoteExec ["hint", _unit];
+         };
+         private _key = format ["PSTATE_%1", _uid];
+         private _data = profileNamespace getVariable [_key, []];
+         if (_data isEqualTo []) then {
+             ["No saved state found"] remoteExec ["hint", _unit];
+             [_unit] call MRC_fnc_assignCID;
+             _unit setVariable ["favor", 0, true];
+         } else {
+             _data params ["_sideStr", "_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFake", "_hasCID", "_cid", "_favor"];
+             private _side = switch (_sideStr) do {
+                 case "WEST": {west};
+                 case "EAST": {east};
+                 case "GUER": {independent};
+                 case "CIV": {civilian};
+                 default {civilian};
+             };
+             if (side _unit != _side) then {
+                 ["Switching side"] remoteExec ["hint", _unit];
+                 [_unit] joinSilent createGroup _side;
+             };
+             ["Applying saved data"] remoteExec ["hint", _unit];
+             _unit setVariable ["HasCID", _hasCID, true];
+             _unit setVariable ["CID_Number", _cid, true];
+             _unit setVariable ["favor", _favor, true];
+-            [_pos, _loadout, _combine, _arm, _armMax, _isOTA, _canFake, _hasCID, _cid] remoteExec ["MRC_fnc_applyPlayerState", _unit];
++            [_unit, _pos, _loadout, _combine, _arm, _armMax, _isOTA, _canFake, _hasCID, _cid] remoteExec ["MRC_fnc_applyPlayerState", _unit];
+         };
+         _unit setVariable ["MRC_stateRestored", true];
+         ["Restore complete"] remoteExec ["hint", _unit];
+     };
+     publicVariable "MRC_fnc_restorePlayerState";
+ };
+ 
  [] spawn {
-     private _markers = allMapMarkers select { (_x select [0,7]) == "ritual_" };
-     {
-         if (random 1 < 0.99) then {
-             private _coco = createVehicle ["xen_coconut", getMarkerPos _x, [], 0, "NONE"];
-             [_coco] remoteExec ["XEN_fnc_addRitualActions", 0, true];
-         };
-     } forEach _markers;
+     // Allow time for players to request and receive their state before the first save
+     sleep 30;
+     while {true} do {
+         {
+             [_x] call MRC_fnc_savePlayerState;
+         } forEach allPlayers;
+         sleep 120;
+     };
  };

@@ -1,21 +1,3 @@
-fnc_applyBlur = {
-    if (!hasInterface) exitWith {};
-    private _effect = ppEffectCreate ["RadialBlur", 200];
-    _effect ppEffectAdjust [0.08, 0.15, 0.2, 0.2];
-    _effect ppEffectCommit 0;
-    _effect ppEffectEnable true;
-	private _ca = ppEffectCreate ["ChromAberration", 1500];
-    _ca ppEffectAdjust [0.07, 0.07, true];
-    _ca ppEffectCommit 0;
-    _ca ppEffectEnable true;
-	sleep 20;
-	_effect ppEffectEnable false;
-	ppEffectDestroy _effect;
-	sleep 60;
-	_ca ppEffectEnable false;
-	ppEffectDestroy _ca;
-};
-
 if (isNil "XEN_fnc_ritualEffects") then {
     XEN_fnc_ritualEffects = {
         params ["_obj", "_caller"];
@@ -63,7 +45,7 @@ if (isNil "XEN_fnc_addRitualActions") then {
 
         if (!(_obj getVariable ["communeUsed", false])) then {
             private _cId = _obj addAction [
-                "<t color='#27c707ff'>C !  # o   ? M u %   N # \  E?</t>",
+                "<t color='#27c707ff'>C !  # o  & m  M u %   N # \  E?</t>",
                 {
                     params ["_target", "_caller"];
                     [_target, _caller] remoteExec ["XEN_fnc_communeServer", 2];
@@ -74,7 +56,7 @@ if (isNil "XEN_fnc_addRitualActions") then {
         };
 
         private _sId = _obj addAction [
-            "<t color='#27c707ff'> S  #  u   $  ^ M #   o  #  $  N</t>",
+            "<t color='#27c707ff'> S  #  u   $  ^ M #  m  & o  #  $  N</t>",
             {
                 params ["_target", "_caller"];
                 [_target, _caller] remoteExec ["XEN_fnc_summonPortalServer", 2];
@@ -111,13 +93,13 @@ if (isNil "XEN_fnc_communeServer") then {
         private _favor = _caller getVariable ["favor", 0];
         _favor = _favor + 1;
         _caller setVariable ["favor", _favor, true];
-        [format ["You commune with Xen. Favor: %1", _favor]] remoteExec ["hint", _caller];
 		private _inf = missionNamespace getVariable ["Infestation", 0];
         missionNamespace setVariable ["Infestation", _inf + 0.5, true];
 
         if (_favor >= 5 && { side _caller != resistance }) then {
             [[_caller], createGroup resistance] remoteExec ["joinSilent", _caller];
-            ["You have become a Xen Cultist!"] remoteExec ["hint", _caller];
+            ["You have become one with it."] remoteExec ["hint", _caller];
+			_caller addItem "rds_uniform_priest";  
 			private _pos = getPosATL _caller;
 			private _ps = "#particlesource" createVehicleLocal _pos;
 			_ps setParticleParams [["\A3\Data_F\ParticleEffects\Universal\Universal",16,12,8,0],"","Billboard",1,2,[0,0,0],[0,0,0],1,0.5,0.5,0.1,[1],[ [0,1,0,0.5] ],[0],1,0,"","",_caller];
@@ -187,9 +169,9 @@ if (isNil "XEN_fnc_forecastServer") then {
         [_obj, _caller] remoteExec ["XEN_fnc_ritualEffects", 0];
 
         private _timer = missionNamespace getVariable ["PortalStormTimer", 0];
-        private _prediction = (_timer + (random 900) - (random 900)) max 0;
+        private _prediction = (_timer + (random 600) - (random 600)) max 0;
         private _mins = floor (_prediction / 60);
-        [format ["You foresee the storm in about %1 minutes.", _mins]] remoteExec ["hint", _caller];
+        [format ["You foresee a storm in %1 minutes.", _mins]] remoteExec ["hint", _caller];
     };
     publicVariable "XEN_fnc_forecastServer";
 };
@@ -198,7 +180,7 @@ if (isNil "XEN_fnc_forecastServer") then {
 [] spawn {
     private _markers = allMapMarkers select { (_x select [0,7]) == "ritual_" };
     {
-        if (random 1 < 0.99) then {
+        if (random 1 < 0.2) then {
             private _coco = createVehicle ["xen_coconut", getMarkerPos _x, [], 0, "NONE"];
             [_coco] remoteExec ["XEN_fnc_addRitualActions", 0, true];
         };

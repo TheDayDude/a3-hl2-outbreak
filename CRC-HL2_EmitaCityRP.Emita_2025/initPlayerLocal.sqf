@@ -1,22 +1,22 @@
 if (isNil "MRC_fnc_applyPlayerState") then {
     MRC_fnc_applyPlayerState = {
-        params ["_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFakeID", "_hasCID", "_cid"];
-        [_pos, _loadout, _combine, _arm, _armMax, _isOTA, _canFakeID, _hasCID, _cid] spawn {
-            params ["_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFakeID", "_hasCID", "_cid"];
+        params ["_unit", "_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFakeID", "_hasCID", "_cid"];
+        [_unit, _pos, _loadout, _combine, _arm, _armMax, _isOTA, _canFakeID, _hasCID, _cid] spawn {
+            params ["_unit", "_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFakeID", "_hasCID", "_cid"];
             hint "Restoring position";
-            player setPosATL _pos;
+            _unit setPosATL _pos;
             sleep 1;
             hint "Restoring loadout";
-            player setUnitLoadout _loadout;
+            _unit setUnitLoadout _loadout;
             sleep 1;
             hint "Restoring WBK variables";
-            player setVariable ["WBK_CombineType", _combine, true];
-            player setVariable ["WBK_HL_CustomArmour", _arm, true];
-            player setVariable ["WBK_HL_CustomArmour_Max", _armMax, true];
-            player setVariable ["isOTA", _isOTA, true];
-            player setVariable ["CanBuyFakeID", _canFakeID, true];
-            player setVariable ["HasCID", _hasCID, true];
-            player setVariable ["CID_Number", _cid, true];            
+            _unit setVariable ["WBK_CombineType", _combine, true];
+            _unit setVariable ["WBK_HL_CustomArmour", _arm, true];
+            _unit setVariable ["WBK_HL_CustomArmour_MAX", _armMax, true];
+            _unit setVariable ["isOTA", _isOTA, true];
+            _unit setVariable ["CanBuyFakeID", _canFakeID, true];
+            _unit setVariable ["HasCID", _hasCID, true];
+            _unit setVariable ["CID_Number", _cid, true];
             sleep 1;
             hint "State restore complete";
         };
