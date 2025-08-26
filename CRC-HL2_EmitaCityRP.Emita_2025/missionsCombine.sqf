@@ -481,6 +481,7 @@ case 4: {
                 [_target] joinSilent _grp;
                 _target setVariable ["cd_state","recruited", true];
                 [_target, "G_HECU_announcekill_04"] remoteExecCall ["say3D", 0];
+                target setVariable ["WBK_CombineType","  g_hecu_",true];
                 _target setVariable ["wasConscript", true, true];
                 private _tid = format ["task_report_%1", getPlayerUID _target];
                 [_target, _tid, ["Report to conscript barracks and suit up.","Report to Barracks",""], getMarkerPos "conscript_barracks", true] remoteExec ["BIS_fnc_taskCreate", _target];

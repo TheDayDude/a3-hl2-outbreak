@@ -1,5 +1,32 @@
 if (!isServer) exitWith {};
 
+if (isNil "MRC_fnc_applyPlayerState") then {
+    MRC_fnc_applyPlayerState = {
+        params ["_unit", "_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFake", "_hasCID", "_cid"];
+        if (!local _unit) exitWith {};
+        [_unit, _pos, _loadout, _combine, _arm, _armMax, _isOTA, _canFake, _hasCID, _cid] spawn {
+            params ["_unit", "_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFake", "_hasCID", "_cid"];
+            hint "Restoring position";
+            _unit setPosATL _pos;
+            sleep 1;
+            hint "Restoring loadout";
+            _unit setUnitLoadout _loadout;
+            sleep 1;
+            hint "Restoring WBK variables";
+            _unit setVariable ["WBK_CombineType", _combine, true];
+            _unit setVariable ["WBK_HL_CustomArmour", _arm, true];
+            _unit setVariable ["WBK_HL_CustomArmour_MAX", _armMax, true];
+            _unit setVariable ["isOTA", _isOTA, true];
+            _unit setVariable ["CanBuyFakeID", _canFake, true];
+            _unit setVariable ["HasCID", _hasCID, true];
+            _unit setVariable ["CID_Number", _cid, true];
+            sleep 1;
+            hint "State restore complete";
+        };
+    };
+    publicVariable "MRC_fnc_applyPlayerState";
+};
+
 if (isNil "MRC_fnc_savePlayerState") then {
     MRC_fnc_savePlayerState = {
         params ["_unit"];
@@ -59,8 +86,11 @@ if (isNil "MRC_fnc_restorePlayerState") then {
             ["Applying saved data"] remoteExec ["hint", _unit];
             _unit setVariable ["HasCID", _hasCID, true];
             _unit setVariable ["CID_Number", _cid, true];
+            _unit setVariable ["WBK_CombineType", _combine];
+            _unit setVariable ["WBK_HL_CustomArmour", _arm];
+            _unit setVariable ["WBK_HL_CustomArmour_MAX", _armMax];
             _unit setVariable ["favor", _favor, true];
-            [_unit, _pos, _loadout, _combine, _arm, _armMax, _isOTA, _canFake, _hasCID, _cid] remoteExec ["MRC_fnc_applyPlayerState", _unit];
+            [_unit, _pos, _loadout, _combine, _arm, _armMax, _isOTA, _canFake, _hasCID, _cid] remoteExecCall ["MRC_fnc_applyPlayerState", _unit];
         };
         _unit setVariable ["MRC_stateRestored", true];
         ["Restore complete"] remoteExec ["hint", _unit];
