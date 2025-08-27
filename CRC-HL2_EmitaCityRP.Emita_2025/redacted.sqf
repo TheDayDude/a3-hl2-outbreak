@@ -186,3 +186,30 @@ if (isNil "XEN_fnc_forecastServer") then {
         };
     } forEach _markers;
 };
+// === Cultist Mission Loop ===
+if (isServer) then {
+    if (isNil "cultMissionActive") then {
+        missionNamespace setVariable ["cultMissionActive", false, true];
+    };
+
+    [] spawn {
+        while {true} do {
+            // Wait for independent players and idle state
+            waitUntil {
+                sleep 10;
+                (count (allPlayers select { side _x == resistance }) > 0)
+                && !(missionNamespace getVariable ["cultMissionActive", false])
+            };
+
+            // Start a mission for Xen Cultists
+            missionNamespace setVariable ["cultMissionActive", true, true];
+            [] execVM "missionsCult.sqf";
+
+            // Wait for mission completion (script will set variable to false)
+            waitUntil {
+                sleep 10;
+                !(missionNamespace getVariable ["cultMissionActive", false])
+            };
+        };
+    };
+};

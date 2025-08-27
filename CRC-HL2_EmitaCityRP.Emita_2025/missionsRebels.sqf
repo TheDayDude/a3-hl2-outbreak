@@ -1,7 +1,7 @@
 if (!isServer) exitWith {};
 
-// Pick a random mission ID (1–3 here)
-private _missionIndex = selectRandom [1, 2, 3, 4];
+// Pick a random mission ID (1–5 here)
+private _missionIndex = selectRandom [1, 2, 3, 4, 5];
 
 switch (_missionIndex) do {
 // === Mission 1: Assassinate Ordinal ===
@@ -547,7 +547,7 @@ case 4: {
     private _guards   = [];
     for "_i" from 1 to 4 do {
         private _p = [_spawnPos,8 + random 5, random 360] call BIS_fnc_relPos;
-        private _g = _guardGrp createUnit [selectRandom ["WBK_Combine_HL2","WBK_Combine_CP_SMG"], _p, [], 0, "FORM"];
+        private _g = _guardGrp createUnit [selectRandom ["WBK_Combine_HL2_Type","WBK_Combine_CP_SMG"], _p, [], 0, "FORM"];
         _guards pushBack _g;
     };
     _guardGrp setBehaviour "AWARE";
@@ -622,6 +622,266 @@ case 4: {
             deleteGroup _huntGrp;
         };
         if (!isNull _rogue) then { deleteVehicle _rogue; };
+        [_taskId] call BIS_fnc_deleteTask;
+    };
+};
+
+// === Mission 5: Hack Combine Terminal ===
+case 5: {
+    if (!isServer) exitWith {};
+
+    // --- Dedicated server-safe hacking actions ---
+    if (isNil "RBL_fnc_addHackActions") then {
+        RBL_fnc_addHackActions = {
+            params ["_term"];
+            if (isNull _term) exitWith {};
+            _term addAction [
+                "Start Hacking",
+                {
+                    params ["_target","_caller"];
+                    [_target,_caller] remoteExec ["RBL_fnc_startHackServer",2];
+                },
+                nil,1.5,true,true,"",
+                "side _this == east && {_target getVariable ['hack_state','idle'] == 'idle'}",
+                4
+            ];
+            _term addAction [
+                "Resume Hacking",
+                {
+                    params ["_target","_caller"];
+                    [_target,_caller] remoteExec ["RBL_fnc_resumeHackServer",2];
+                },
+                nil,1.5,true,true,"",
+                "side _this == east && {_target getVariable ['hack_state',''] == 'paused'}",
+                4
+            ];
+        };
+        publicVariable "RBL_fnc_addHackActions";
+    };
+
+    if (isNil "RBL_fnc_startHackServer") then {
+        RBL_fnc_startHackServer = {
+            params ["_term","_caller"];
+            if (_term getVariable ["hack_state","idle"] == "idle") then {
+                _term setVariable ["hack_state","running", true];
+                _term setVariable ["hack_lastPresence", time, true];
+            };
+        };
+        publicVariable "RBL_fnc_startHackServer";
+    };
+
+    if (isNil "RBL_fnc_resumeHackServer") then {
+        RBL_fnc_resumeHackServer = {
+            params ["_term","_caller"];
+            if (_term getVariable ["hack_state",""] == "paused") then {
+                _term setVariable ["hack_state","running", true];
+                _term setVariable ["hack_lastPresence", time, true];
+            };
+        };
+        publicVariable "RBL_fnc_resumeHackServer";
+    };
+
+    if (isNil "RBL_fnc_monitorHackClient") then {
+        RBL_fnc_monitorHackClient = {
+            params ["_term"];
+            if (!hasInterface || {side player != east}) exitWith {};
+            private _shown = false;
+            while { !isNull _term } do {
+                private _state = _term getVariable ["hack_state","idle"];
+                private _time = _term getVariable ["hack_time",0];
+                switch (_state) do {
+                    case "running": {
+                        hintSilent format ["Hacking: %1", [_time,"MM:SS"] call BIS_fnc_secondsToString];
+                        _shown = true;
+                    };
+                    case "paused": {
+                        hintSilent format ["Hacking paused: %1", [_time,"MM:SS"] call BIS_fnc_secondsToString];
+                        _shown = true;
+                    };
+                    default {
+                        if (_shown) then { hintSilent ""; _shown = false; };
+                    };
+                };
+                sleep 1;
+            };
+            hintSilent "";
+        };
+        publicVariable "RBL_fnc_monitorHackClient";
+    };
+
+    // pick combine marker
+    private _cmbMarkers = allMapMarkers select { toLower _x find "combine_" == 0 };
+    if (_cmbMarkers isEqualTo []) exitWith {
+        ["[Rebel Mission] No combine_ markers found — mission skipped."] remoteExec ["systemChat",0];
+    };
+
+    private _marker = selectRandom _cmbMarkers;
+    private _pos = getMarkerPos _marker;
+
+    // spawn terminal
+    private _terminal = createVehicle ["HL_CMB_Static_interface002", _pos, [], 0, "NONE"];
+    _terminal setDir random 360;
+    _terminal setVariable ["hack_state","idle", true];
+    _terminal setVariable ["hack_time",300,true];
+    _terminal setVariable ["hack_lastPresence", time, true];
+
+    // initial protection squad
+    private _guardGrp = createGroup west;
+    for "_i" from 1 to 4 do {
+        private _gPos = [_pos, 6 + random 4, random 360] call BIS_fnc_relPos;
+        _guardGrp createUnit [selectRandom ["WBK_Combine_Grunt","WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_AR"], _gPos, [], 0, "FORM"];
+    };
+    _guardGrp setBehaviour "AWARE";
+    _guardGrp setCombatMode "RED";
+    [_guardGrp, _pos, 40] call BIS_fnc_taskPatrol;
+
+    // add actions for rebels
+    [_terminal] remoteExec ["RBL_fnc_addHackActions",0,true];
+    [_terminal] remoteExec ["RBL_fnc_monitorHackClient",0,true];
+
+    // create task
+    private _taskId = format ["task_hackTerminal_%1", diag_tickTime];
+    [east,_taskId,
+        ["Vital intel resides on this Overwatch terminal. Hack into it and stay nearby. Resume the process as needed.","Hack Combine Terminal",""],
+        _pos,true
+    ] call BIS_fnc_taskCreate;
+
+    // monitor mission
+    [_taskId,_terminal,_guardGrp] spawn {
+        params ["_taskId","_terminal","_guardGrp"];
+        private _deadline = time + 2700;
+        private _timeLeft = 300;
+        private _nextWave = -1;
+        private _nextPause = -1;
+        private _heliSpawned = false;
+        private _allUnits = [_terminal];
+        private _allGroups = [];
+        if (!isNull _guardGrp) then {
+            { _allUnits pushBack _x; } forEach units _guardGrp;
+            _allGroups pushBack _guardGrp;
+        };
+        private _success = false;
+        private _fail = false;
+        private _lastPresence = time;
+
+        while { !_success && !_fail } do {
+            sleep 1;
+
+            if (time > _deadline) exitWith { _fail = true; };
+
+            private _state = _terminal getVariable ["hack_state","idle"];
+
+            if (_state != "idle") then {
+                if (_nextWave < 0) then {
+                    _nextWave = time;
+                    _nextPause = time + 60 + random 60;
+                };
+                private _rebels = allUnits select { side _x == east && alive _x && (_x distance2D _terminal) < 200 };
+                if (_rebels isNotEqualTo []) then {
+                    _lastPresence = time;
+                } else {
+                    if (time - _lastPresence > 200) exitWith { _fail = true; };
+                };
+            };
+
+            if (_nextWave >= 0 && time >= _nextWave) then {
+                _nextWave = time + 90;
+                private _wpPos = getPos _terminal;
+                private _spawnPos = [_wpPos, 250, 450, 0, 0, 20, 0] call BIS_fnc_findSafePos;
+                private _grp = createGroup west;
+                private _count = 4 + floor random 3;
+                for "_i" from 1 to _count do {
+                    private _p = [_spawnPos,5, random 360] call BIS_fnc_relPos;
+                    private _u = _grp createUnit [selectRandom ["WBK_Combine_Grunt","WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_AR"], _p, [], 0, "FORM"];
+                    _allUnits pushBack _u;
+                };
+                _grp setBehaviour "AWARE";
+                _grp setCombatMode "RED";
+                private _wp = _grp addWaypoint [_wpPos,0];
+                _wp setWaypointType "SAD";
+                _allGroups pushBack _grp;
+            };
+
+            if (_state == "running") then {
+                _timeLeft = _timeLeft - 1;
+                _terminal setVariable ["hack_time",_timeLeft,true];
+                if (_timeLeft <= 0) exitWith { _success = true; };
+
+                if (!_heliSpawned && _timeLeft <= 150) then {
+                    _heliSpawned = true;
+                    private _spawn = [getPos _terminal, 1000, 1200, 0, 0, 20, 0] call BIS_fnc_findSafePos;
+                    private _heli = createVehicle ["B_Heli_Transport_03_unarmed_F", _spawn, [], 0, "FLY"];
+                    _heli flyInHeight 60;
+                    _allUnits pushBack _heli;
+                    createVehicleCrew _heli;
+                    { _allUnits pushBack _x; } forEach crew _heli;
+                    _allGroups pushBack group (driver _heli);
+
+                    private _eliteGrp = createGroup west;
+                    // mix of elite soldiers and assassins
+                    for "_i" from 1 to 3 do {
+                        private _e = _eliteGrp createUnit ["WBK_Combine_HL2_Type_Elite", _spawn, [], 0, "NONE"];
+                        _e moveInCargo _heli;
+                        _allUnits pushBack _e;
+                    };
+                    for "_i" from 1 to 3 do {
+                        private _a = _eliteGrp createUnit ["WBK_Combine_ASS_SMG", _spawn, [], 0, "NONE"];
+                        _a moveInCargo _heli;
+                        _allUnits pushBack _a;
+                    };
+                    _allGroups pushBack _eliteGrp;
+
+                    [_heli,_terminal,_eliteGrp] spawn {
+                        params ["_heli","_term","_grp"];
+                        private _dropPos = getPos _term;
+                        private _exitPos = [_dropPos, 2000, 2500, 0, 0, 20, 0] call BIS_fnc_findSafePos;
+                        _heli move (_dropPos vectorAdd [0,0,60]);
+                        waitUntil { sleep 1; (_heli distance2D _dropPos) < 100 };
+                        {
+                            unassignVehicle _x;
+                            _x action ["Eject", _heli];
+                            _x allowDamage false;
+                            [_x] spawn { params ["_u"]; waitUntil { sleep 0.5; isTouchingGround _u }; _u allowDamage true; };
+                        } forEach units _grp;
+                        _grp setBehaviour "AWARE";
+                        _grp setCombatMode "RED";
+                        private _wp = _grp addWaypoint [_dropPos, 0];
+                        _wp setWaypointType "SAD";
+                        _heli move (_exitPos vectorAdd [0,0,80]);
+                        waitUntil { sleep 1; (_heli distance2D _dropPos) > 1500 || !canMove _heli };
+                        { if (!isNull _x) then { deleteVehicle _x }; } forEach crew _heli;
+                        deleteVehicle _heli;
+                    };
+                };
+
+                if (time >= _nextPause) then {
+                    _terminal setVariable ["hack_state","paused",true];
+                    _nextPause = time + 60 + random 60;
+                    ["Hacking paused! Use Resume Hacking."] remoteExec ["hint", (allPlayers select { side _x == east }) apply { owner _x }];
+                };
+            };
+        };
+
+        if (_success) then {
+            [_taskId,"SUCCEEDED",true] call BIS_fnc_taskSetState;
+            missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 2, true];
+            private _amt = 4 + floor random 5;
+            {
+                if (side _x == east && alive _x) then {
+                    for "_i" from 1 to _amt do { _x addItem "VRP_HL_Token_Item"; };
+                };
+            } forEach allPlayers;
+            [format ["Terminal hacked. You acquire %1 Tokens.", _amt]]
+            remoteExec ["hintSilent", (allPlayers select { side _x == east }) apply { owner _x }];
+        } else {
+            [_taskId,"FAILED",true] call BIS_fnc_taskSetState;
+            missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
+        };
+
+        sleep 300;
+        { if (!isNull _x) then { deleteVehicle _x }; } forEach _allUnits;
+        { if (!isNull _x) then { deleteGroup _x }; } forEach _allGroups;
+        if (!isNull _terminal) then { deleteVehicle _terminal; };
         [_taskId] call BIS_fnc_deleteTask;
     };
 };

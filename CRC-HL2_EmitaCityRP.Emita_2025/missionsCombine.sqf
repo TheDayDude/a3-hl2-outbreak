@@ -1,7 +1,7 @@
 if (!isServer) exitWith {};
 
-// Pick a random mission ID (1–4 here)
-private _missionIndex = selectRandom [1, 2, 3, 4];
+// Pick a random mission ID (1–5 here)
+private _missionIndex = selectRandom [1, 2, 3, 4, 5];
 
 switch (_missionIndex) do {
 // === Mission 1: Quell Worker Riot  ===
@@ -623,6 +623,139 @@ case 4: {
             if (alive _x && { side _x == civilian }) then { deleteVehicle _x };
         } forEach _civs;
 
+        [_taskId] call BIS_fnc_deleteTask;
+    };
+};
+
+// === Mission 5: Capture Rebel Scientist ===
+case 5: {
+    if (!isServer) exitWith {};
+
+    private _rebelMarkers = allMapMarkers select { toLower _x find "rebel_" == 0 };
+    if (_rebelMarkers isEqualTo []) exitWith {
+        ["[Scientist] No rebel_ markers found — mission skipped."] remoteExec ["systemChat", 0];
+    };
+
+    private _marker    = selectRandom _rebelMarkers;
+    private _centerPos = getMarkerPos _marker;
+
+    // Create research HQ at a safe position
+    private _hqPos = [_centerPos, 100, 400, 20, 0, 0.4, 0] call BIS_fnc_findSafePos;
+    private _hq = createVehicle ["Land_Research_HQ_F", _hqPos, [], 0, "NONE"];
+    _hq setDir random 360;
+
+    // Spawn scientist inside the building
+    private _civGrp = createGroup civilian;
+    private _scientist = _civGrp createUnit ["c_scientist_F", _hqPos, [], 0, "NONE"];
+    _scientist disableAI "MOVE";
+    private _positions = _hq buildingPos -1;
+    if (!(_positions isEqualTo [])) then { _scientist setPosATL (selectRandom _positions); };
+
+    // WEST task
+    private _taskId = format ["task_captureScientist_%1", diag_tickTime];
+    [west, _taskId,
+        ["Capture the rebel scientist and deliver them to the Nexus.",
+         "Capture Rebel Scientist", ""],
+        _hqPos, true
+    ] call BIS_fnc_taskCreate;
+
+    private _rebelInfantry = [
+        "WBK_Rebel_Rifleman_1","WBK_Rebel_SMG_3","WBK_Rebel_SMG_2","UU_Sniper","UU_CP",
+        "WBK_Rebel_Medic_1","WBK_Rebel_WP_3","WBK_Rebel_Shotgunner"
+    ];
+
+    private _groups = [];
+
+    // Turret on the roof
+    private _bb = boundingBox _hq;
+    private _height = (_bb select 1) select 2;
+    private _turretPos = _hq modelToWorld [0, 0, _height + 1];
+    private _turret = createVehicle ["O_G_HMG_02_high_F", _turretPos, [], 0, "NONE"];
+    _turret setDir (random 360);
+    createVehicleCrew _turret;
+    private _turretGrp = group (gunner _turret);
+    _turretGrp setBehaviour "AWARE";
+    _turretGrp setCombatMode "RED";
+    _groups pushBack _turretGrp;
+
+    // Garrison squad inside building (static)
+    private _garrisonGrp = createGroup east;
+    private _garrisonCount = 4 + floor random 3;
+    for "_i" from 1 to _garrisonCount do {
+        private _pos = if (_positions isEqualTo []) then { _hqPos } else { _positions select ((_i - 1) mod (count _positions)) };
+        private _u = _garrisonGrp createUnit [selectRandom _rebelInfantry, _pos, [], 0, "NONE"];
+        _u disableAI "PATH";
+        _u setDir (random 360);
+    };
+    _garrisonGrp setBehaviour "AWARE";
+    _garrisonGrp setCombatMode "RED";
+    _groups pushBack _garrisonGrp;
+
+    // Two patrol squads around the building
+    for "_g" from 1 to 2 do {
+        private _grp = createGroup east;
+        private _count = 4 + floor random 3;
+        for "_i" from 1 to _count do {
+            private _pos = [_hqPos, 30 + random 30, random 360] call BIS_fnc_relPos;
+            _grp createUnit [selectRandom _rebelInfantry, _pos, [], 0, "FORM"];
+        };
+        _grp setBehaviour "AWARE";
+        _grp setCombatMode "RED";
+        [_grp, _hqPos, 120] call BIS_fnc_taskPatrol;
+        _groups pushBack _grp;
+    };
+
+    // RPG squad for anti-armor capability
+    private _rpgGrp = createGroup east;
+    private _rpgCount = 3 + floor random 3;
+    for "_i" from 1 to _rpgCount do {
+        private _pos = [_hqPos, 40 + random 40, random 360] call BIS_fnc_relPos;
+        _rpgGrp createUnit ["WBK_Rebel_HL2_RPG", _pos, [], 0, "FORM"];
+    };
+    _rpgGrp setBehaviour "AWARE";
+    _rpgGrp setCombatMode "RED";
+    [_rpgGrp, _hqPos, 150] call BIS_fnc_taskPatrol;
+    _groups pushBack _rpgGrp;
+
+    // Monitor success/failure
+    [_scientist, _hq, _groups, _taskId, _turret] spawn {
+        params ["_sci","_hq","_groups","_taskId","_turret"];
+        private _deadline = time + 2700; // 45 minutes
+
+        waitUntil {
+            sleep 5;
+            !alive _sci || (_sci inArea RestrictedZone2) || { time > _deadline }
+        };
+
+        if (alive _sci && {_sci inArea RestrictedZone2}) then {
+            [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
+
+            // Reward BLUFOR (6–10 tokens each)
+            private _amount  = 6 + floor random 5;
+            private _targets = allPlayers select { side _x == west && alive _x };
+            missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
+            {
+                for "_i" from 1 to _amount do { _x addItem "VRP_HL_Token_Item"; };
+            } forEach _targets;
+
+            [format ["Scientist captured. You received %1 tokens.", _amount]]
+                remoteExec ["hintSilent", _targets apply { owner _x }];
+        } else {
+            [_taskId, "FAILED", true] call BIS_fnc_taskSetState;
+            missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 1, true];
+        };
+
+        // Cleanup
+        {
+            { if (!isNull _x) then { deleteVehicle _x }; } forEach units _x;
+            deleteGroup _x;
+        } forEach _groups;
+
+        if (!isNull _sci) then { deleteVehicle _sci; };
+        if (!isNull _hq)  then { deleteVehicle _hq; };
+        if (!isNull _turret) then { deleteVehicle _turret; };
+
+        sleep 15;
         [_taskId] call BIS_fnc_deleteTask;
     };
 };
