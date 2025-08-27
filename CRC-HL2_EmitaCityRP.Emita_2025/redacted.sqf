@@ -45,7 +45,7 @@ if (isNil "XEN_fnc_addRitualActions") then {
 
         if (!(_obj getVariable ["communeUsed", false])) then {
             private _cId = _obj addAction [
-                "<t color='#27c707ff'>C !  # o  & m  M u %   N # \  E?</t>",
+                "<t color='#A0FFA0'>C !  # o  ? m  M u  ?  N  ?  E?</t>",
                 {
                     params ["_target", "_caller"];
                     [_target, _caller] remoteExec ["XEN_fnc_communeServer", 2];
@@ -56,7 +56,7 @@ if (isNil "XEN_fnc_addRitualActions") then {
         };
 
         private _sId = _obj addAction [
-            "<t color='#27c707ff'> S  #  u   $  ^ M #  m  & o  #  $  N</t>",
+            "<t color='#A0FFA0'> S  ?  u   ?  . M ,  m  ? o  ?  $  N</t>",
             {
                 params ["_target", "_caller"];
                 [_target, _caller] remoteExec ["XEN_fnc_summonPortalServer", 2];
@@ -67,7 +67,7 @@ if (isNil "XEN_fnc_addRitualActions") then {
 
         if (!(_obj getVariable ["forecastUsed", false])) then {
             private _fId = _obj addAction [
-                "<t color='#27c707ff'>F #  o # R  %  $ c A S  * t</t>",
+                "<t color='#A0FFA0'>F .  o - R  ?  c A S  * t</t>",
                 {
                     params ["_target", "_caller"];
                     [_target, _caller] remoteExec ["XEN_fnc_forecastServer", 2];
