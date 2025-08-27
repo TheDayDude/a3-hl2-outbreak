@@ -15,9 +15,9 @@ switch (_missionIndex) do {
                 _corpse setVariable ["hasRaiseAction", true, true];
 
                 private _text = if (_side == west) then {
-                    "<t color='#27c707ff'>Raise Zombine</t>"
+                    "<t color='#A0FFA0'>Raise Zombine</t>"
                 } else {
-                    "<t color='#27c707ff'>Raise Zombie</t>"
+                    "<t color='#A0FFA0'>Raise Zombie</t>"
                 };
                 _corpse addAction [
                     _text,
@@ -62,9 +62,9 @@ switch (_missionIndex) do {
                 private _hc = createVehicle ["WBK_Headcrab_Normal", _hcPos, [], 0, "NONE"];
                 _hc setDir (getDir _caller);
                 _hc doMove (getPosATL _corpse);
-				sleep 2;
+				sleep 6;
                 [_corpse] remoteExec ["CULT_fnc_raiseFX", 0];
-                sleep 4;
+                sleep 6;
                 deleteVehicle _hc;
 
                 private _grp = group _caller;
@@ -104,16 +104,13 @@ switch (_missionIndex) do {
         private _groups  = [];
 
         // Wrecks and fires
-        private _wreckTypes = ["Land_Wreck_Car2_F","Land_Wreck_Car3_F","Land_Wreck_Truck_F"]; 
-        for "_i" from 1 to 3 do {
+        private _wreckTypes = ["HL_CMB_Static_Wreck_APC","Land_Cyt_Lada","Land_Wreck_Ural_F"]; 
+        for "_i" from 1 to 5 do {
             private _pos = _battlePos getPos [random 25, random 360];
             private _w = createVehicle [selectRandom _wreckTypes, _pos, [], 0, "CAN_COLLIDE"];
-            _spawned pushBack _w;
-        };
-        for "_i" from 1 to 3 do {
-            private _pos = _battlePos getPos [random 25, random 360];
-            private _f = createVehicle ["Particle_MediumFire_F", _pos, [], 0, "CAN_COLLIDE"];
+			private _f = createVehicle ["Particle_MediumFire_F", _pos, [], 0, "CAN_COLLIDE"];
             _spawned pushBack _f;
+            _spawned pushBack _w;
         };
 
         // Corpses
@@ -183,7 +180,7 @@ switch (_missionIndex) do {
 
             // Cleanup and mark mission done
             missionNamespace setVariable ["cultMissionActive", false, true];
-			sleep 300
+			sleep 300;
             { if (!isNull _x) then { deleteVehicle _x; }; } forEach _spawned;
             { if (!isNull _x) then { { deleteVehicle _x } forEach units _x; deleteGroup _x; }; } forEach _groups;
             [_taskId] call BIS_fnc_deleteTask;
