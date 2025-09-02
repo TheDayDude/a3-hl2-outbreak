@@ -1,7 +1,7 @@
 if (!isServer) exitWith {};
 
 // Select a mission
-private _missionIndex = selectRandom [1];
+private _missionIndex = selectRandom [1,2];
 
 switch (_missionIndex) do {
     // === Mission 1: Raise the Flesh ===
@@ -181,6 +181,87 @@ switch (_missionIndex) do {
             // Cleanup and mark mission done
             missionNamespace setVariable ["cultMissionActive", false, true];
 			sleep 300;
+            { if (!isNull _x) then { deleteVehicle _x; }; } forEach _spawned;
+            { if (!isNull _x) then { { deleteVehicle _x } forEach units _x; deleteGroup _x; }; } forEach _groups;
+            [_taskId] call BIS_fnc_deleteTask;
+        };
+    };
+    // === Mission 2: Cleanse the Ritual Site ===
+    case 2: {
+        // Pick a ritual marker
+        private _ritualMarkers = allMapMarkers select { (_x select [0,7]) == "ritual_" };
+        if (_ritualMarkers isEqualTo []) exitWith {
+            ["[Cult Mission] No ritual_ markers found — mission skipped."] remoteExec ["systemChat", 0];
+            missionNamespace setVariable ["cultMissionActive", false, true];
+        };
+
+        private _chosen = selectRandom _ritualMarkers;
+        private _sitePos = getMarkerPos _chosen;
+        private _taskId = format ["cult_cleanse_%1", diag_tickTime];
+        [resistance, _taskId,
+            ["Cleanse the ritual site by eliminating or driving off all Combine within 150 meters.",
+             "Cleanse the Ritual Site", ""],
+            _sitePos, true
+        ] call BIS_fnc_taskCreate;
+
+        private _spawned = [];
+        private _groups  = [];
+        private _units   = [];
+
+        // Xen infestation props
+        private _propTypes = ["xen_anchor_rock","xen_anchor_rock_2","xen_anchor_rock_3","xen_anchor_rock_4"];
+        for "_i" from 1 to 4 do {
+            private _p = _sitePos getPos [random 10, random 360];
+            private _prop = createVehicle [selectRandom _propTypes, _p, [], 0, "CAN_COLLIDE"];
+            _spawned pushBack _prop;
+        };
+
+        // Kamaz truck for cleanup crew
+        private _truckPos = _sitePos getPos [random 12, random 360];
+        private _truck = createVehicle ["I_E_Truck_02_F", _truckPos, [], 0, "NONE"];
+        _spawned pushBack _truck;
+
+        // Combine workers cleaning up
+        private _workerGrp = createGroup west; _groups pushBack _workerGrp;
+        for "_i" from 1 to 3 do {
+            private _p = _sitePos getPos [random 8, random 360];
+            private _w = _workerGrp createUnit ["cmb_Hz_worker", _p, [], 0, "FORM"];
+            removeAllWeapons _w; removeAllAssignedItems _w;
+            _w forceAddUniform "CombainCIV_Uniform_2";
+            _w playMoveNow "Acts_carFixingWheel";
+            _spawned pushBack _w; _units pushBack _w;
+        };
+        _workerGrp allowFleeing 1;
+
+        // Patrolling Combine grunts
+        for "_g" from 1 to 2 do {
+            private _grp = createGroup west; _groups pushBack _grp;
+            for "_i" from 1 to 4 do {
+                private _p = _sitePos getPos [random 35, random 360];
+                private _u = _grp createUnit [selectRandom ["WBK_Combine_Grunt","WBK_Combine_Grunt_White"], _p, [], 0, "FORM"];
+                _spawned pushBack _u; _units pushBack _u;
+            };
+            [_grp, _sitePos, 50] call BIS_fnc_taskPatrol;
+            _grp allowFleeing 1;
+        };
+
+        // Mission success/failure monitoring
+        [_taskId, _sitePos, _spawned, _groups, _units] spawn {
+            params ["_taskId","_center","_spawned","_groups","_units"];
+            private _deadline = time + 2700; // 45 minutes
+            waitUntil {
+                sleep 5;
+                ({alive _x && _x distance _center < 150} count _units) == 0 || { time > _deadline }
+            };
+            if (({alive _x && _x distance _center < 150} count _units) == 0) then {
+                [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
+                missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) + 1, true];
+            } else {
+                [_taskId, "FAILED", true] call BIS_fnc_taskSetState;
+            };
+
+            missionNamespace setVariable ["cultMissionActive", false, true];
+            sleep 300;
             { if (!isNull _x) then { deleteVehicle _x; }; } forEach _spawned;
             { if (!isNull _x) then { { deleteVehicle _x } forEach units _x; deleteGroup _x; }; } forEach _groups;
             [_taskId] call BIS_fnc_deleteTask;

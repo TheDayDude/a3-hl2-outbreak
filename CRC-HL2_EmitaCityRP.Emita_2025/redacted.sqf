@@ -38,6 +38,36 @@ if (isNil "XEN_fnc_removeForecastAction") then {
     publicVariable "XEN_fnc_removeForecastAction";
 };
 
+if (isNil "XEN_fnc_petHoundeye") then {
+    XEN_fnc_petHoundeye = {
+        params ["_hound", "_caller"];
+        if (isNull _hound || {isNull _caller}) exitWith {};
+        _caller setDir (_caller getDir _hound);
+        _hound setDir (_hound getDir _caller);
+        _caller playMoveNow "Acts_Accessing_Computer_In";
+        [_hound, "WBK_HoundEye_Alert_6"] remoteExecCall ["say3D", 0];
+        uiSleep 3;
+        _caller switchMove "";
+    };
+    publicVariable "XEN_fnc_petHoundeye";
+};
+
+if (isNil "XEN_fnc_addPetHoundeyeAction") then {
+    XEN_fnc_addPetHoundeyeAction = {
+        params ["_hound", "_caller"];
+        if (!hasInterface) exitWith {};
+        _hound addAction [
+            "Pet Houndeye",
+            {
+                params ["_target", "_caller"];
+                [_target, _caller] remoteExec ["XEN_fnc_petHoundeye", 0];
+            },
+            nil, 1.5, true, true, "", "", 3, true
+        ];
+    };
+    publicVariable "XEN_fnc_addPetHoundeyeAction";
+};
+
 if (isNil "XEN_fnc_addRitualActions") then {
     XEN_fnc_addRitualActions = {
         params ["_obj"];
@@ -147,6 +177,9 @@ if (isNil "XEN_fnc_summonPortalServer") then {
             private _u = _grp createUnit [selectRandom _types, _unitPos, [], 0, "FORM"];
             _u setBehaviour "AWARE";
             _u setCombatMode "RED";
+            if (typeOf _u == "WBK_Houndeye_1") then {
+                [_u, _caller] remoteExec ["XEN_fnc_addPetHoundeyeAction", _caller];
+            };
 			private _ps = "#particlesource" createVehicleLocal _unitPos;
 			_ps setParticleParams [["\A3\Data_F\ParticleEffects\Universal\Universal",16,12,8,0],"","Billboard",1,2,[0,0,0],[0,0,0],1,0.5,0.5,0.1,[1],[ [0,1,0,0.5] ],[0],1,0,"","",_u];
 			_ps setParticleRandom [0,[0.5,0.5,0.5],[0,0,0],0,0,[0,0,0,0],0,0];
@@ -180,7 +213,7 @@ if (isNil "XEN_fnc_forecastServer") then {
 [] spawn {
     private _markers = allMapMarkers select { (_x select [0,7]) == "ritual_" };
     {
-        if (random 1 < 0.2) then {
+        if (random 1 < 0.99) then {
             private _coco = createVehicle ["xen_coconut", getMarkerPos _x, [], 0, "NONE"];
             [_coco] remoteExec ["XEN_fnc_addRitualActions", 0, true];
         };
