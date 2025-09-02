@@ -34,6 +34,8 @@ if (isServer) then {
     } forEach (allMissionObjects "Combine_Shield_wall_F");
 };
 
+createVehicle ["Gravity_BeamGreen_Module", getMarkerPos "GravBeam", [], 0, "NONE"];
+
 call compile preprocessFileLineNumbers "portalStorm.sqf";
 
 if (isNil "Global_CID_Registry") then {
@@ -332,6 +334,7 @@ if (isServer) then {
     };
 };
 
+// weird workarounds
 [] spawn {
     while {true} do {
         {

@@ -44,9 +44,9 @@ if (isNil "XEN_fnc_petHoundeye") then {
         if (isNull _hound || {isNull _caller}) exitWith {};
         _caller setDir (_caller getDir _hound);
         _hound setDir (_hound getDir _caller);
-        _caller playMoveNow "Acts_Accessing_Computer_In";
+        _caller playMoveNow "Acts_CivilTalking_2";
         [_hound, "WBK_HoundEye_Alert_6"] remoteExecCall ["say3D", 0];
-        uiSleep 3;
+        uiSleep 7;
         _caller switchMove "";
     };
     publicVariable "XEN_fnc_petHoundeye";
@@ -131,6 +131,9 @@ if (isNil "XEN_fnc_communeServer") then {
             ["You have become one with it."] remoteExec ["hint", _caller];
 			_caller addItem "rds_uniform_priest";  
 			private _pos = getPosATL _caller;
+            _caller setVariable ["WBK_CombineType","  g_hecu_",true]; 
+            _caller setVariable ["WBK_HL_CustomArmour",256,true]; 
+            _caller setVariable ["WBK_HL_CustomArmour_MAX",256,true];
 			private _ps = "#particlesource" createVehicleLocal _pos;
 			_ps setParticleParams [["\A3\Data_F\ParticleEffects\Universal\Universal",16,12,8,0],"","Billboard",1,2,[0,0,0],[0,0,0],1,0.5,0.5,0.1,[1],[ [0,1,0,0.5] ],[0],1,0,"","",_caller];
 			_ps setParticleRandom [0,[0.5,0.5,0.5],[0,0,0],0,0,[0,0,0,0],0,0];
@@ -213,7 +216,7 @@ if (isNil "XEN_fnc_forecastServer") then {
 [] spawn {
     private _markers = allMapMarkers select { (_x select [0,7]) == "ritual_" };
     {
-        if (random 1 < 0.99) then {
+        if (random 1 < 0.2) then {
             private _coco = createVehicle ["xen_coconut", getMarkerPos _x, [], 0, "NONE"];
             [_coco] remoteExec ["XEN_fnc_addRitualActions", 0, true];
         };

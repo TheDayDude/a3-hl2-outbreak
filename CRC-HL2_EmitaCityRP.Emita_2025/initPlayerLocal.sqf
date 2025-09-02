@@ -1,3 +1,49 @@
+if (isNil "fnc_applyBlur") then {
+    fnc_applyBlur = {
+        params ["_id", "_unit"];
+        if (!hasInterface) exitWith {};
+
+        [_unit] spawn {
+            private _chrom = ppEffectCreate ["ChromAberration", 200];
+            _chrom ppEffectEnable true;
+            _chrom ppEffectAdjust [0.05, 0.05, true];
+            _chrom ppEffectCommit 0;
+
+            private _wet = ppEffectCreate ["WetDistortion", 201];
+            _wet ppEffectEnable true;
+            // WetDistortion requires 15 parameters, use defaults for remaining slots
+            _wet ppEffectAdjust [1, 1, 0.1, 0.1, 1, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5];
+            _wet ppEffectCommit 0;
+
+            private _grain = ppEffectCreate ["FilmGrain", 202];
+            _grain ppEffectEnable true;
+            _grain ppEffectAdjust [0.2, 1, 1, 0, 1];
+            _grain ppEffectCommit 0;
+
+            [_wet] spawn {
+                params ["_eff"];
+                uiSleep 5;
+                _eff ppEffectEnable false;
+                ppEffectDestroy _eff;
+            };
+
+            [_chrom] spawn {
+                params ["_eff"];
+                uiSleep 60;
+                _eff ppEffectEnable false;
+                ppEffectDestroy _eff;
+            };
+
+            [_grain] spawn {
+                params ["_eff"];
+                uiSleep 120;
+                _eff ppEffectEnable false;
+                ppEffectDestroy _eff;
+            };
+        };
+    };
+};
+
 [] spawn {
     waitUntil {sleep 1; !isNull player};
     hint "Requesting saved state";
