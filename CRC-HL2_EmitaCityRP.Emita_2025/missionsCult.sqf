@@ -516,6 +516,7 @@ switch (_missionIndex) do {
                     [_taskR, "SUCCEEDED", true] call BIS_fnc_taskSetState;
                     [_taskW, "FAILED", true] call BIS_fnc_taskSetState;
                     [_taskE, "FAILED", true] call BIS_fnc_taskSetState;
+                    missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) + 1, true];
 
                     ["smasher_idle_5"] remoteExec ["playSound", 0];
 
