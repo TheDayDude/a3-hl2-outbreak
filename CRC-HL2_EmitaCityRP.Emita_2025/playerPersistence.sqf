@@ -49,7 +49,9 @@ if (isNil "MRC_fnc_savePlayerState") then {
             _unit getVariable ["CanBuyFakeID", false],
             _unit getVariable ["HasCID", false],
             _unit getVariable ["CID_Number", nil],
-            _unit getVariable ["favor", 0]
+            _unit getVariable ["favor", 0],
+            _unit getVariable ["antiKills", 0],
+            _unit getVariable ["wantedLevel", 0]
         ]];
         saveProfileNamespace;
         ["Autosave Complete."] remoteExec ["systemChat", _unit];
@@ -71,8 +73,7 @@ if (isNil "MRC_fnc_restorePlayerState") then {
             [_unit] call MRC_fnc_assignCID;
             _unit setVariable ["favor", 0, true];
         } else {
-            _data params ["_sideStr", "_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFake", "_hasCID", "_cid", "_favor"];
-            private _side = switch (_sideStr) do {
+            _data params ["_sideStr", "_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFake", "_hasCID", "_cid", "_favor", ["_kills",0], ["_wlevel",0]];            private _side = switch (_sideStr) do {
                 case "WEST": {west};
                 case "EAST": {east};
                 case "GUER": {independent};
@@ -90,6 +91,10 @@ if (isNil "MRC_fnc_restorePlayerState") then {
             _unit setVariable ["WBK_HL_CustomArmour", _arm];
             _unit setVariable ["WBK_HL_CustomArmour_MAX", _armMax];
             _unit setVariable ["favor", _favor, true];
+            _unit setVariable ["antiKills", _kills];
+            _unit setVariable ["wantedLevel", _wlevel];
+            [_unit,["antiKills",_kills,true]] remoteExec ["setVariable",0,true];
+            [_unit,["wantedLevel",_wlevel,true]] remoteExec ["setVariable",0,true];
             [_unit, _pos, _loadout, _combine, _arm, _armMax, _isOTA, _canFake, _hasCID, _cid] remoteExecCall ["MRC_fnc_applyPlayerState", _unit];
         };
         _unit setVariable ["MRC_stateRestored", true];

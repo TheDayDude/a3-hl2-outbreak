@@ -10,6 +10,7 @@ CID_Malcompliance = createHashMap;
 [] execVM "rebelIncursion.sqf";
 [] execVM "spawnLootSystem.sqf";
 [] execVM "malcompliant.sqf";
+[] execVM "wantedLevel.sqf";
 [] execVM "qzones.sqf";
 [] execVM "garrison.sqf";
 [] execVM "merchants.sqf";

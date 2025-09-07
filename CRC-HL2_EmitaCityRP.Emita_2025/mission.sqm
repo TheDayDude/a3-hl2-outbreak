@@ -13,22 +13,22 @@ class EditorData
 	};
 	class ItemIDProvider
 	{
-		nextID=37692;
+		nextID=37715;
 	};
 	class MarkerIDProvider
 	{
-		nextID=154;
+		nextID=155;
 	};
 	class LayerIndexProvider
 	{
-		nextID=8087;
+		nextID=8271;
 	};
 	class Camera
 	{
-		pos[]={3609.1924,176.55359,4450.3013};
-		dir[]={0.53571236,-0.8426376,-0.054566085};
-		up[]={0.83829963,0.53848201,-0.085386626};
-		aside[]={-0.10133258,-1.2532109e-07,-0.99485475};
+		pos[]={2997.3105,66.894844,3795.1221};
+		dir[]={-0.55289698,-0.41400713,0.72312373};
+		up[]={-0.25146702,0.91027212,0.32888937};
+		aside[]={0.79440278,-3.0430965e-07,0.60739505};
 	};
 };
 binarizationWanted=0;
@@ -2292,7 +2292,7 @@ class Mission
 	};
 	class Entities
 	{
-		items=787;
+		items=788;
 		class Item0
 		{
 			dataType="Layer";
@@ -60085,6 +60085,7 @@ class Mission
 		{
 			dataType="Layer";
 			name="AmbientNPCs/Objects";
+			state=1;
 			class Entities
 			{
 				items=75;
@@ -74101,7 +74102,7 @@ class Mission
 						dynamicSimulation=1;
 					};
 					id=22208;
-					atlOffset=0.040016174;
+					atlOffset=-95;
 					class CustomAttributes
 					{
 						class Attribute0
@@ -74425,7 +74426,7 @@ class Mission
 						dynamicSimulation=1;
 					};
 					id=22558;
-					atlOffset=1.9073486e-06;
+					atlOffset=-95;
 					class CustomAttributes
 					{
 						class Attribute0
@@ -74948,7 +74949,7 @@ class Mission
 					{
 					};
 					id=23367;
-					atlOffset=9.9370003;
+					atlOffset=-95;
 					class CustomAttributes
 					{
 						class Attribute0
@@ -112379,7 +112380,7 @@ class Mission
 		{
 			dataType="Marker";
 			position[]={2109.7849,4.1300001,4930.833};
-			name="a";
+			name="Nexus";
 			type="Overwatch";
 			a=2;
 			b=2;
@@ -380358,6 +380359,86 @@ class Mission
 			name="TheCrater";
 			id=37691;
 			type="LocationRespawnPoint_F";
+		};
+		class Item787
+		{
+			dataType="Marker";
+			position[]={1676.109,4.1300001,4114.9468};
+			name="wastland_patrol";
+			type="hlsep_marker_union4";
+			alpha=0;
+			id=37692;
+			atlOffset=0.00044584274;
+			class CustomAttributes
+			{
+				class Attribute0
+				{
+					property="markerblink";
+					expression="if ((_value # 0 isNotEqualTo 0) || (_value # 1 isNotEqualTo 0)) then {[_this, _value # 0, _value # 1] spawn BIS_fnc_blinkMarker};";
+					class Value
+					{
+						class data
+						{
+							singleType="ARRAY";
+							class value
+							{
+								items=3;
+								class Item0
+								{
+									class data
+									{
+										singleType="SCALAR";
+										value=0;
+									};
+								};
+								class Item1
+								{
+									class data
+									{
+										singleType="SCALAR";
+										value=0;
+									};
+								};
+								class Item2
+								{
+									class data
+									{
+										singleType="SCALAR";
+										value=0;
+									};
+								};
+							};
+						};
+					};
+				};
+				class Attribute1
+				{
+					property="ENH_markerHideOnStart";
+					expression="                if (!isServer || is3DEN || !_value) exitWith {};                missionNamespace setVariable [format ['ENH_attributesMarker_%1_initAlpha', _this], markerAlpha _this];                _this setMarkerAlpha 0";
+					class Value
+					{
+						class data
+						{
+							singleType="BOOL";
+							value=1;
+						};
+					};
+				};
+				class Attribute2
+				{
+					property="ENH_markerShape";
+					expression="if (_value != 'NONE' && isServer) then {_this setMarkerShape _value}";
+					class Value
+					{
+						class data
+						{
+							singleType="STRING";
+							value="NONE";
+						};
+					};
+				};
+				nAttributes=3;
+			};
 		};
 	};
 	class Connections

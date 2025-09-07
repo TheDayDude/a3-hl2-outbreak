@@ -1,4 +1,4 @@
-params ["_unit", "_corpse"];
+params ["_unit"];
 if (!local _unit) exitWith {};
 
 private _old = _unit getVariable ["CID_Number", nil];
@@ -15,6 +15,8 @@ _unit setVariable ["HasCID", false, false];
 _unit setVariable ["CID_Number", nil, true];
 _unit setVariable ["isLoyalist", false, true];
 _unit setVariable ["Favor", 0, true];
+_unit setVariable ["antiKills", 0, true];
+_unit setVariable ["wantedLevel", 0, true];
 
 [_unit] joinSilent createGroup civilian;
 [_unit] remoteExec ["MRC_fnc_assignCID", 2];

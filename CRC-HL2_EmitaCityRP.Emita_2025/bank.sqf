@@ -34,7 +34,7 @@ if (isNil "MRC_fnc_bankServer") then {
                 saveProfileNamespace;
                 _caller setVariable ["bankTokens", _bal, true];
                 [format ["Deposited %1 token(s). Balance: %2.", _amt, _bal]] remoteExec ["hintSilent", owner _caller];
-                [_caller] call MRC_fnc_savePlayerState;
+                [_caller] remoteExecCall ["MRC_fnc_savePlayerState", 2];
             };
             case "WITHDRAW": {
                 if (_bal < _amt) exitWith {
@@ -46,7 +46,7 @@ if (isNil "MRC_fnc_bankServer") then {
                 _caller setVariable ["bankTokens", _bal, true];
                 for "_i" from 1 to _amt do { _caller addItem "VRP_HL_Token_Item"; };
                 [format ["Withdrew %1 token(s). Balance: %2.", _amt, _bal]] remoteExec ["hintSilent", owner _caller];
-                [_caller] call MRC_fnc_savePlayerState;
+                [_caller] remoteExecCall ["MRC_fnc_savePlayerState", 2];
             };
             case "BALANCE": {
                 [format ["Bank balance: %1 token(s).", _bal]] remoteExec ["hintSilent", owner _caller];
