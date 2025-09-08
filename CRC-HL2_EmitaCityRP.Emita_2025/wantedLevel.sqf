@@ -1,19 +1,19 @@
 if (!isServer) exitWith {};
 
 // === Configuration ===
-private _unitLists = [
+unitLists = [
     [],
-    ["WBK_Combine_CP_SMG","WBK_Combine_CP_SMG","WBK_Combine_CP_SMG","WBK_Combine_CP_P","WBK_Combine_CP_P","WBK_Combine_CP_P","WBK_Combine_CP_P"],
-    ["WBK_Combine_Ordinal","WBK_Combine_Grunt","WBK_Combine_Grunt_White","WBK_Combine_HL2_Type_WastelandPatrol","WBK_HL_Conscript_6","WBK_HL_Conscript_3","WBK_Combine_Grunt","WBK_Combine_Grunt_White","WBK_Combine_Grunt"],
-    ["WBK_Combine_Ordinal","WBK_Combine_Grunt","WBK_Combine_APF","WBK_Combine_Walhammer","WBK_Combine_ASS_SMG","WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_WastelandPatrol"],
+    ["WBK_Combine_CP_SMG","WBK_Combine_CP_SMG","WBK_Combine_CP_SMG","WBK_Combine_CP_P","WBK_Combine_CP_P","WBK_Combine_CP_P"],
+    ["WBK_Combine_Ordinal","WBK_Combine_Grunt","WBK_Combine_Grunt_White","WBK_Combine_HL2_Type_WastelandPatrol","WBK_HL_Conscript_6","WBK_HL_Conscript_3","WBK_Combine_Grunt","WBK_Combine_Grunt_White"],
+    ["WBK_Combine_Ordinal","WBK_Combine_APF","WBK_Combine_Walhammer","WBK_Combine_ASS_SMG","WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_WastelandPatrol"],
     ["WBK_Combine_Ordinal","WBK_Combine_APF","WBK_Combine_Walhammer","WBK_Combine_ASS_SMG","WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_WastelandPatrol","WBK_Combine_HL2_Type_AR","WBK_Combine_APF","WBK_Combine_Walhammer","WBK_Combine_ASS_SMG","WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_WastelandPatrol","WBK_Combine_HL2_Type_AR","WBK_Combine_APF"],
     ["WBK_Combine_HL2_Type_Elite","WBK_Combine_APF","WBK_Combine_Walhammer","WBK_Combine_ASS_Sniper","WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_WastelandPatrol","WBK_Combine_HL2_Type_AR","WBK_Combine_APF","WBK_Combine_Walhammer","WBK_Combine_ASS_Sniper","WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_WastelandPatrol","WBK_Combine_HL2_Type_AR","WBK_Combine_APF"]
 ];
 
-private _transport = ["","GT_Prowler","GT_APC","HL_CMB_OW_APC","B_Heli_Transport_03_unarmed_F","B_Heli_Transport_03_F"];
+transport = ["","GT_Prowler","GT_APC","HL_CMB_OW_APC","B_Heli_Transport_03_unarmed_F","B_Heli_Transport_03_F"];
 
-private _respCity = [0,1200,900,600,300,120];
-private _respOut  = [0,5400,3600,2700,1800,1500];
+respCity = [0,5,900,600,300,120];
+respOut  = [0,5400,3600,2700,1800,1500];
  
 // === Utility functions ===
 MRC_fnc_updateWantedLevel = {
@@ -124,14 +124,14 @@ MRC_fnc_spawnQRF = {
             } else {
                 removeAllWeapons _unit; removeAllItems _unit; removeAllAssignedItems _unit; removeUniform _unit; removeHeadgear _unit;
                 _unit forceAddUniform "Z_C18_Uniform_1";
-                _unit addHeadgear "H_SM_CMBMask2";
+                _unit addHeadgear "H_SM_CMBMask";
                 for "_i" from 1 to 4 do {_unit addMagazine "HLB_HSMG";};
                 _unit addWeapon "WBK_CP_HeavySMG";
             };
         };
-    } forEach (_unitLists select _lvl);
+    } forEach (unitLists select _lvl);
 
-    private _vehType = _transport select _lvl;
+    private _vehType = transport select _lvl;
     private _veh = objNull;
     if (_vehType != "") then {
         _veh = createVehicle [_vehType,_pos,[],0,"NONE"];
@@ -184,9 +184,9 @@ MRC_fnc_scheduleQRF = {
     if (!isNull _existing && {count units _existing > 0}) exitWith {};
     if (_target getVariable ["qrfPending",false]) exitWith {};
     _target setVariable ["qrfPending",true];
-    private _delay = if (_target inArea City18) then {_respCity select _lvl} else {_respOut select _lvl};
+    private _delay = if (_target inArea City18) then {respCity select _lvl} else {respOut select _lvl};
     [_target,_lvl,_delay] spawn {
-        params ["_t","_l","_d"];
+        _this params ["_t","_l","_d"];
         sleep _d;
         if (_t getVariable ["wantedLevel",0] != _l) exitWith {_t setVariable ["qrfPending",false];};
         private _grp = _t getVariable ["qrfGroup",objNull];

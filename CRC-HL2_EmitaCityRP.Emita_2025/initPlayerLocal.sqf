@@ -110,6 +110,7 @@ sleep 2;
         private _invTokens = { _x == "VRP_HL_Token_Item" } count (items player);
         private _bankTokens = player getVariable ["bankTokens", 0];
         private _cidNum = player getVariable ["CID_Number", "-"];
+        private _acl = player getVariable ["wantedLevel", 0];
         private _prefix = switch (side player) do {
             case civilian: {"CIT"};
             case west: {"UNIT"};
@@ -118,15 +119,21 @@ sleep 2;
             default {"???"};
         };
         private _cidText = format ["%1-%2", _prefix, _cidNum];
-        private _text = format [
-            "<t size='0.5' color='#00D0FF' align='center' shadow='1' font='LCD14'> %1 | SOCIOSTABILITY: %2%% | INFESTATION: %3%% | TOKENS: %4 | BANK: %5</t>",
+        private _aclSegment = if (_acl >= 1) then {
+            format ["<t color='#FF4D4D'> ANTICITIZEN LEVEL: %1</t>", _acl];
+        } else {
+            "";
+        };
+        private _mainText = format [
+            "<t size='0.5' align='center' shadow='1' font='LCD14'><t color='#00D0FF'> %1 | SOCIOSTABILITY: %2%% | INFESTATION: %3%% | TOKENS: %4 | BANK: %5</t>%6</t>",
             _cidText,
             round _socio,
             round _inf,
             _invTokens,
-            _bankTokens
+            _bankTokens,
+            _aclSegment
         ];
-        [_text, safeZoneX + safeZoneW / 2 - 0.5, safeZoneY + 0.02, 30, 0, 0] spawn BIS_fnc_dynamicText;
+        [_mainText, safeZoneX + safeZoneW / 2 - 0.5, safeZoneY + 0.02, 30, 0, 0] spawn BIS_fnc_dynamicText;
         sleep 2;
     };
 };

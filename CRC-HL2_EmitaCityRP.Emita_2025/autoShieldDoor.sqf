@@ -4,8 +4,8 @@ private _radius = 5;     // detection radius in meters
 
 while {alive _shield} do {
 
-    // Find BLUFOR players within the radius
-    private _nearBlu = allPlayers select { side _x == west && _x distance _shield < _radius };
+    // Find BLUFOR units within the radius
+    private _nearBlu = allUnits select { side _x == west && _x distance _shield < _radius };
 
     if (_nearBlu isNotEqualTo []) then {
         // BLUFOR nearby → “Disable shield” (open)
