@@ -12,7 +12,7 @@ unitLists = [
 
 transport = ["","GT_Prowler","GT_APC","HL_CMB_OW_APC","B_Heli_Transport_03_unarmed_F","B_Heli_Transport_03_F"];
 
-respCity = [0,5,900,600,300,120];
+respCity = [0,1200,900,600,300,120];
 respOut  = [0,5400,3600,2700,1800,1500];
  
 // === Utility functions ===
