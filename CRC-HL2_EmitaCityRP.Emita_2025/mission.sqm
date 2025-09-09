@@ -13,7 +13,7 @@ class EditorData
 	};
 	class ItemIDProvider
 	{
-		nextID=37718;
+		nextID=37720;
 	};
 	class MarkerIDProvider
 	{
@@ -25,10 +25,10 @@ class EditorData
 	};
 	class Camera
 	{
-		pos[]={1396.0704,293.11984,3879.9131};
-		dir[]={0.7229774,-0.567729,-0.39369425};
-		up[]={0.49859911,0.82321382,-0.27150983};
-		aside[]={-0.47823855,-5.6810677e-08,-0.87823373};
+		pos[]={1673.3333,33.514915,4141.8701};
+		dir[]={0.53300452,-0.52277553,-0.66530663};
+		up[]={0.32686293,0.85246754,-0.40799657};
+		aside[]={-0.78044254,-3.5855919e-08,-0.62524426};
 	};
 };
 binarizationWanted=0;
@@ -313,7 +313,8 @@ addons[]=
 	"tts_lns",
 	"GT_Cars",
 	"GT_Air",
-	"A3_Structures_F_Globe_VR_Helpers"
+	"A3_Structures_F_Globe_VR_Helpers",
+	"A3_Structures_F_Mil_Helipads"
 };
 class AddonsMetaData
 {
@@ -2292,7 +2293,7 @@ class Mission
 	};
 	class Entities
 	{
-		items=789;
+		items=790;
 		class Item0
 		{
 			dataType="Layer";
@@ -45372,7 +45373,7 @@ class Mission
 					dataType="Logic";
 					class PositionInfo
 					{
-						position[]={1925.8726,4.1295543,4640.7837};
+						position[]={1925.8727,4.1295543,4640.7837};
 					};
 					areaSize[]={1,-1,1};
 					id=29579;
@@ -380377,12 +380378,11 @@ class Mission
 		class Item787
 		{
 			dataType="Marker";
-			position[]={1676.109,4.1300001,4114.9468};
+			position[]={1691.5487,4.1295543,4114.8984};
 			name="wasteland_patrol";
 			type="hlsep_marker_union4";
 			alpha=0;
 			id=37692;
-			atlOffset=0.00044584274;
 			class CustomAttributes
 			{
 				class Attribute0
@@ -380460,6 +380460,20 @@ class Mission
 			name="Layer 8410";
 			id=37717;
 			atlOffset=-95;
+		};
+		class Item789
+		{
+			dataType="Object";
+			class PositionInfo
+			{
+				position[]={1693.3997,4.1295543,4114.6108};
+			};
+			side="Empty";
+			class Attributes
+			{
+			};
+			id=37719;
+			type="Land_HelipadEmpty_F";
 		};
 	};
 	class Connections

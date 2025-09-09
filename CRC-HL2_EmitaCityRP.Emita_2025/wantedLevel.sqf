@@ -85,6 +85,14 @@ MRC_fnc_trackQRF = {
             _lostStart = 0;
         };
         
+        if (!_onFoot && {({vehicle _x != _veh} count units _grp) > 0}) then {
+            _grp setCombatMode "RED";
+            _grp setBehaviour "COMBAT";
+            deleteWaypoint _wp;
+            _onFoot = true;
+            _lostStart = 0;
+        };
+
         if (!_onFoot) then {
             if (!isNull _veh && {_veh distance _target < 100}) then {
                 {
@@ -170,13 +178,47 @@ MRC_fnc_trackQRF = {
     [_target] call MRC_fnc_scheduleQRF;
 };
 
+MRC_fnc_trackSynth = {
+    params ["_grp","_target"];
+    private _wp = _grp addWaypoint [getPos _target,0];
+    _wp setWaypointType "MOVE";
+    _wp setWaypointSpeed "FULL";
+    while {alive _target && ({alive _x} count units _grp > 0)} do {
+        private _leader = leader _grp;
+        if (_leader distance waypointPosition _wp < 20) then {
+            private _near = allPlayers select {alive _x && {_x distance _leader < 100}};
+            if (_near isEqualTo []) then {
+                deleteWaypoint _wp;
+                _wp = _grp addWaypoint [getPos _target,0];
+                _wp setWaypointType "MOVE";
+                _wp setWaypointSpeed "FULL";
+            } else {
+                deleteWaypoint _wp;
+                _grp setCombatMode "RED";
+                _grp setBehaviour "COMBAT";
+                waitUntil {
+                    sleep 5;
+                    (!alive _target) || ({alive _x} count units _grp == 0) || ((allPlayers select {alive _x && {_x distance (leader _grp) < 100}}) isEqualTo [])
+                };
+                if (!alive _target || {({alive _x} count units _grp == 0)}) exitWith {};
+                _wp = _grp addWaypoint [getPos _target,0];
+                _wp setWaypointType "MOVE";
+                _wp setWaypointSpeed "FULL";
+            };
+        };
+        sleep 5;
+    };
+    {deleteVehicle _x} forEach units _grp;
+    deleteGroup _grp;
+};
+
 MRC_fnc_spawnSynth = {
     params ["_target","_lvl"];
     private _spawnMarker = if (_target inArea City18) then {"Nexus"} else {"wasteland_Patrol"};
     private _pos = getMarkerPos _spawnMarker;
     private _type = switch (_lvl) do {
         case 3: {"WBK_HumanSynth_1"};
-        case 4: {if (random 1 < 0.7) then {"WBK_HumanSynth_1"} else {"WBK_HunterSynth_1"}};
+        case 4: {if (random 1 < 0.6) then {"WBK_HumanSynth_1"} else {"WBK_HunterSynth_1"}};
         case 5: {
             private _r = random 1;
             if (_r < 0.5) then {"WBK_HumanSynth_1"} else {if (_r < 0.8) then {"WBK_HunterSynth_1"} else {"WBK_Strider_HL2"}};
@@ -184,7 +226,7 @@ MRC_fnc_spawnSynth = {
     };
     private _grp = createGroup west;
     _grp createUnit [_type,_pos,[],0,"FORM"];
-    [_grp,_target,objNull] spawn MRC_fnc_trackQRF;
+    [_grp,_target] spawn MRC_fnc_trackSynth;
 };
 
 MRC_fnc_spawnAirSupport = {
