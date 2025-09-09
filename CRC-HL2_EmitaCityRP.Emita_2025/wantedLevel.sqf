@@ -12,8 +12,8 @@ unitLists = [
 
 transport = ["","GT_Prowler","GT_APC","HL_CMB_OW_APC","B_Heli_Transport_03_unarmed_F","B_Heli_Transport_03_F"];
 
-respCity = [0,5,900,600,300,120];
-respOut  = [0,5,3600,2700,1800,1500];
+respCity = [0,5,5,5,5,5];
+respOut  = [0,5,5,5,5,5];
  
 // === Utility functions ===
 MRC_fnc_updateWantedLevel = {
@@ -45,6 +45,9 @@ MRC_fnc_resetWanted = {
 
 MRC_fnc_trackQRF = {
     params ["_grp","_target","_veh"];
+    private _onFoot = false;
+    private _lostStart = 0;
+
     if (!isNull _veh) then {
         sleep 3;
         _veh engineOn true;
@@ -52,17 +55,60 @@ MRC_fnc_trackQRF = {
         _veh setVelocity [(_dir select 0) * 5, (_dir select 1) * 5, (_dir select 2) * 5];
         sleep 3;
     };
+
+    private _wpPos = getPos _target;
+    private _wp = _grp addWaypoint [_wpPos,0];
+    _wp setWaypointType "MOVE";
+    _wp setWaypointSpeed "FULL";
+
     while {alive _target && ({alive _x} count units _grp > 0)} do {
-        private _wp = _grp addWaypoint [getPos _target,0];
-        _wp setWaypointType "MOVE";
-        _wp setWaypointSpeed "FULL";
-        if (!isNull _veh) then {
-            if (_veh distance _target < 100) then {
-                {unassignVehicle _x; doGetOut _x;} forEach units _grp;
+        if (!_onFoot) then {
+            if (!isNull _veh && {_veh distance _target < 100}) then {
+                {
+                    private _role = assignedVehicleRole _x;
+                    if (_role isEqualTo [] || {_role select 0 != "Turret"}) then {unassignVehicle _x; doGetOut _x;};
+                } forEach units _grp;
+                _grp setCombatMode "RED";
+                _grp setBehaviour "COMBAT";
+                _onFoot = true;
+                _lostStart = time;
+            } else {
+                private _leader = leader _grp;
+                if (_leader distance _wpPos < 20 && _leader distance _target > 100) then {
+                    sleep 10;
+                    _wpPos = getPos _target;
+                    _wp = _grp addWaypoint [_wpPos,0];
+                    _wp setWaypointType "MOVE";
+                    _wp setWaypointSpeed "FULL";
+                };
+            };
+        } else {
+            _grp move getPos _target;
+            private _dist = (leader _grp) distance _target;
+            if (_dist > 300) then {
+                if (_lostStart == 0) then {_lostStart = time;};
+                if (time - _lostStart > 300) then {
+                    if (!isNull _veh && {alive _veh}) then {
+                        private _driver = leader _grp;
+                        _driver moveInDriver _veh;
+                        {
+                            if (_x != _driver && {_x != gunner _veh}) then {_x moveInCargo _veh;};
+                        } forEach units _grp;
+                        _onFoot = false;
+                        _lostStart = 0;
+                        _wpPos = getPos _target;
+                        _wp = _grp addWaypoint [_wpPos,0];
+                        _wp setWaypointType "MOVE";
+                        _wp setWaypointSpeed "FULL";
+                    };
+                };
+            } else {
+                _lostStart = 0;
             };
         };
-        sleep 300;
+        sleep 5;
     };
+
     sleep 300;
     {deleteVehicle _x} forEach units _grp;
     if (!isNull _veh) then {deleteVehicle _veh};
