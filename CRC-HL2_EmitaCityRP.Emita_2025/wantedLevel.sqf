@@ -47,6 +47,8 @@ MRC_fnc_trackQRF = {
     params ["_grp","_target","_veh"];
     private _onFoot = false;
     private _lostStart = 0;
+    private _noPlayerTime = -1;
+    private _abandon = false;
 
     private _findSafePos = {
         params ["_obj"];
@@ -68,7 +70,21 @@ MRC_fnc_trackQRF = {
     _wp setWaypointType "MOVE";
     _wp setWaypointSpeed "FULL";
 
-    while {alive _target && ({alive _x} count units _grp > 0)} do {
+        while {alive _target && ({alive _x} count units _grp > 0) && !_abandon} do {
+        if (!_onFoot && {!isNull _veh} && {(!alive _veh) || {!canMove _veh}}) then {
+            {
+                unassignVehicle _x;
+                [_x] allowGetIn false;
+                doGetOut _x;
+            } forEach units _grp;
+            [_grp] orderGetIn false;
+            _grp setCombatMode "RED";
+            _grp setBehaviour "COMBAT";
+            deleteWaypoint _wp;
+            _onFoot = true;
+            _lostStart = 0;
+        };
+        
         if (!_onFoot) then {
             if (!isNull _veh && {_veh distance _target < 100}) then {
                 {
@@ -125,10 +141,27 @@ MRC_fnc_trackQRF = {
                 _lostStart = 0;
             };
         };
+        
+        if (!isNull _veh && {(!alive _veh) || {!canMove _veh}}) then {
+            private _near = allPlayers select {alive _x && {_x distance (leader _grp) < 500}};
+            if (_near isEqualTo []) then {
+                if (_noPlayerTime == -1) then {
+                    _noPlayerTime = time;
+                } else {
+                    if (time - _noPlayerTime > 600) then {_abandon = true;};
+                };
+            } else {
+                _noPlayerTime = -1;
+            };
+        } else {
+            _noPlayerTime = -1;
+        };
+
         sleep 5;
     };
 
-    sleep 300;
+    private _delay = if (_abandon) then {0} else {300};
+    sleep _delay;
     {deleteVehicle _x} forEach units _grp;
     if (!isNull _veh) then {deleteVehicle _veh};
     deleteGroup _grp;
