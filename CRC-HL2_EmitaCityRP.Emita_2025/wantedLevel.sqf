@@ -3,17 +3,17 @@ if (!isServer) exitWith {};
 // === Configuration ===
 unitLists = [
     [],
-    ["WBK_Combine_CP_SMG","WBK_Combine_CP_SMG","WBK_Combine_CP_SMG","WBK_Combine_CP_P","WBK_Combine_CP_P","WBK_Combine_CP_P"],
-    ["WBK_Combine_Ordinal","WBK_Combine_Grunt","WBK_Combine_Grunt_White","WBK_Combine_HL2_Type_WastelandPatrol","WBK_HL_Conscript_6","WBK_HL_Conscript_3","WBK_Combine_Grunt","WBK_Combine_Grunt_White"],
-    ["WBK_Combine_Ordinal","WBK_Combine_APF","WBK_Combine_Walhammer","WBK_Combine_ASS_SMG","WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_WastelandPatrol"],
+    ["WBK_Combine_CP_SMG","WBK_Combine_CP_SMG","WBK_Combine_CP_SMG","WBK_Combine_CP_P","WBK_Combine_CP_P","WBK_Combine_CP_P","WBK_Combine_CP_P"],
+    ["WBK_Combine_Ordinal","WBK_Combine_Grunt","WBK_Combine_Grunt_White","WBK_Combine_HL2_Type_WastelandPatrol","WBK_HL_Conscript_6","WBK_HL_Conscript_3","WBK_Combine_Grunt","WBK_Combine_Grunt_White","WBK_Combine_Grunt_White"],
+    ["WBK_Combine_Ordinal","WBK_Combine_APF","WBK_Combine_Walhammer","WBK_Combine_ASS_SMG","WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_WastelandPatrol","WBK_Combine_HL2_Type"],
     ["WBK_Combine_Ordinal","WBK_Combine_APF","WBK_Combine_Walhammer","WBK_Combine_ASS_SMG","WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_WastelandPatrol","WBK_Combine_HL2_Type_AR","WBK_Combine_APF","WBK_Combine_Walhammer","WBK_Combine_ASS_SMG","WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_WastelandPatrol","WBK_Combine_HL2_Type_AR","WBK_Combine_APF"],
     ["WBK_Combine_HL2_Type_Elite","WBK_Combine_APF","WBK_Combine_Walhammer","WBK_Combine_ASS_Sniper","WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_WastelandPatrol","WBK_Combine_HL2_Type_AR","WBK_Combine_APF","WBK_Combine_Walhammer","WBK_Combine_ASS_Sniper","WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_WastelandPatrol","WBK_Combine_HL2_Type_AR","WBK_Combine_APF"]
 ];
 
 transport = ["","GT_Prowler","GT_APC","HL_CMB_OW_APC","B_Heli_Transport_03_unarmed_F","B_Heli_Transport_03_F"];
 
-respCity = [0,1200,900,600,300,120];
-respOut  = [0,5400,3600,2700,1800,1500];
+respCity = [0,5,900,600,300,120];
+respOut  = [0,5,3600,2700,1800,1500];
  
 // === Utility functions ===
 MRC_fnc_updateWantedLevel = {
@@ -45,6 +45,13 @@ MRC_fnc_resetWanted = {
 
 MRC_fnc_trackQRF = {
     params ["_grp","_target","_veh"];
+    if (!isNull _veh) then {
+        sleep 3;
+        _veh engineOn true;
+        private _dir = vectorDir _veh;
+        _veh setVelocity [(_dir select 0) * 5, (_dir select 1) * 5, (_dir select 2) * 5];
+        sleep 3;
+    };
     while {alive _target && ({alive _x} count units _grp > 0)} do {
         private _wp = _grp addWaypoint [getPos _target,0];
         _wp setWaypointType "MOVE";
@@ -60,6 +67,9 @@ MRC_fnc_trackQRF = {
     {deleteVehicle _x} forEach units _grp;
     if (!isNull _veh) then {deleteVehicle _veh};
     deleteGroup _grp;
+    _target setVariable ["qrfGroup", objNull];
+    _target setVariable ["qrfVehicle", objNull];
+    [_target] call MRC_fnc_scheduleQRF;
 };
 
 MRC_fnc_spawnSynth = {
@@ -159,7 +169,7 @@ MRC_fnc_spawnQRF = {
                 deleteGroup _pilotGrp;
             };
         } else {
-            private _driver = _grp createUnit ["WBK_Combine_CP_SMG",_pos,[],0,"FORM"];
+            private _driver = leader _grp;
             _driver moveInDriver _veh;
             {
                 if (_x != _driver) then {_x moveInCargo _veh;};
