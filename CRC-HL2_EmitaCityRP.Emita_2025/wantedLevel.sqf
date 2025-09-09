@@ -82,6 +82,7 @@ MRC_fnc_trackQRF = {
                 [_grp] orderGetIn false;
                 _grp setCombatMode "RED";
                 _grp setBehaviour "COMBAT";
+                deleteWaypoint _wp;
                 _onFoot = true;
                 _lostStart = 0;
             } else {
@@ -99,13 +100,19 @@ MRC_fnc_trackQRF = {
             private _dist = (leader _grp) distance _target;
             if (_dist > 500) then {
                 if (_lostStart == 0) then {_lostStart = time;};
-                if (time - _lostStart > 300) then {
+                if (time - _lostStart > 60) then {
                     if (!isNull _veh && {alive _veh}) then {
                         private _driver = leader _grp;
+                        _driver assignAsDriver _veh;
                         _driver moveInDriver _veh;
                         {
-                            if (_x != _driver && {_x != gunner _veh}) then {_x moveInCargo _veh;};
+                            if (_x != _driver && {_x != gunner _veh}) then {
+                                _x assignAsCargo _veh;
+                                _x moveInCargo _veh;
+                            };
+                            [_x] allowGetIn true;
                         } forEach units _grp;
+                        [_grp] orderGetIn true;
                         _onFoot = false;
                         _lostStart = 0;
                         _wpPos = [_target] call _findSafePos;

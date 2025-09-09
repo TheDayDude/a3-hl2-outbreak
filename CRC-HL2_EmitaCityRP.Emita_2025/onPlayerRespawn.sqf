@@ -15,8 +15,10 @@ _unit setVariable ["HasCID", false, false];
 _unit setVariable ["CID_Number", nil, true];
 _unit setVariable ["isLoyalist", false, true];
 _unit setVariable ["Favor", 0, true];
-_unit setVariable ["antiKills", 0, true];
-_unit setVariable ["wantedLevel", 0, true];
+_unit setVariable ["antiKills", 0];
+_unit setVariable ["wantedLevel", 0];
+[_unit,["antiKills",0,true]] remoteExec ["setVariable",0,true];
+[_unit,["wantedLevel",0,true]] remoteExec ["setVariable",0,true];
 
 [_unit] joinSilent createGroup civilian;
 [_unit] remoteExec ["MRC_fnc_assignCID", 2];
