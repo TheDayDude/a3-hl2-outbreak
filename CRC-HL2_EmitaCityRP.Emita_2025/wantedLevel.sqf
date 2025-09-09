@@ -180,6 +180,7 @@ MRC_fnc_trackQRF = {
 
 MRC_fnc_trackSynth = {
     params ["_grp","_target"];
+    sleep 5;
     private _wp = _grp addWaypoint [getPos _target,0];
     _wp setWaypointType "MOVE";
     _wp setWaypointSpeed "FULL";
@@ -239,21 +240,22 @@ MRC_fnc_spawnAirSupport = {
     private _pilot = _grp createUnit ["WBK_Combine_CP_SMG",_pos,[],0,"FORM"];
     _pilot moveInDriver _veh;
     _veh flyInHeight 200;
-    [_veh,_grp,_target] spawn {
-        params ["_veh","_grp","_target"];
-        private _start = time;
-        while {time - _start < 900 && alive _veh && alive _target} do {
-            private _wp = _grp addWaypoint [_target getPos [500, random 360],0];
+    [_veh,_grp,_target,_pos] spawn {
+        params ["_veh","_grp","_target","_home"];
+        private _radius = 500;
+        for "_i" from 0 to 12 do {
+            private _wpPos = _target getPos [_radius, _i * 45];
+            private _wp = _grp addWaypoint [_wpPos,0];
             _wp setWaypointType "MOVE";
-            sleep 60;
+            _wp setWaypointSpeed "FULL";
         };
+        private _wpHome = _grp addWaypoint [_home,0];
+        _wpHome setWaypointType "MOVE";
+        waitUntil {sleep 5; !alive _veh || {_veh distance _home < 100}};        
         if (alive _veh) then {
-            _grp move (_veh getPos [2000, random 360]);
-            sleep 60;
+            {deleteVehicle _x} forEach crew _veh;
+            deleteVehicle _veh;
         };
-        {deleteVehicle _x} forEach crew _veh;
-        deleteVehicle _veh;
-        deleteGroup _grp;
     };
 };
 
