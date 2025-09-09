@@ -48,6 +48,13 @@ MRC_fnc_trackQRF = {
     private _onFoot = false;
     private _lostStart = 0;
 
+    private _findSafePos = {
+        params ["_obj"];
+        private _p = [getPos _obj, 0, 100, 5, 0, 20, 0] call BIS_fnc_findSafePos;
+        _p set [2,0];
+        _p
+    };
+
     if (!isNull _veh) then {
         sleep 3;
         _veh engineOn true;
@@ -56,7 +63,7 @@ MRC_fnc_trackQRF = {
         sleep 3;
     };
 
-    private _wpPos = getPos _target;
+    private _wpPos = [_target] call _findSafePos;
     private _wp = _grp addWaypoint [_wpPos,0];
     _wp setWaypointType "MOVE";
     _wp setWaypointSpeed "FULL";
@@ -66,17 +73,22 @@ MRC_fnc_trackQRF = {
             if (!isNull _veh && {_veh distance _target < 100}) then {
                 {
                     private _role = assignedVehicleRole _x;
-                    if (_role isEqualTo [] || {_role select 0 != "Turret"}) then {unassignVehicle _x; doGetOut _x;};
+                    if (_role isEqualTo [] || {_role select 0 != "Turret"}) then {
+                        unassignVehicle _x;
+                        [_x] allowGetIn false;
+                        doGetOut _x;
+                    };
                 } forEach units _grp;
+                [_grp] orderGetIn false;
                 _grp setCombatMode "RED";
                 _grp setBehaviour "COMBAT";
                 _onFoot = true;
-                _lostStart = time;
+                _lostStart = 0;
             } else {
                 private _leader = leader _grp;
                 if (_leader distance _wpPos < 20 && _leader distance _target > 100) then {
                     sleep 10;
-                    _wpPos = getPos _target;
+                    _wpPos = [_target] call _findSafePos;
                     _wp = _grp addWaypoint [_wpPos,0];
                     _wp setWaypointType "MOVE";
                     _wp setWaypointSpeed "FULL";
@@ -85,7 +97,7 @@ MRC_fnc_trackQRF = {
         } else {
             _grp move getPos _target;
             private _dist = (leader _grp) distance _target;
-            if (_dist > 300) then {
+            if (_dist > 500) then {
                 if (_lostStart == 0) then {_lostStart = time;};
                 if (time - _lostStart > 300) then {
                     if (!isNull _veh && {alive _veh}) then {
@@ -96,7 +108,7 @@ MRC_fnc_trackQRF = {
                         } forEach units _grp;
                         _onFoot = false;
                         _lostStart = 0;
-                        _wpPos = getPos _target;
+                        _wpPos = [_target] call _findSafePos;
                         _wp = _grp addWaypoint [_wpPos,0];
                         _wp setWaypointType "MOVE";
                         _wp setWaypointSpeed "FULL";
