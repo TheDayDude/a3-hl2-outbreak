@@ -13,7 +13,7 @@ class EditorData
 	};
 	class ItemIDProvider
 	{
-		nextID=37717;
+		nextID=37718;
 	};
 	class MarkerIDProvider
 	{
@@ -21,14 +21,14 @@ class EditorData
 	};
 	class LayerIndexProvider
 	{
-		nextID=8409;
+		nextID=8410;
 	};
 	class Camera
 	{
-		pos[]={2200.2322,133.90175,4060.6587};
-		dir[]={-0.65948141,-0.38827723,-0.64371037};
-		up[]={-0.277868,0.92153502,-0.27122235};
-		aside[]={-0.69850934,-2.682209e-07,0.71562386};
+		pos[]={1396.0704,293.11984,3879.9131};
+		dir[]={0.7229774,-0.567729,-0.39369425};
+		up[]={0.49859911,0.82321382,-0.27150983};
+		aside[]={-0.47823855,-5.6810677e-08,-0.87823373};
 	};
 };
 binarizationWanted=0;
@@ -2292,7 +2292,7 @@ class Mission
 	};
 	class Entities
 	{
-		items=788;
+		items=789;
 		class Item0
 		{
 			dataType="Layer";
@@ -45372,7 +45372,7 @@ class Mission
 					dataType="Logic";
 					class PositionInfo
 					{
-						position[]={1925.8727,4.1295543,4640.7837};
+						position[]={1925.8726,4.1295543,4640.7837};
 					};
 					areaSize[]={1,-1,1};
 					id=29579;
@@ -191659,7 +191659,7 @@ class Mission
 					};
 					id=28017;
 					type="MedicalGarbage_01_Injector_F";
-					atlOffset=1.4499984;
+					atlOffset=1.4640117;
 				};
 				class Item723
 				{
@@ -191670,13 +191670,13 @@ class Mission
 						angles[]={0,1.6057028,0};
 					};
 					side="Empty";
-					flags=5;
+					flags=1;
 					class Attributes
 					{
 					};
 					id=28018;
 					type="MedicalGarbage_01_Injector_F";
-					atlOffset=0.0025119781;
+					atlOffset=0.016525269;
 				};
 				class Item724
 				{
@@ -194788,13 +194788,14 @@ class Mission
 						angles[]={0,1.0471971,0};
 					};
 					side="Empty";
+					flags=4;
 					class Attributes
 					{
 						createAsSimpleObject=1;
 					};
 					id=28016;
 					type="Land_BottlePlastic_V2_F";
-					atlOffset=0.81301022;
+					atlOffset=0.13134384;
 				};
 				class Item892
 				{
@@ -199214,7 +199215,7 @@ class Mission
 					};
 					id=27058;
 					type="Land_BottlePlastic_V2_F";
-					atlOffset=0.89930248;
+					atlOffset=1.0319438;
 				};
 				class Item1140
 				{
@@ -199231,7 +199232,7 @@ class Mission
 					};
 					id=27068;
 					type="Land_BottlePlastic_V2_F";
-					atlOffset=0.19430256;
+					atlOffset=0.32694387;
 				};
 				class Item1141
 				{
@@ -199248,7 +199249,7 @@ class Mission
 					};
 					id=27140;
 					type="Land_BottlePlastic_V2_F";
-					atlOffset=1.2322059;
+					atlOffset=1.3648472;
 				};
 				class Item1142
 				{
@@ -199968,7 +199969,7 @@ class Mission
 					};
 					id=29090;
 					type="VRP_HL2_YellowWater_Item";
-					atlOffset=0.81364822;
+					atlOffset=0.65909576;
 				};
 				class Item1180
 				{
@@ -203259,7 +203260,7 @@ class Mission
 					};
 					id=26307;
 					type="Land_BottlePlastic_V2_F";
-					atlOffset=0.4038372;
+					atlOffset=0.53647852;
 				};
 				class Item1336
 				{
@@ -203270,14 +203271,13 @@ class Mission
 						angles[]={0,6.2482786,0};
 					};
 					side="Empty";
-					flags=4;
 					class Attributes
 					{
 						createAsSimpleObject=1;
 					};
 					id=26313;
 					type="Land_BottlePlastic_V2_F";
-					atlOffset=0.048837185;
+					atlOffset=0.1814785;
 				};
 				class Item1337
 				{
@@ -211827,7 +211827,7 @@ class Mission
 					};
 					id=28549;
 					type="MedicalGarbage_01_Injector_F";
-					atlOffset=0.28395033;
+					atlOffset=0.29796362;
 				};
 				class Item1747
 				{
@@ -211844,7 +211844,7 @@ class Mission
 					};
 					id=28596;
 					type="MedicalGarbage_01_Injector_F";
-					atlOffset=0.57270908;
+					atlOffset=0.58672237;
 				};
 				class Item1748
 				{
@@ -214969,7 +214969,7 @@ class Mission
 					};
 					id=28523;
 					type="Land_BottlePlastic_V2_F";
-					atlOffset=0.53648186;
+					atlOffset=0.66912317;
 				};
 				class Item1922
 				{
@@ -214986,7 +214986,7 @@ class Mission
 					};
 					id=28618;
 					type="Land_BottlePlastic_V2_F";
-					atlOffset=0.53614235;
+					atlOffset=0.66878366;
 				};
 				class Item1923
 				{
@@ -251073,6 +251073,7 @@ class Mission
 			};
 			id=32328;
 			type="Land_Wreck_Truck_dropside_F";
+			atlOffset=-4.7683716e-07;
 		};
 		class Item274
 		{
@@ -380452,6 +380453,13 @@ class Mission
 				};
 				nAttributes=3;
 			};
+		};
+		class Item788
+		{
+			dataType="Layer";
+			name="Layer 8410";
+			id=37717;
+			atlOffset=-95;
 		};
 	};
 	class Connections

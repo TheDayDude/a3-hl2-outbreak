@@ -45,7 +45,7 @@ MRC_fnc_resetWanted = {
 
 MRC_fnc_trackQRF = {
     params ["_grp","_target","_veh"];
-    private _onFoot = false;
+    private _onFoot = isNull _veh || {({vehicle _x != _veh} count units _grp) > 0};
     private _lostStart = 0;
     private _noPlayerTime = -1;
     private _abandon = false;
@@ -58,11 +58,11 @@ MRC_fnc_trackQRF = {
     };
 
     if (!isNull _veh) then {
-        sleep 3;
+        sleep 10;
         _veh engineOn true;
         private _dir = vectorDir _veh;
         _veh setVelocity [(_dir select 0) * 5, (_dir select 1) * 5, (_dir select 2) * 5];
-        sleep 3;
+        sleep 5;
     };
 
     private _wpPos = [_target] call _findSafePos;
@@ -268,9 +268,13 @@ MRC_fnc_spawnQRF = {
             };
         } else {
             private _driver = leader _grp;
+            _driver assignAsDriver _veh;
             _driver moveInDriver _veh;
             {
-                if (_x != _driver) then {_x moveInCargo _veh;};
+                if (_x != _driver) then {
+                    _x assignAsCargo _veh;
+                    _x moveInCargo _veh;
+                };
             } forEach units _grp;
         };
     };
