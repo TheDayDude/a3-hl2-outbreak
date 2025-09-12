@@ -12,8 +12,8 @@ unitLists = [
 
 transport = ["","GT_Prowler","GT_APC","HL_CMB_OW_APC","B_Heli_Transport_03_unarmed_F","B_Heli_Transport_03_F"];
 
-respCity = [0,5,5,5,5,5];
-respOut  = [0,5,5,5,5,5];
+respCity = [0,900,600,300,120,60];
+respOut  = [0,5400,3600,2700,1800,900];
  
 // === Utility functions ===
 MRC_fnc_updateWantedLevel = {
@@ -362,7 +362,6 @@ MRC_fnc_scheduleQRF = {
                     params ["_dead", "_killer"];
                     private _deadSide = _dead getVariable ["OriginalSide", side _dead];
                     private _killerSide = side _killer;
-                    systemChat format ["%1 (%2) was killed by %3 (%4).", name _dead, _deadSide, name _killer, _killerSide];
                     if (!isPlayer _killer) exitWith {};
                     if (_killerSide == west) exitWith {};
                     if (_deadSide != west) exitWith {};
