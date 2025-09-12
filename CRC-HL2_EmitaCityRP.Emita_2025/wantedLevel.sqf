@@ -29,18 +29,22 @@ MRC_fnc_resetWanted = {
     _unit setVariable ["antiKills",0,true];
     _unit setVariable ["wantedLevel",0,true];
     _unit setVariable ["qrfPending",false];
+    _unit setVariable ["backUpPending",false];
     private _grp = _unit getVariable ["qrfGroup",objNull];
     private _veh = _unit getVariable ["qrfVehicle",objNull];
-    if (!isNull _grp || !isNull _veh) then {
-        [_grp,_veh] spawn {
-            params ["_grp","_veh"];
+    private _back = _unit getVariable ["backUpGroup",objNull];
+    if (!isNull _grp || !isNull _veh || !isNull _back) then {
+        [_grp,_veh,_back] spawn {
+            params ["_grp","_veh","_back"];
             sleep 300;
             if (!isNull _grp) then {{deleteVehicle _x} forEach units _grp; deleteGroup _grp;};
             if (!isNull _veh) then {deleteVehicle _veh};
+            if (!isNull _back) then {{deleteVehicle _x} forEach units _back; deleteGroup _back;};
         };
     };
     _unit setVariable ["qrfGroup",objNull];
     _unit setVariable ["qrfVehicle",objNull];
+    _unit setVariable ["backUpGroup",objNull];
 };
 
 MRC_fnc_trackQRF = {
@@ -259,6 +263,63 @@ MRC_fnc_spawnAirSupport = {
     };
 };
 
+MRC_fnc_trackBackUp = {
+    params ["_grp","_target"];
+    _grp setCombatMode "RED";
+    _grp setBehaviour "COMBAT";
+    while {alive _target && ({alive _x} count units _grp > 0)} do {
+        _grp move getPos _target;
+        sleep 5;
+    };
+    {deleteVehicle _x} forEach units _grp;
+    deleteGroup _grp;
+    _target setVariable ["backUpGroup", objNull];
+    [_target] call MRC_fnc_scheduleBackUp;
+};
+
+MRC_fnc_spawnBackUp = {
+    params ["_target","_lvl"];
+    private _pos = getMarkerPos "Nexus";
+    private _grp = createGroup west;
+    {
+        private _unit = _grp createUnit [_x,_pos,[],0,"FORM"];
+        if (_x == "WBK_Combine_CP_SMG") then {
+            removeAllWeapons _unit; removeAllItems _unit; removeAllAssignedItems _unit; removeUniform _unit; removeHeadgear _unit;
+            _unit forceAddUniform "U_C18_Uniform_1";
+            _unit addHeadgear "H_SM_OVSMask2";
+            for "_i" from 1 to 4 do {_unit addMagazine "30Rnd_556x45_Stanag_Tracer_Blue";};
+            _unit addWeapon "hlc_rifle_416D10C";
+        } else {
+            removeAllWeapons _unit; removeAllItems _unit; removeAllAssignedItems _unit; removeUniform _unit; removeHeadgear _unit;
+            _unit forceAddUniform "Z_C18_Uniform_1";
+            _unit addHeadgear "H_SM_CMBMask";
+            for "_i" from 1 to 4 do {_unit addMagazine "HLB_HSMG";};
+            _unit addWeapon "WBK_CP_HeavySMG";
+        };
+    } forEach (unitLists select 1);
+    _target setVariable ["backUpGroup", _grp];
+    [_grp,_target] spawn MRC_fnc_trackBackUp;
+};
+
+MRC_fnc_scheduleBackUp = {
+    params ["_target"];
+    private _lvl = _target getVariable ["wantedLevel",0];
+    if (_lvl == 0) exitWith {};
+    if (!(_target inArea City18)) exitWith {};
+    private _existing = _target getVariable ["backUpGroup",objNull];
+    if (!isNull _existing && {count units _existing > 0}) exitWith {};
+    if (_target getVariable ["backUpPending",false]) exitWith {};
+    _target setVariable ["backUpPending",true];
+    private _delay = respCity select _lvl;
+    [_target,_lvl,_delay] spawn {
+        params ["_t","_l","_d"];
+        sleep _d;
+        if (_t getVariable ["wantedLevel",0] != _l || { !(_t inArea City18) }) exitWith {_t setVariable ["backUpPending",false];};
+        [_t,_l] call MRC_fnc_spawnBackUp;
+        _t setVariable ["backUpPending",false];
+    };
+};
+
 MRC_fnc_spawnQRF = {
     params ["_target","_lvl"];
     private _spawnMarker = if (_target inArea City18) then {"Nexus"} else {"wasteland_Patrol"};
@@ -334,6 +395,7 @@ MRC_fnc_spawnQRF = {
 
 MRC_fnc_scheduleQRF = {
     params ["_target"];
+    [_target] call MRC_fnc_scheduleBackUp;
     private _lvl = _target getVariable ["wantedLevel",0];
     if (_lvl == 0) exitWith {};
     private _existing = _target getVariable ["qrfGroup",objNull];
@@ -370,6 +432,7 @@ MRC_fnc_scheduleQRF = {
                     _killer setVariable ["antiKills",_k,true];
                     [_killer] call MRC_fnc_updateWantedLevel;
                     [_killer] call MRC_fnc_scheduleQRF;
+                    [_killer] call MRC_fnc_scheduleBackUp;
                 }];
                 _x setVariable ["MRC_killEH", _id];
             };

@@ -1,451 +1,279 @@
-diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/outlandsThreatSpawner.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/outlandsThreatSpawner.sqf
-index 44a82ac38a7c8398945738394f19f4b61df3a3c8..5bd9f04d270986d707d6ab1f747bafd2c52aa5dd 100644
---- a/CRC-HL2_EmitaCityRP.Emita_2025/outlandsThreatSpawner.sqf
-+++ b/CRC-HL2_EmitaCityRP.Emita_2025/outlandsThreatSpawner.sqf
-@@ -1,239 +1,222 @@
--// File: outlandsThreatSpawner.sqf
--[] spawn {
--    private _xenCommon = [
--        "WBK_ClassicZombie_HLA_3",
--		"WBK_ClassicZombie_HLA_4",
--		"WBK_ClassicZombie_HLA_5",
--        "WBK_Zombine_HLA_1",
--        "WBK_Headcrab_Normal",
--        "WBK_Antlion_1",
--		"WBK_Antlion_1",
--		"WBK_Antlion_1",
--		"WBK_Antlion_1"
--    ];
--    private _xenRare = [
--        "WBK_Bullsquid_1",
--        "WBK_Houndeye_1"
--    ];
--
--    private _combineInfantry = [
--        "WBK_Combine_HL2_Type_WastelandPatrol",
--        "WBK_Combine_Grunt",
--        "WBK_Combine_Grunt_white",
--        "WBK_HL_Conscript_2",
--        "WBK_HL_Conscript_6",
--        "WBK_Combine_HL2_Type",
--        "WBK_Combine_Ordinal"
--    ];
--    private _combineSpecial = [
--        "WBK_Combine_ASS_SMG",
--		"WBK_Combine_ASS_Sniper",
--        "WBK_HunterSynth_1",
--        "WBK_HumanSynth_1",
--        "WBK_Combine_APF",
--        "WBK_Combine_HL2_Type_Elite"
--    ];
--    private _combineVehicles = ["HL_CMB_OW_APC"];
--    private _combineHeli = "HL_CMB_Hunter";
--
--    private _rebelInfantry = [
--        "WBK_Rebel_Medic_1","WBK_Rebel_Rifleman_1","WBK_Rebel_Rifleman_2","WBK_Rebel_Rifleman_3",
--        "WBK_Rebel_WP_1","WBK_Rebel_WP_2","WBK_Rebel_WP_3","WBK_Rebel_SMG_1","WBK_Rebel_SMG_2","WBK_Rebel_SMG_3",
--        "UU_Melee"
--    ];
--    private _rebelSpecial = [
--        "WBK_Rebel_Sniper","WBK_Rebel_HL2_RPG","UU_CP_HeavySMG","WBK_Rebel_SL_1","WBK_Rebel_SL_2"
--    ];
--    private _rebelVehicles = ["HL_RES_DVP_HMG"];
-+/*
-+    File: outlandsThreatSpawner.sqf
-+    Description: Random encounter spawner for outlands.
-+*/
+diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf
+index 26cdac71e9d1a13a61fe6f153539b9a0a7311626..f088f95b3e908c447ed36d6ec50734f927b88ef7 100644
+--- a/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf
++++ b/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf
+@@ -7,62 +7,66 @@ unitLists = [
+     ["WBK_Combine_Ordinal","WBK_Combine_Grunt","WBK_Combine_Grunt_White","WBK_Combine_HL2_Type_WastelandPatrol","WBK_HL_Conscript_6","WBK_HL_Conscript_3","WBK_Combine_Grunt","WBK_Combine_Grunt_White","WBK_Combine_Grunt_White"],
+     ["WBK_Combine_Ordinal","WBK_Combine_APF","WBK_Combine_Walhammer","WBK_Combine_ASS_SMG","WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_WastelandPatrol","WBK_Combine_HL2_Type"],
+     ["WBK_Combine_Ordinal","WBK_Combine_APF","WBK_Combine_Walhammer","WBK_Combine_ASS_SMG","WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_WastelandPatrol","WBK_Combine_HL2_Type_AR","WBK_Combine_APF","WBK_Combine_Walhammer","WBK_Combine_ASS_SMG","WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_WastelandPatrol","WBK_Combine_HL2_Type_AR","WBK_Combine_APF"],
+     ["WBK_Combine_HL2_Type_Elite","WBK_Combine_APF","WBK_Combine_Walhammer","WBK_Combine_ASS_Sniper","WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_WastelandPatrol","WBK_Combine_HL2_Type_AR","WBK_Combine_APF","WBK_Combine_Walhammer","WBK_Combine_ASS_Sniper","WBK_Combine_HL2_Type","WBK_Combine_HL2_Type_WastelandPatrol","WBK_Combine_HL2_Type_AR","WBK_Combine_APF"]
+ ];
  
--    private _spawnedUnits = [];
-+[] spawn {
-+    private _recruit = {
-+        params ["_u"];
-+        if (_u isKindOf "Man" && {side _u in [west,east]}) then {
-+            _u addAction ["Recruit", {
-+                params ["_target","_caller","_id"];
-+                [_target] joinSilent group _caller;
-+                _target removeAction _id;
-+            }, nil, 1.5, true, true, "", "side _target == side _this"];
-+        };
-+    };
+ transport = ["","GT_Prowler","GT_APC","HL_CMB_OW_APC","B_Heli_Transport_03_unarmed_F","B_Heli_Transport_03_F"];
  
-     while {true} do {
--        private _players = allPlayers select { alive _x && !(_x inArea City18) && !(_x inArea nexus) && !(_x inArea slums)};
-+        private _players = allPlayers select {alive _x && !(_x inArea City18) && !(_x inArea slums)};
-         if !(_players isEqualTo []) then {
-             private _target = selectRandom _players;
--            private _side = side _target;
--            private _spawnDir = random 360;
--            private _spawnPos = getPos _target vectorAdd [200 * cos _spawnDir, 200 * sin _spawnDir, 0];
--            private _group = objNull;
--
--            switch (_side) do {
--                case opfor: {
--                    private _roll = random 1;
--                    if (_roll < 0.2) then {
--                        _group = createGroup west;
--                        for "_i" from 1 to 5 do { _group createUnit [selectRandom _combineInfantry, _spawnPos, [], 0, "FORM"]; };
--                    } else {
--                        if (_roll < 0.3) then {
--                            _group = createGroup west;
--                            for "_i" from 1 to 3 do { _group createUnit [selectRandom _combineSpecial, _spawnPos, [], 0, "FORM"]; };
--                        } else {
--                            if (_roll < 0.4) then {
--                                private _apc = createVehicle [selectRandom _combineVehicles, _spawnPos, [], 0, "NONE"];
--                                createVehicleCrew _apc;
--                                _apc setDir random 360;
--                                _apc setCombatMode "RED";
--                                _apc setBehaviour "AWARE";
--                                _apc lock true;
--                                (group (crew _apc select 0)) addWaypoint [getPos _target, 0];
--                                _spawnedUnits pushBack _apc;
--                                { _spawnedUnits pushBack _x } forEach crew _apc;
--                            } else {
--                                if (_roll < 0.5) then {
--                                    private _heli = createVehicle [_combineHeli, _spawnPos vectorAdd [0,0,120], [], 0, "FLY"];
--                                    createVehicleCrew _heli;
--                                    _heli setDir random 360;
--                                    _heli flyInHeight 120;
--                                    _heli lock true;
--                                    private _hGrp = group (driver _heli);
--                                    _hGrp setBehaviour "AWARE";
--                                    _hGrp setCombatMode "GREEN";
--                                    _spawnedUnits pushBack _heli;
--                                    { _spawnedUnits pushBack _x } forEach crew _heli;
--									[_heli, _target] spawn {
--										params ["_heli","_target"];
--										private _grp = group driver _heli;
--
--										// 4 passes around/near the target
--										for "_i" from 1 to 6 do {
--											private _pos = _target getPos [200 + random 300, random 360];
--											private _wp  = _grp addWaypoint [_pos, 0];
--											_wp setWaypointType "MOVE";
--											_wp setWaypointSpeed "NORMAL";
--											_wp setWaypointBehaviour "AWARE";
--											_wp setWaypointCompletionRadius 80;
--										};
--										// exit
--										private _exit = _target getPos [2500 + random 1000, random 360];
--										private _wpExit = _grp addWaypoint [_exit, 0];
--										_wpExit setWaypointType "MOVE";
--										_wpExit setWaypointSpeed "FULL";
--										_wpExit setWaypointBehaviour "SAFE";
--
--										_heli flyInHeight 150;
--									};
--
--                                } else {
--                                    private _sub = random 1;
--                                    _group = createGroup resistance;
--                                    if (_sub < 0.8) then {
--                                        for "_i" from 1 to (3 + floor random 3) do {
--                                            private _type = selectRandom _xenCommon;
--                                            private _u = _group createUnit [_type, _spawnPos, [], 0, "FORM"];
--                                            _u setBehaviour "AWARE"; _u setCombatMode "RED";
--                                            _u addEventHandler ["Killed", {
--                                                params ["_dead"];
--                                                missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) - 0.01, true];
--                                                for "_k" from 1 to selectRandom [0,0,1,1] do {
--                                                    private _item = createVehicle ["GroundWeaponHolder", getPosATL _dead, [], 0, "NONE"];
--                                                    _item addItemCargoGlobal ["VRP_StrangeMeat", 1];
--                                                };
--                                            }];
--                                        };
--                                    } else {
--                                        for "_i" from 1 to (1 + floor random 2) do {
--                                            private _type = selectRandom _xenRare;
--                                            private _u = _group createUnit [_type, _spawnPos, [], 0, "FORM"];
--                                            _u setBehaviour "AWARE"; _u setCombatMode "RED";
--                                            _u addEventHandler ["Killed", {
--                                                params ["_dead"];
--                                                missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) - 0.01, true];
--                                                for "_k" from 1 to selectRandom [0,1,1,2] do {
--                                                    private _item = createVehicle ["GroundWeaponHolder", getPosATL _dead, [], 0, "NONE"];
--                                                    _item addItemCargoGlobal ["VRP_StrangeMeat", 1];
--                                                };
--                                            }];
--                                        };
--                                    };
--                                };
--                            };
-+            private _center = _target getPos [200 + random 300, random 360];
-+            [_center, _recruit] spawn {
-+                params ["_center","_addRecruit"];
-+                private _spawned = [];
-+                private _nearest = nearestLocations [_center, ["NameCity","NameVillage","NameLocal"], 1500];
-+                private _locName = if (_nearest isEqualTo []) then {"unknown"} else {text (_nearest select 0)};
-+                switch (floor random 8) do {
-+                    case 0: {
-+                        private _grpW = createGroup west;
-+                        for "_i" from 1 to 5 do {
-+                            private _u = _grpW createUnit ["WBK_Combine_HL2_Type_WastelandPatrol", _center getPos [random 25, random 360], [], 0, "FORM"];
-+                            _spawned pushBack _u; _u call _addRecruit;
-+                        };
-+                        private _grpE = createGroup east;
-+                        for "_i" from 1 to 4 do {
-+                            private _u = _grpE createUnit ["WBK_Rebel_Rifleman_1", _center getPos [random 25, random 360], [], 0, "FORM"];
-+                            _spawned pushBack _u; _u call _addRecruit;
-+                        };
-+                        _grpW addWaypoint [_center,0]; _grpE addWaypoint [_center,0];
-+                        _grpW setCombatMode "RED"; _grpE setCombatMode "RED";
-+                        private _wrecks = ["HL_CMB_Static_Wreck_APC","Land_Cyt_Lada","Land_wreck_HMMWV_F","Land_Wreck_Hunter_F","Land_Wreck_Offroad_F"];
-+                        {
-+                            private _w = _x createVehicle (_center getPos [random 40, random 360]);
-+                            _spawned pushBack _w;
-+                            private _fire = "test_EmptyObjectForFireBig" createVehicle position _w;
-+                            _spawned pushBack _fire;
-+                        } forEach _wrecks;
-+                        format ["This is %1, we are engaged with hostile forces near %2", groupId _grpW, _locName] remoteExec ["systemChat", 0];
-+                    };
-+                    case 1: {
-+                        private _conscripts = ["WBK_HL_Conscript_1","WBK_HL_Conscript_2","WBK_HL_Conscript_3","WBK_HL_Conscript_6"];
-+                        private _truck = createVehicle ["I_E_Truck_02_F", _center, [], 0, "NONE"];
-+                        _truck setDir random 360;
-+                        _truck setHitPointDamage ["HitEngine", 0.3 + random 0.4];
-+                        _truck setHitPointDamage ["HitBody", 0.2 + random 0.6];
-+                        _truck setHitPointDamage ["HitLFWheel",1];
-+                        _truck setHitPointDamage ["HitRFWheel",1];
-+                        _spawned pushBack _truck;
-+                        private _grp = createGroup east;
-+                        for "_i" from 1 to 5 do {
-+                            private _u = _grp createUnit [selectRandom _conscripts, _center getPos [random 20, random 360], [], 0, "FORM"];
-+                            removeAllWeapons _u; _u addWeapon "hlc_rifle_G36CV"; for "_k" from 1 to 6 do { _u addMagazine "hlc_30rnd_556x45_EPR_G36"; };
-+                            _spawned pushBack _u; _u call _addRecruit;
-+                        };
-+                        [_grp, _center, 30] call BIS_fnc_taskPatrol;
-+                        private _repairGrp = createGroup east;
-+                        private _repair = _repairGrp createUnit [selectRandom _conscripts, _truck modelToWorld [1,-1,0], [],0,"FORM"];
-+                        removeAllWeapons _repair; _repair addWeapon "hlc_rifle_G36CV"; for "_k" from 1 to 6 do { _repair addMagazine "hlc_30rnd_556x45_EPR_G36"; };
-+                        _repair setDir (getDir _truck + 90);
-+                        [_repair, "REPAIR_VEH_KNEEL","ASIS"] call BIS_fnc_ambientAnim;
-+                        _repair addEventHandler ["FiredNear",{[_this select 0, "TERMINATE"] call BIS_fnc_ambientAnim;}];
-+                        _repair addEventHandler ["Hit",{[_this select 0, "TERMINATE"] call BIS_fnc_ambientAnim;}];
-+                        _spawned pushBack _repair; _repair call _addRecruit;
-+                        private _prisoners = ["WBK_Rebel_HL2_refugee_1","WBK_Rebel_HL2_refugee_2","WBK_Rebel_HL2_refugee_3"];
-+                        for "_i" from 1 to 3 do {
-+                            private _p = (createGroup east) createUnit [selectRandom _prisoners, _center getPos [3 + random 5, random 360], [],0,"FORM"];
-+                            _p setCaptive true;
-+                            _spawned pushBack _p; _p call _addRecruit;
-+                        };
-+                    };
-+                    case 2: {
-+                        private _rocks = ["xen_anchor_rock","xen_anchor_rock_2","xen_anchor_rock_3","xen_anchor_rock_4"];
-+                        private _rockPos = [];
-+                        {
-+                            private _obj = createVehicle [_x, _center getPos [random 20, random 360], [],0,"CAN_COLLIDE"];
-+                            _rockPos pushBack position _obj;
-+                            _spawned pushBack _obj;
-+                        } forEach _rocks;
-+                        private _zGrp = createGroup resistance;
-+                        for "_i" from 1 to 5 do {
-+                            private _u = _zGrp createUnit ["WBK_ClassicZombie_HLA_3", _center getPos [random 15, random 360], [],0,"FORM"];
-+                            _spawned pushBack _u;
-+                        };
-+                        private _cGrp = createGroup west;
-+                        for "_i" from 1 to 4 do {
-+                            private _u = _cGrp createUnit [selectRandom ["WBK_Combine_Grunt","WBK_Combine_Grunt_2"], _center getPos [random 15, random 360], [],0,"FORM"];
-+                            _spawned pushBack _u; _u call _addRecruit;
-+                        };
-+                        private _truckPos = _center getPos [1000, random 360];
-+                        private _truck = createVehicle ["CBRN_Typhoon_Truck", _truckPos, [],0,"NONE"];
-+                        _truck setDir random 360; createVehicleCrew _truck;
-+                        _spawned pushBack _truck; { _spawned pushBack _x; _x call _addRecruit; } forEach crew _truck;
-+                        (group driver _truck) addWaypoint [_center,0];
-+                        private _wGrp = createGroup west;
-+                        for "_i" from 1 to 2 do {
-+                            private _w = _wGrp createUnit ["cmb_hz_worker", _truckPos, [],0,"FORM"];
-+                            _w forceAddUniform "CombainCIV_Uniform_2";
-+                            _w assignAsCargo _truck; _w moveInCargo _truck;
-+                            _spawned pushBack _w; _w call _addRecruit;
-+                        };
-+                        [_truck, units _wGrp, _rockPos] spawn {
-+                            params ["_truck","_workers","_rocks"];
-+                            waitUntil {sleep 5; (_truck distance2D (_rocks select 0)) < 50};
-+                            {unassignVehicle _x; _x action ["GetOut", _truck];} forEach _workers;
-+                            private _dest = selectRandom _rocks;
-+                            {
-+                                _x doMove _dest;
-+                                [_x, "REPAIR_VEH_KNEEL","ASIS"] call BIS_fnc_ambientAnim;
-+                            } forEach _workers;
-                         };
-                     };
-+                    case 3: {
-+                        private _structures = ["Land_Cargo_House_V2_ruins_F","Land_Cargo_HQ_V2_ruins_F","CargoPlatform_01_rusty_ruins_F","Land_Cargo_Patrol_V2_ruins_F"];
-+                        { private _o = _x createVehicle (_center getPos [random 25, random 360]); _spawned pushBack _o; } forEach _structures;
-+                        for "_i" from 1 to 3 do {
-+                            private _can = createVehicle ["HL_CMB_Static_headcrabcannister01b", _center getPos [random 20, random 360], [],0,"NONE"];
-+                            _can setVectorUp [0,0.7071,0.7071]; _spawned pushBack _can;
-+                        };
-+                        private _zGrp = createGroup resistance;
-+                        for "_i" from 1 to 8 do {
-+                            private _u = _zGrp createUnit [selectRandom ["WBK_ClassicZombie_HLA_4","WBK_Headcrab_Normal"], _center getPos [random 30, random 360], [],0,"FORM"];
-+                            _spawned pushBack _u;
-+                        };
-+                        for "_i" from 1 to 3 do {
-+                            private _u = (createGroup east) createUnit [selectRandom ["WBK_Rebel_HL2_refugee_3","WBK_Rebel_HL2_refugee_4"], _center getPos [random 10, random 360], [],0,"FORM"];
-+                            _u call _addRecruit; _spawned pushBack _u;
-+                        };
-+                        private _targets = allPlayers select { _x distance2D _center < 500 };
-+                        [[_center, "FS_Plus_Mortar_5"]] remoteExec ["playSound3D", _targets];
-+                        playSound3D ["FTL_Ship_Hit_fakeExplosionsound_1", objNull, false, _center];
-+                    };
-+                    case 4: {
-+                        private _wreck = createVehicle ["Land_wreck_hunter_F", _center, [],0,"NONE"]; _spawned pushBack _wreck;
-+                        private _sGroup = if (random 1 < 0.5) then {createGroup west} else {createGroup east};
-+                        for "_i" from 1 to 4 do {
-+                            private _cls = if (side _sGroup == west) then {"WBK_Combine_Grunt"} else {"WBK_Rebel_Rifleman_1"};
-+                            private _u = _sGroup createUnit [_cls, _center getPos [random 20, random 360], [],0,"FORM"];
-+                            _spawned pushBack _u; _u call _addRecruit;
-+                        };
-+                        private _xGrp = createGroup resistance;
-+                        { private _u = _xGrp createUnit [_x, _center getPos [random 30, random 360], [],0,"FORM"]; _spawned pushBack _u; } forEach ["WBK_Antlion_1","WBK_Bullsquid_1","WBK_Houndeye_1"];
-+                        private _pGrp = createGroup resistance;
-+                        private _priest = _pGrp createUnit ["RDS_PL_Priest", _center getPos [50 + random 50, random 360], [],0,"FORM"];
-+                        removeAllWeapons _priest; _priest addWeapon "hlc_rifle_m21"; _priest addMagazine "20Rnd_762x51_Mag_Tracer_Blue"; _priest addGoggles "MK50";
-+                        _priest joinSilent _xGrp;
-+                        _priest addEventHandler ["Killed", { params ["_u"]; deleteVehicle _u; createVehicle ["Zombie_Special_GREENFOR_Leaper_1", position _u, [],0,"NONE"]; }];
-+                        _spawned pushBack _priest; _priest call _addRecruit;
-+                    };
-+                    case 5: {
-+                        private _veh1 = createVehicle ["HL_RES_DVP_HMG", _center, [],0,"NONE"]; createVehicleCrew _veh1;
-+                        _spawned pushBack _veh1; { _spawned pushBack _x; _x call _addRecruit; } forEach crew _veh1;
-+                        private _veh2 = createVehicle ["HL_RES_DC", _center getPos [10,0], [],0,"NONE"]; createVehicleCrew _veh2;
-+                        _spawned pushBack _veh2; { _spawned pushBack _x; _x call _addRecruit; } forEach crew _veh2;
-+                        [(group driver _veh1), _center, 500] call BIS_fnc_taskPatrol;
-+                        [(group driver _veh2), _center, 500] call BIS_fnc_taskPatrol;
-+                    };
-+                    case 6: {
-+                        private _veh = createVehicle ["GT_Hunter", _center, [],0,"NONE"]; _veh setDir random 360;
-+                        _spawned pushBack _veh;
-+                        private _grp = createGroup west;
-+                        for "_i" from 1 to 4 do {
-+                            private _u = _grp createUnit ["WBK_Combine_CP_SMG", _center, [],0,"FORM"];
-+                            removeAllWeapons _u; _u addWeapon "hlc_rifle_416D10"; for "_k" from 1 to 6 do { _u addMagazine "30Rnd_556x45_Stanag_Tracer_Blue"; };
-+                            _u forceAddUniform "Z_C18_Uniform_1";
-+                            _spawned pushBack _u; _u call _addRecruit;
-+                            if (_i == 1) then { _u moveInDriver _veh; } else { _u moveInCargo _veh; };
-+                        };
-+                        [(group driver _veh), _center, 500] call BIS_fnc_taskPatrol;
-+                    };
-+                    case 7: {
-+                        private _classes = ["WBK_HECU_Hazmat_1","WBK_HECU_Hazmat_2","WBK_HECU_Shotgun","WBK_HECU_Sniper"];
-+                        private _grp = createGroup resistance;
-+                        for "_i" from 1 to 7 do {
-+                            private _u = _grp createUnit [selectRandom _classes, _center getPos [random 15, random 360], [],0,"FORM"];
-+                            _spawned pushBack _u; _u call _addRecruit;
-+                        };
-+                        [_grp, _center, 40] call BIS_fnc_taskPatrol;
-+                        private _turret = createVehicle ["I_E_HMG_01_high_F", _center getPos [10, random 360], [],0,"NONE"]; createVehicleCrew _turret;
-+                        _spawned pushBack _turret; { _spawned pushBack _x; _x call _addRecruit; } forEach crew _turret;
-+                        for "_i" from 0 to 2 do {
-+                            private _bag = createVehicle ["Land_BagFence_Round_F", _turret modelToWorld [3*cos (_i*120),3*sin (_i*120),0], [],0,"NONE"];
-+                            _bag setDir (_i*120); _spawned pushBack _bag;
-+                        };
-+                        { private _o = _x createVehicle (_center getPos [random 10, random 360]); _spawned pushBack _o; } forEach ["Campfire_burning_F","Land_DeconTent_01_NATO_F","Land_MedicalTent_01_NATO_generic_inner_F"];
-+                        private _containersMilitary = ["Box_FIA_Support_F","Box_Syndicate_Ammo_F","Box_EAF_Wps_F","Box_EAF_Ammo_F"];
-+                        private _lootMilitary = ["WBK_Revolver_HL1_2","WBK_Glock_HL1","Cytech_Makeshift_Argument","HL_CMB_hgun_USP","WBK_CP_HeavySmg_Resist","hlc_rifle_ak74_dirty2","hlc_rifle_M14_Bipod_Rail","hlc_rifle_ACR_SBR_cliffhanger","hlc_rifle_RPK12","hlc_rifle_aks74","WBK_BearRebel_Rifle","hlc_rifle_M4","hlc_optic_goshawk","optic_DMS_s","optic_MRCO","optic_Yorris","hlc_optic_ATACR_Offset","HLC_optic_DocterV","hlc_optic_kobra","hlc_optic_HensoldtZO_Lo","hlc_optic_ZF95Base","HLC_optic_DocterR","hlc_optic_VOMZ","HLC_optic_ISM1400A7","optic_KHS_tan","HLC_optic_RomeoV","hlc_optic_VOMZ3d","optic_SRS","HLC_Optic_PSO1","HLC_Optic_1p29","hlc_optic_LeupoldM3A","HLC_optic_Aimpoint3000_Magnifier","optic_Aco","WBK_BearRebel_Rifle_Scope","hlc_optic_ATACR","hlc_optic_PVS4FAL","hlc_rifle_FAL5000","hlc_smg_mp5k","hlc_pistol_C96_Bolo_Worn_stock","hlc_acc_AIM1D_Generic","HLC_Charm_Teethgang","HLC_Charm_Izhmash","Cytech_flashlight_Normal","acc_pointer_IR","hlc_acc_TLR1","Cytech_flashlight_Bright","HLC_Charm_Herstal","acc_flashlightMax","acc_flashlight_pistol","Cytech_flashlight_Dim","hlc_acc_SF660","hlc_acc_SF660_Barrel","hlc_acc_DBALPL_FL","hlc_acc_LS321G","hlc_acc_DBALPL","hlc_acc_TLR1_Side","hlc_acc_DBALPL_Side","ACE_SPIR","ACE_acc_pointer_green","hlc_acc_DBALPL_side_FL","HLC_bipod_UTGShooters","HLC_ISOPOD","HLC_Bipod_G36","hlc_rifle_G36A1","HL_CivHuntingRifle_Mag","HLB_HSMG_Mag","200Rnd_556x45_Box_Mixed_Tracer_Blue_F","200Rnd_556x45_Box_Tracer_Blue_F","30Rnd_556x45_Stanag_Tracer_Blue","150Rnd_762x51_Box_Mixed_Tracer_Blue","150Rnd_762x51_Box_Tracer_Blue","20Rnd_762x51_Mag_Tracer_Blue","hlc_45Rnd_545x39_b_rpkm","hlc_30Rnd_545x39_B_AK","hlc_60Rnd_545x39_b_rpk","hlc_rifle_akm","hlc_rifle_ak47","hlc_30Rnd_762x39_b_ak","hlc_100rnd_556x45_EPR_G36","hlc_30rnd_556x45_EPR_G36","16Rnd_9x21_Mag","HL_CMB_18Rnd_9x19_Mag","Cytech_14Rnd_9x18_Mag","Cytech_Makeshift_PM","Cytech_Makeshift_APS","Cytech_35Rnd_9x18_Mag","Cytech_6Rnd_45ACP","H_combine_helmet_1","H_bms_helmet_1","H_hecu_pasgt_green_b_nvo","U_BDU_Raid_urban","U_raincoat_urban","U_hecu_mopp","U_BMS_Shirt","U_BDU_Raid_zwart","U_bms_swetr1_trop","U_bms_veldjas_blauw_trop","V_bms_mk56","V_resistance_vest_bms_5","V_resistance_vest_pcv_1","V_resistance_vest_rba","V_bms_vest","V_bms_vest_rig","V_bms_vest_lbv","V_hecu_vest_collar","V_resistance_vest_bms","bms_rebel_asspack","bms_rebel_rearpack","B_hecu_survival_m81","DemoCharge_Remote_Mag","ATMine_Range_Mag","ClaymoreDirectionalMine_Remote_Mag","SatchelCharge_Remote_Mag","SLAMDirectionalMine_Wire_Mag","ACE_M26_Clacker","launch_RPG7_F","RPG7_F"];
-+                        private _crate = (selectRandom _containersMilitary) createVehicle (_center getPos [random 10, random 360]);
-+                        clearItemCargoGlobal _crate; clearWeaponCargoGlobal _crate; clearMagazineCargoGlobal _crate; clearBackpackCargoGlobal _crate;
-+                        for "_i" from 1 to 20 do { _crate addItemCargoGlobal [selectRandom _lootMilitary,1]; };
-+                        _spawned pushBack _crate;
-+                    };
-                 };
--
--                case west: {
--                    private _roll = random 1;
--                    if (_roll < 0.20) then {
--                        _group = createGroup east;
--                        for "_i" from 1 to 7 do { _group createUnit [selectRandom _rebelInfantry, _spawnPos, [], 0, "FORM"]; };
--                    } else {
--                        if (_roll < 0.35) then {
--                            private _ambushPos = _target getPos [200, getDir _target];
--                            _group = createGroup east;
--                            for "_i" from 1 to 5 do { _group createUnit [selectRandom _rebelSpecial, _ambushPos, [], 0, "FORM"]; };
-+                [_spawned, _center] spawn {
-+                    params ["_spawned","_center"];
-+                    private _timeout = time + 900;
-+                    while {true} do {
-+                        private _near = allPlayers select {alive _x && _x distance2D _center < 500};
-+                        if (_near isEqualTo []) then {
-+                            if (time > _timeout) exitWith {};
-                         } else {
--                            if (_roll < 0.50) then {
--                                private _veh = createVehicle [selectRandom _rebelVehicles, _spawnPos, [], 0, "NONE"];
--                                createVehicleCrew _veh;
--                                _veh setDir random 360;
--                                _veh setCombatMode "RED";
--                                _veh setBehaviour "AWARE";
--                                _veh lock true;
--                                (group (crew _veh select 0)) addWaypoint [getPos _target, 0];
--                                _spawnedUnits pushBack _veh;
--                                { _spawnedUnits pushBack _x } forEach crew _veh;
--                            } else {
--                                private _sub = random 1;
--                                _group = createGroup resistance;
--                                if (_sub < 0.8) then {
--                                    for "_i" from 1 to (3 + floor random 3) do {
--                                        private _type = selectRandom _xenCommon;
--                                        private _u = _group createUnit [_type, _spawnPos, [], 0, "FORM"];
--                                        _u setBehaviour "AWARE"; _u setCombatMode "RED";
--                                        _u addEventHandler ["Killed", {
--                                            params ["_dead"];
--                                            missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) - 0.01, true];
--                                            for "_k" from 1 to selectRandom [0,0,1,1] do {
--                                                private _item = createVehicle ["GroundWeaponHolder", getPosATL _dead, [], 0, "NONE"];
--                                                _item addItemCargoGlobal ["VRP_StrangeMeat", 1];
--                                            };
--                                        }];
--                                    };
--                                } else {
--                                    for "_i" from 1 to (1 + floor random 2) do {
--                                        private _type = selectRandom _xenRare;
--                                        private _u = _group createUnit [_type, _spawnPos, [], 0, "FORM"];
--                                        _u setBehaviour "AWARE"; _u setCombatMode "RED";
--                                        _u addEventHandler ["Killed", {
--                                            params ["_dead"];
--                                            missionNamespace setVariable ["Infestation", (missionNamespace getVariable ["Infestation",0]) - 0.01, true];
--                                            for "_k" from 1 to selectRandom [0,1,1,2] do {
--                                                private _item = createVehicle ["GroundWeaponHolder", getPosATL _dead, [], 0, "NONE"];
--                                                _item addItemCargoGlobal ["VRP_StrangeMeat", 1];
--                                            };
--                                        }];
--                                    };
--                                };
--                            };
-+                            _timeout = time + 900;
-                         };
-+                        sleep 60;
-                     };
-+                    { if (!isNull _x) then { deleteVehicle _x; }; } forEach _spawned;
-                 };
-             };
--
--            if (!isNull _group) then {
--                _group setBehaviour "AWARE";
--                _group setCombatMode "RED";
--                _group addWaypoint [getPos _target, 0];
--                { _spawnedUnits pushBack _x } forEach units _group;
--            };
+ respCity = [0,900,600,300,120,60];
+ respOut  = [0,5400,3600,2700,1800,900];
+  
+ // === Utility functions ===
+ MRC_fnc_updateWantedLevel = {
+     params ["_unit"];
+     private _k = _unit getVariable ["antiKills",0];
+     private _lvl = 0;
+     if (_k >= 200) then {_lvl = 5} else {if (_k >= 100) then {_lvl = 4} else {if (_k >= 50) then {_lvl = 3} else {if (_k >= 25) then {_lvl = 2} else {if (_k >= 1) then {_lvl = 1};};};};};
+     _unit setVariable ["wantedLevel",_lvl,true];
+ };
+ 
+ MRC_fnc_resetWanted = {
+     params ["_unit"];
+     _unit setVariable ["antiKills",0,true];
+     _unit setVariable ["wantedLevel",0,true];
+     _unit setVariable ["qrfPending",false];
++    _unit setVariable ["backUpPending",false];
+     private _grp = _unit getVariable ["qrfGroup",objNull];
+     private _veh = _unit getVariable ["qrfVehicle",objNull];
+-    if (!isNull _grp || !isNull _veh) then {
+-        [_grp,_veh] spawn {
+-            params ["_grp","_veh"];
++    private _back = _unit getVariable ["backUpGroup",objNull];
++    if (!isNull _grp || !isNull _veh || !isNull _back) then {
++        [_grp,_veh,_back] spawn {
++            params ["_grp","_veh","_back"];
+             sleep 300;
+             if (!isNull _grp) then {{deleteVehicle _x} forEach units _grp; deleteGroup _grp;};
+             if (!isNull _veh) then {deleteVehicle _veh};
++            if (!isNull _back) then {{deleteVehicle _x} forEach units _back; deleteGroup _back;};
          };
--
--        sleep (300 + random 300);
--
--        private _kept = [];
--        {
--            private _unit = _x;
--            if (alive _unit) then {
--                private _nearby = allPlayers select { alive _x && (_x distance2D _unit) < 300 };
--                if (count _nearby > 0) then {
--                    _kept pushBack _unit;
--                } else {
--                    deleteVehicle _unit;
--                };
--            } else {
--                deleteVehicle _unit;
--            };
--        } forEach _spawnedUnits;
--        _spawnedUnits = _kept;
-+        sleep (720 + random 720);
      };
--};
+     _unit setVariable ["qrfGroup",objNull];
+     _unit setVariable ["qrfVehicle",objNull];
++    _unit setVariable ["backUpGroup",objNull];
+ };
+ 
+ MRC_fnc_trackQRF = {
+     params ["_grp","_target","_veh"];
+     private _onFoot = isNull _veh || {({vehicle _x != _veh} count units _grp) > 0};
+     private _lostStart = 0;
+     private _noPlayerTime = -1;
+     private _abandon = false;
+ 
+     private _findSafePos = {
+         params ["_obj"];
+         private _p = [getPos _obj, 0, 100, 5, 0, 20, 0] call BIS_fnc_findSafePos;
+         _p set [2,0];
+         _p
+     };
+ 
+     if (!isNull _veh) then {
+         sleep 10;
+         _veh engineOn true;
+         private _dir = vectorDir _veh;
+         _veh setVelocity [(_dir select 0) * 5, (_dir select 1) * 5, (_dir select 2) * 5];
+         sleep 5;
+     };
+ 
+     private _wpPos = [_target] call _findSafePos;
+diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf
+index 26cdac71e9d1a13a61fe6f153539b9a0a7311626..f088f95b3e908c447ed36d6ec50734f927b88ef7 100644
+--- a/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf
++++ b/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf
+@@ -237,50 +241,107 @@ MRC_fnc_spawnAirSupport = {
+     private _type = if (_lvl == 4) then {"HL_CMB_Hunter"} else {selectRandom ["HL_CMB_Gunship","HL_Gunship_01"]};
+     private _grp = createGroup west;
+     private _veh = createVehicle [_type,_pos,[],0,"FLY"];
+     private _pilot = _grp createUnit ["WBK_Combine_CP_SMG",_pos,[],0,"FORM"];
+     _pilot moveInDriver _veh;
+     _veh flyInHeight 200;
+     [_veh,_grp,_target,_pos] spawn {
+         params ["_veh","_grp","_target","_home"];
+         private _radius = 500;
+         for "_i" from 0 to 12 do {
+             private _wpPos = _target getPos [_radius, _i * 45];
+             private _wp = _grp addWaypoint [_wpPos,0];
+             _wp setWaypointType "MOVE";
+             _wp setWaypointSpeed "FULL";
+         };
+         private _wpHome = _grp addWaypoint [_home,0];
+         _wpHome setWaypointType "MOVE";
+         waitUntil {sleep 5; !alive _veh || {_veh distance _home < 100}};        
+         if (alive _veh) then {
+             {deleteVehicle _x} forEach crew _veh;
+             deleteVehicle _veh;
+         };
+     };
+ };
+ 
++MRC_fnc_trackBackUp = {
++    params ["_grp","_target"];
++    _grp setCombatMode "RED";
++    _grp setBehaviour "COMBAT";
++    while {alive _target && ({alive _x} count units _grp > 0)} do {
++        _grp move getPos _target;
++        sleep 5;
++    };
++    {deleteVehicle _x} forEach units _grp;
++    deleteGroup _grp;
++    _target setVariable ["backUpGroup", objNull];
++    [_target] call MRC_fnc_scheduleBackUp;
 +};
++
++MRC_fnc_spawnBackUp = {
++    params ["_target","_lvl"];
++    private _pos = getMarkerPos "Nexus";
++    private _grp = createGroup west;
++    {
++        private _unit = _grp createUnit [_x,_pos,[],0,"FORM"];
++        if (_x == "WBK_Combine_CP_SMG") then {
++            removeAllWeapons _unit; removeAllItems _unit; removeAllAssignedItems _unit; removeUniform _unit; removeHeadgear _unit;
++            _unit forceAddUniform "U_C18_Uniform_1";
++            _unit addHeadgear "H_SM_OVSMask2";
++            for "_i" from 1 to 4 do {_unit addMagazine "30Rnd_556x45_Stanag_Tracer_Blue";};
++            _unit addWeapon "hlc_rifle_416D10C";
++        } else {
++            removeAllWeapons _unit; removeAllItems _unit; removeAllAssignedItems _unit; removeUniform _unit; removeHeadgear _unit;
++            _unit forceAddUniform "Z_C18_Uniform_1";
++            _unit addHeadgear "H_SM_CMBMask";
++            for "_i" from 1 to 4 do {_unit addMagazine "HLB_HSMG";};
++            _unit addWeapon "WBK_CP_HeavySMG";
++        };
++    } forEach (unitLists select 1);
++    _target setVariable ["backUpGroup", _grp];
++    [_grp,_target] spawn MRC_fnc_trackBackUp;
++};
++
++MRC_fnc_scheduleBackUp = {
++    params ["_target"];
++    private _lvl = _target getVariable ["wantedLevel",0];
++    if (_lvl == 0) exitWith {};
++    if (!(_target inArea City18)) exitWith {};
++    private _existing = _target getVariable ["backUpGroup",objNull];
++    if (!isNull _existing && {count units _existing > 0}) exitWith {};
++    if (_target getVariable ["backUpPending",false]) exitWith {};
++    _target setVariable ["backUpPending",true];
++    private _delay = respCity select _lvl;
++    [_target,_lvl,_delay] spawn {
++        params ["_t","_l","_d"];
++        sleep _d;
++        if (_t getVariable ["wantedLevel",0] != _l || { !(_t inArea City18) }) exitWith {_t setVariable ["backUpPending",false];};
++        [_t,_l] call MRC_fnc_spawnBackUp;
++        _t setVariable ["backUpPending",false];
++    };
++};
++
+ MRC_fnc_spawnQRF = {
+     params ["_target","_lvl"];
+     private _spawnMarker = if (_target inArea City18) then {"Nexus"} else {"wasteland_Patrol"};
+     private _pos = getMarkerPos _spawnMarker;
+     private _grp = createGroup west;
+     {
+         private _unit = _grp createUnit [_x,_pos,[],0,"FORM"];
+         if (_lvl == 1) then {
+             if (_x == "WBK_Combine_CP_SMG") then {
+                 removeAllWeapons _unit; removeAllItems _unit; removeAllAssignedItems _unit; removeUniform _unit; removeHeadgear _unit;
+                 _unit forceAddUniform "U_C18_Uniform_1";
+                 _unit addHeadgear "H_SM_OVSMask2";
+                 for "_i" from 1 to 4 do {_unit addMagazine "30Rnd_556x45_Stanag_Tracer_Blue";};
+                 _unit addWeapon "hlc_rifle_416D10C";
+             } else {
+                 removeAllWeapons _unit; removeAllItems _unit; removeAllAssignedItems _unit; removeUniform _unit; removeHeadgear _unit;
+                 _unit forceAddUniform "Z_C18_Uniform_1";
+                 _unit addHeadgear "H_SM_CMBMask";
+                 for "_i" from 1 to 4 do {_unit addMagazine "HLB_HSMG";};
+                 _unit addWeapon "WBK_CP_HeavySMG";
+             };
+         };
+     } forEach (unitLists select _lvl);
+ 
+     private _vehType = transport select _lvl;
+diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf
+index 26cdac71e9d1a13a61fe6f153539b9a0a7311626..f088f95b3e908c447ed36d6ec50734f927b88ef7 100644
+--- a/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf
++++ b/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf
+@@ -312,86 +373,88 @@ MRC_fnc_spawnQRF = {
+             };
+         } else {
+             private _driver = leader _grp;
+             _driver assignAsDriver _veh;
+             _driver moveInDriver _veh;
+             {
+                 if (_x != _driver) then {
+                     _x assignAsCargo _veh;
+                     _x moveInCargo _veh;
+                 };
+             } forEach units _grp;
+         };
+     };
+ 
+     _target setVariable ["qrfGroup",_grp];
+     _target setVariable ["qrfVehicle",_veh];
+ 
+     if (_lvl >= 3) then {[_target,_lvl] call MRC_fnc_spawnSynth;};
+     if (_lvl >= 4) then {[_target,_lvl] call MRC_fnc_spawnAirSupport;};
+ 
+     [_grp,_target,_veh] spawn MRC_fnc_trackQRF;
+ };
+ 
+ MRC_fnc_scheduleQRF = {
+     params ["_target"];
++    [_target] call MRC_fnc_scheduleBackUp;
+     private _lvl = _target getVariable ["wantedLevel",0];
+     if (_lvl == 0) exitWith {};
+     private _existing = _target getVariable ["qrfGroup",objNull];
+     if (!isNull _existing && {count units _existing > 0}) exitWith {};
+     if (_target getVariable ["qrfPending",false]) exitWith {};
+     _target setVariable ["qrfPending",true];
+     private _delay = if (_target inArea City18) then {respCity select _lvl} else {respOut select _lvl};
+     [_target,_lvl,_delay] spawn {
+         _this params ["_t","_l","_d"];
+         sleep _d;
+         if (_t getVariable ["wantedLevel",0] != _l) exitWith {_t setVariable ["qrfPending",false];};
+         private _grp = _t getVariable ["qrfGroup",objNull];
+         if (!isNull _grp && {count units _grp > 0}) exitWith {_t setVariable ["qrfPending",false];};
+         [_t,_l] call MRC_fnc_spawnQRF;
+         _t setVariable ["qrfPending",false];
+     };
+ };
+ 
+ // === Kill Tracking ===
+ [] spawn {
+     while {true} do {
+         {
+             if (!isPlayer _x && {side _x == west} && {isNil {_x getVariable "MRC_killEH"}}) then {
+                 _x setVariable ["OriginalSide", side _x];
+                 private _id = _x addEventHandler ["Killed", {
+                     params ["_dead", "_killer"];
+                     private _deadSide = _dead getVariable ["OriginalSide", side _dead];
+                     private _killerSide = side _killer;
+                     if (!isPlayer _killer) exitWith {};
+                     if (_killerSide == west) exitWith {};
+                     if (_deadSide != west) exitWith {};
+                     if (_killerSide == civilian) then {[_killer] joinSilent createGroup east};
+                     private _k = (_killer getVariable ["antiKills",0]) + 1;
+                     _killer setVariable ["antiKills",_k,true];
+                     [_killer] call MRC_fnc_updateWantedLevel;
+                     [_killer] call MRC_fnc_scheduleQRF;
++                    [_killer] call MRC_fnc_scheduleBackUp;
+                 }];
+                 _x setVariable ["MRC_killEH", _id];
+             };
+         } forEach allUnits;
+         sleep 5;
+     };
+ };
+ 
+ // === Wanted level maintenance ===
+ [] spawn {
+     while {true} do {
+         {
+             [_x] call MRC_fnc_updateWantedLevel;
+         } forEach allPlayers;
+         sleep 10;
+     };
+ };
+ 
+ addMissionEventHandler ["EntityKilled", {
+     params ["_dead"];
+     if (isPlayer _dead) then {[_dead] call MRC_fnc_resetWanted;};
+ }];
+ 
+ addMissionEventHandler ["HandleDisconnect", {
+     params ["_unit"];

@@ -6,7 +6,7 @@ publicVariable "WasCitizen";
 CID_Loyalty = createHashMap;
 CID_Malcompliance = createHashMap;
 [] execVM "xenAggroLoop.sqf";
-[] execVM "outlandsThreatSpawner.sqf";
+[] execVM "randomEncounters.sqf";
 [] execVM "rebelIncursion.sqf";
 [] execVM "spawnLootSystem.sqf";
 [] execVM "malcompliant.sqf";

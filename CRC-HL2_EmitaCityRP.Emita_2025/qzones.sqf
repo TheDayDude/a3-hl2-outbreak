@@ -63,7 +63,7 @@ if (isNil "XEN_fnc_clearAnchorServer") then {
                 } else {
                     if !(_plr getVariable ["qzoneWarned", false]) then {
                         _plr setVariable ["qzoneWarned", true];
-                        ["Unauthorized access detected. Leave within 10 seconds!"] remoteExec ["hint", _plr];
+                        ["Unauthorized access detected. Please vacate the Quarantine Zone. Please renew your Infestion Control ID at the CWU Office."] remoteExec ["hint", _plr];
                         [_plr, _zone] spawn {
                             params ["_u", "_z"];
                             sleep 10;
@@ -71,7 +71,7 @@ if (isNil "XEN_fnc_clearAnchorServer") then {
                                 _u setVariable ["qzoneOrigGrp", group _u];
                                 _u setVariable ["qzoneChanged", true];
                                 [[_u], createGroup east] remoteExec ["joinSilent", _u];
-                                ["You have been convicted of Access violation. Submit to your local Civil Protection Force."] remoteExec ["hint", _u];
+                                ["Access Violation Detected."] remoteExec ["hint", _u];
                             };
                             _u setVariable ["qzoneWarned", false];
                         };
