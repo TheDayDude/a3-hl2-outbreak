@@ -12,7 +12,7 @@ unitLists = [
 
 transport = ["","GT_Prowler","GT_APC","HL_CMB_OW_APC","B_Heli_Transport_03_unarmed_F","B_Heli_Transport_03_F"];
 
-respCity = [0,900,600,300,120,60];
+respCity = [0,5,5,300,120,60];
 respOut  = [0,5400,3600,2700,1800,900];
  
 // === Utility functions ===
@@ -98,7 +98,7 @@ MRC_fnc_trackQRF = {
         };
 
         if (!_onFoot) then {
-            if (!isNull _veh && {_veh distance _target < 100}) then {
+            if (!isNull _veh && {_veh distance _target < 50}) then {
                 {
                     private _role = assignedVehicleRole _x;
                     if (_role isEqualTo [] || {_role select 0 != "Turret"}) then {
@@ -267,8 +267,17 @@ MRC_fnc_trackBackUp = {
     params ["_grp","_target"];
     _grp setCombatMode "RED";
     _grp setBehaviour "COMBAT";
+    private _wp = _grp addWaypoint [getPos _target,0];
+    _wp setWaypointType "MOVE";
+    _wp setWaypointSpeed "FULL";
     while {alive _target && ({alive _x} count units _grp > 0)} do {
-        _grp move getPos _target;
+        private _leader = leader _grp;
+        if (_leader distance waypointPosition _wp < 20 && {_leader distance _target > 100}) then {
+            deleteWaypoint _wp;
+            _wp = _grp addWaypoint [getPos _target,0];
+            _wp setWaypointType "MOVE";
+            _wp setWaypointSpeed "FULL";
+        };
         sleep 5;
     };
     {deleteVehicle _x} forEach units _grp;
@@ -296,7 +305,7 @@ MRC_fnc_spawnBackUp = {
             for "_i" from 1 to 4 do {_unit addMagazine "HLB_HSMG";};
             _unit addWeapon "WBK_CP_HeavySMG";
         };
-    } forEach (unitLists select 1);
+    } forEach ((unitLists select 1) select [0,5]);
     _target setVariable ["backUpGroup", _grp];
     [_grp,_target] spawn MRC_fnc_trackBackUp;
 };
