@@ -12,7 +12,7 @@ unitLists = [
 
 transport = ["","GT_Prowler","GT_APC","HL_CMB_OW_APC","B_Heli_Transport_03_unarmed_F","B_Heli_Transport_03_F"];
 
-respCity = [0,5,5,300,120,60];
+respCity = [0,900,600,300,120,60];
 respOut  = [0,5400,3600,2700,1800,900];
  
 // === Utility functions ===
@@ -49,10 +49,13 @@ MRC_fnc_resetWanted = {
 
 MRC_fnc_trackQRF = {
     params ["_grp","_target","_veh"];
+    private _origVeh = _veh;
     private _onFoot = isNull _veh || {({vehicle _x != _veh} count units _grp) > 0};
     private _lostStart = 0;
     private _noPlayerTime = -1;
     private _abandon = false;
+    private _stuckPos = if (isNull _veh) then {[0,0,0]} else {getPos _veh};
+    private _stuckStart = time;
 
     private _findSafePos = {
         params ["_obj"];
@@ -98,29 +101,52 @@ MRC_fnc_trackQRF = {
         };
 
         if (!_onFoot) then {
-            if (!isNull _veh && {_veh distance _target < 50}) then {
-                {
-                    private _role = assignedVehicleRole _x;
-                    if (_role isEqualTo [] || {_role select 0 != "Turret"}) then {
-                        unassignVehicle _x;
-                        [_x] allowGetIn false;
-                        doGetOut _x;
+            if (!isNull _veh && {alive _veh}) then {
+                if (_veh distance _stuckPos > 5) then {
+                    _stuckPos = getPos _veh;
+                    _stuckStart = time;
+                } else {
+                    if (time - _stuckStart > 300) then {
+                        {
+                            unassignVehicle _x;
+                            [_x] allowGetIn false;
+                            doGetOut _x;
+                        } forEach units _grp;
+                        [_grp] orderGetIn false;
+                        _grp setCombatMode "RED";
+                        _grp setBehaviour "COMBAT";
+                        deleteWaypoint _wp;
+                        _onFoot = true;
+                        _veh = objNull;
+                        _lostStart = 0;
                     };
-                } forEach units _grp;
-                [_grp] orderGetIn false;
-                _grp setCombatMode "RED";
-                _grp setBehaviour "COMBAT";
-                deleteWaypoint _wp;
-                _onFoot = true;
-                _lostStart = 0;
-            } else {
-                private _leader = leader _grp;
-                if (_leader distance _wpPos < 20 && _leader distance _target > 100) then {
-                    sleep 10;
-                    _wpPos = [_target] call _findSafePos;
-                    _wp = _grp addWaypoint [_wpPos,0];
-                    _wp setWaypointType "MOVE";
-                    _wp setWaypointSpeed "FULL";
+                };
+            };
+            if (!_onFoot) then {
+                if (!isNull _veh && {_veh distance _target < 50}) then {
+                    {
+                        private _role = assignedVehicleRole _x;
+                        if (_role isEqualTo [] || {_role select 0 != "Turret"}) then {
+                            unassignVehicle _x;
+                            [_x] allowGetIn false;
+                            doGetOut _x;
+                        };
+                    } forEach units _grp;
+                    [_grp] orderGetIn false;
+                    _grp setCombatMode "RED";
+                    _grp setBehaviour "COMBAT";
+                    deleteWaypoint _wp;
+                    _onFoot = true;
+                    _lostStart = 0;
+                } else {
+                    private _leader = leader _grp;
+                    if (_leader distance _wpPos < 20 && _leader distance _target > 100) then {
+                        sleep 10;
+                        _wpPos = [_target] call _findSafePos;
+                        _wp = _grp addWaypoint [_wpPos,0];
+                        _wp setWaypointType "MOVE";
+                        _wp setWaypointSpeed "FULL";
+                    };
                 };
             };
         } else {
@@ -142,6 +168,8 @@ MRC_fnc_trackQRF = {
                         } forEach units _grp;
                         [_grp] orderGetIn true;
                         _onFoot = false;
+                        _stuckPos = getPos _veh;
+                        _stuckStart = time;
                         _lostStart = 0;
                         _wpPos = [_target] call _findSafePos;
                         _wp = _grp addWaypoint [_wpPos,0];
@@ -175,7 +203,7 @@ MRC_fnc_trackQRF = {
     private _delay = if (_abandon) then {0} else {300};
     sleep _delay;
     {deleteVehicle _x} forEach units _grp;
-    if (!isNull _veh) then {deleteVehicle _veh};
+    if (!isNull _origVeh) then {deleteVehicle _origVeh};
     deleteGroup _grp;
     _target setVariable ["qrfGroup", objNull];
     _target setVariable ["qrfVehicle", objNull];
