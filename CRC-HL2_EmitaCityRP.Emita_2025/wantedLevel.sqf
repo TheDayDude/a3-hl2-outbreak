@@ -269,7 +269,7 @@ MRC_fnc_trackSynth = {
 
 MRC_fnc_spawnSynth = {
     params ["_target","_lvl"];
-    private _spawnMarker = if (_target inArea City18) then {"Nexus"} else {"wasteland_Patrol"};
+    private _spawnMarker = if (_target inArea City18 || _target inArea slums) then {"Nexus"} else {"wasteland_Patrol"};
     private _pos = getMarkerPos _spawnMarker;
     private _type = switch (_lvl) do {
         case 3: {"WBK_HumanSynth_1"};
@@ -286,7 +286,7 @@ MRC_fnc_spawnSynth = {
 
 MRC_fnc_spawnAirSupport = {
     params ["_target","_lvl"];
-    private _spawnMarker = if (_target inArea City18) then {"Nexus"} else {"wasteland_Patrol"};
+    private _spawnMarker = if (_target inArea City18 || _target inArea slums) then {"Nexus"} else {"wasteland_Patrol"};
     private _pos = getMarkerPos _spawnMarker;
     private _type = if (_lvl == 4) then {"HL_CMB_Hunter"} else {selectRandom ["HL_CMB_Gunship","HL_Gunship_01"]};
     private _grp = createGroup west;
@@ -364,7 +364,7 @@ MRC_fnc_scheduleBackUp = {
     params ["_target"];
     private _lvl = _target getVariable ["wantedLevel",0];
     if (_lvl == 0) exitWith {};
-    if (!(_target inArea City18)) exitWith {};
+    if (!(_target inArea City18) && !(_target inArea slums)) exitWith {};
     private _existing = _target getVariable ["backUpGroup",objNull];
     if (!isNull _existing && {count units _existing > 0}) exitWith {};
     if (_target getVariable ["backUpPending",false]) exitWith {};
@@ -373,7 +373,7 @@ MRC_fnc_scheduleBackUp = {
     [_target,_lvl,_delay] spawn {
         params ["_t","_l","_d"];
         sleep _d;
-        if (_t getVariable ["wantedLevel",0] != _l || { !(_t inArea City18) }) exitWith {_t setVariable ["backUpPending",false];};
+        if (_t getVariable ["wantedLevel",0] != _l || { !(_t inArea City18) && !(_t inArea slums) }) exitWith {_t setVariable ["backUpPending",false];};
         [_t,_l] call MRC_fnc_spawnBackUp;
         _t setVariable ["backUpPending",false];
     };
@@ -381,7 +381,7 @@ MRC_fnc_scheduleBackUp = {
 
 MRC_fnc_spawnQRF = {
     params ["_target","_lvl"];
-    private _spawnMarker = if (_target inArea City18) then {"Nexus"} else {"wasteland_Patrol"};
+    private _spawnMarker = if (_target inArea City18 || _target inArea slums) then {"Nexus"} else {"wasteland_Patrol"};
     private _pos = getMarkerPos _spawnMarker;
     private _grp = createGroup west;
     {
@@ -461,7 +461,7 @@ MRC_fnc_scheduleQRF = {
     if (!isNull _existing && {count units _existing > 0}) exitWith {};
     if (_target getVariable ["qrfPending",false]) exitWith {};
     _target setVariable ["qrfPending",true];
-    private _delay = if (_target inArea City18) then {respCity select _lvl} else {respOut select _lvl};
+    private _delay = if (_target inArea City18 || _target inArea slums) then {respCity select _lvl} else {respOut select _lvl};
     [_target,_lvl,_delay] spawn {
         _this params ["_t","_l","_d"];
         sleep _d;
