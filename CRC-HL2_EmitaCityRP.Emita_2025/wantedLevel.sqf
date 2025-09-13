@@ -1,4 +1,4 @@
-if (!isServer) exitWith {
+if (isServer) then {
     addMissionEventHandler ["EntityKilled", {
         params ["_dead", "_killer"];
         private _deadSide = _dead getVariable ["OriginalSide", side _dead];
@@ -6,7 +6,8 @@ if (!isServer) exitWith {
         if (!isPlayer _killer) exitWith {};
         if (_killerSide == west) exitWith {};
         if (_deadSide != west) exitWith {};
-        [_killer] remoteExec ["MRC_fnc_registerKill", 2];
+        if (_killerSide == civilian) then { [_killer] joinSilent createGroup east };
+        [_killer] call MRC_fnc_registerKill;
     }];
 };
 
