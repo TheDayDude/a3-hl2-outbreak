@@ -1,4 +1,14 @@
-if (!isServer) exitWith {};
+if (!isServer) exitWith {
+    addMissionEventHandler ["EntityKilled", {
+        params ["_dead", "_killer"];
+        private _deadSide = _dead getVariable ["OriginalSide", side _dead];
+        private _killerSide = side _killer;
+        if (!isPlayer _killer) exitWith {};
+        if (_killerSide == west) exitWith {};
+        if (_deadSide != west) exitWith {};
+        [_killer] remoteExec ["MRC_fnc_registerKill", 2];
+    }];
+};
 
 // === Configuration ===
 unitLists = [
@@ -46,6 +56,17 @@ MRC_fnc_resetWanted = {
     _unit setVariable ["qrfVehicle",objNull];
     _unit setVariable ["backUpGroup",objNull];
 };
+
+// Server side handler for a player killing a Combine unit
+MRC_fnc_registerKill = {
+    params ["_killer"];
+    private _k = (_killer getVariable ["antiKills",0]) + 1;
+    _killer setVariable ["antiKills",_k,true];
+    [_killer] call MRC_fnc_updateWantedLevel;
+    [_killer] call MRC_fnc_scheduleQRF;
+    [_killer] call MRC_fnc_scheduleBackUp;
+};
+publicVariable "MRC_fnc_registerKill";
 
 MRC_fnc_trackQRF = {
     params ["_grp","_target","_veh"];
@@ -465,11 +486,7 @@ MRC_fnc_scheduleQRF = {
                     if (_killerSide == west) exitWith {};
                     if (_deadSide != west) exitWith {};
                     if (_killerSide == civilian) then {[_killer] joinSilent createGroup east};
-                    private _k = (_killer getVariable ["antiKills",0]) + 1;
-                    _killer setVariable ["antiKills",_k,true];
-                    [_killer] call MRC_fnc_updateWantedLevel;
-                    [_killer] call MRC_fnc_scheduleQRF;
-                    [_killer] call MRC_fnc_scheduleBackUp;
+                    [_killer] call MRC_fnc_registerKill;
                 }];
                 _x setVariable ["MRC_killEH", _id];
             };
