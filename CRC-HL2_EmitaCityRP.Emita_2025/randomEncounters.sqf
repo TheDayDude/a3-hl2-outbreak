@@ -41,7 +41,7 @@ publicVariable "RE_LootMilList";
                         private _dir = random 360;
                         private _grpW = createGroup west;
                         private _wTypes = ["WBK_Combine_Grunt","WBK_Combine_Grunt_2","WBK_Combine_HL2_Type_WastelandPatrol"];
-                        for "_i" from 1 to 5 do {
+                        for "_i" from 1 to 7 do {
                             private _pos = _center getPos [60 + random 20, _dir + random 20 - 10];
                             private _u = _grpW createUnit [selectRandom _wTypes, _pos, [], 0, "FORM"];
                             [_u] call _giveFood;
@@ -49,7 +49,7 @@ publicVariable "RE_LootMilList";
                         };
                         private _grpE = createGroup east;
                         private _eTypes = ["WBK_Rebel_Rifleman_1","WBK_Rebel_Rifleman_2","WBK_Rebel_SMG_1","WBK_Rebel_Shotgunner_2"];
-                        for "_i" from 1 to 4 do {
+                        for "_i" from 1 to 6 do {
                             private _pos = _center getPos [60 + random 20, _dir + 180 + random 20 - 10];
                             private _u = _grpE createUnit [selectRandom _eTypes, _pos, [], 0, "FORM"];
                             [_u] call _giveFood;
@@ -327,6 +327,6 @@ publicVariable "RE_LootMilList";
                 };
             };
         };
-        sleep (720 + random 720);
+        sleep (300 + random 600);
     };
 };

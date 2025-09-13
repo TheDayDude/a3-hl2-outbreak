@@ -23,15 +23,15 @@ unitLists = [
 
 transport = ["","GT_Prowler","GT_APC","HL_CMB_OW_APC","B_Heli_Transport_03_unarmed_F","B_Heli_Transport_03_F"];
 
-respCity = [0,900,600,300,120,60];
-respOut  = [0,5400,3600,2700,1800,900];
+respCity = [0,300,240,180,120,60];
+respOut  = [0,1800,1500,1200,900,300];
  
 // === Utility functions ===
 MRC_fnc_updateWantedLevel = {
     params ["_unit"];
     private _k = _unit getVariable ["antiKills",0];
     private _lvl = 0;
-    if (_k >= 200) then {_lvl = 5} else {if (_k >= 100) then {_lvl = 4} else {if (_k >= 50) then {_lvl = 3} else {if (_k >= 25) then {_lvl = 2} else {if (_k >= 1) then {_lvl = 1};};};};};
+    if (_k >= 100) then {_lvl = 5} else {if (_k >= 50) then {_lvl = 4} else {if (_k >= 25) then {_lvl = 3} else {if (_k >= 15) then {_lvl = 2} else {if (_k >= 1) then {_lvl = 1};};};};};
     _unit setVariable ["wantedLevel",_lvl,true];
 };
 
