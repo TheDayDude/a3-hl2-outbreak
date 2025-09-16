@@ -21,14 +21,14 @@ class EditorData
 	};
 	class LayerIndexProvider
 	{
-		nextID=8974;
+		nextID=9021;
 	};
 	class Camera
 	{
-		pos[]={3245.1826,295.09387,4278.0229};
-		dir[]={0.88263679,-0.46949461,0.022962183};
-		up[]={0.46933585,0.88293535,0.012209978};
-		aside[]={0.026006643,9.3132257e-10,-0.99966192};
+		pos[]={1277.692,28.427155,4648.8721};
+		dir[]={0.7183876,-0.67935216,0.14966612};
+		up[]={0.66507208,0.73381233,0.13855857};
+		aside[]={0.2039569,0,-0.97897983};
 	};
 };
 binarizationWanted=0;
@@ -3118,7 +3118,7 @@ class Mission
 							};
 							id=21215;
 							type="HL_CMB_Static_innerwall001";
-							atlOffset=0.88005638;
+							atlOffset=0.88002205;
 							class CustomAttributes
 							{
 								class Attribute0
@@ -10090,7 +10090,7 @@ class Mission
 							};
 							id=21274;
 							type="HL_CMB_Static_innerwall001";
-							atlOffset=0.9216485;
+							atlOffset=0.92161226;
 							class CustomAttributes
 							{
 								class Attribute0
@@ -17033,7 +17033,7 @@ class Mission
 					};
 					id=21506;
 					type="Land_HouseB_Tenement_ruins";
-					atlOffset=0.40146255;
+					atlOffset=0.40142822;
 					class CustomAttributes
 					{
 						class Attribute0
@@ -22496,7 +22496,7 @@ class Mission
 					dataType="Logic";
 					class PositionInfo
 					{
-						position[]={1356.3254,4.1295543,4208.4688};
+						position[]={1356.3253,4.1295543,4208.4688};
 					};
 					areaSize[]={1,-1,1};
 					id=21472;
@@ -48231,7 +48231,7 @@ class Mission
 					};
 					id=35922;
 					type="Land_HouseB_Tenement_ruins";
-					atlOffset=4.3392181e-05;
+					atlOffset=4.7683716e-07;
 					class CustomAttributes
 					{
 						class Attribute0
@@ -50377,7 +50377,7 @@ class Mission
 									};
 									id=36434;
 									type="Reflector_Cone_01_narrow_white_F";
-									atlOffset=4.8979816;
+									atlOffset=4.8979988;
 								};
 								class Item44
 								{
@@ -108553,7 +108553,7 @@ class Mission
 							};
 							id=35472;
 							type="xen_anchor_rock_4";
-							atlOffset=9.5367432e-06;
+							atlOffset=5.7220459e-06;
 						};
 						class Item1075
 						{
@@ -108759,7 +108759,7 @@ class Mission
 							};
 							id=35479;
 							type="xen_coconut";
-							atlOffset=1.2955093;
+							atlOffset=1.2955055;
 							class CustomAttributes
 							{
 								class Attribute0
@@ -109425,7 +109425,7 @@ class Mission
 							};
 							id=35498;
 							type="xen_anchor_rock";
-							atlOffset=7.6293945e-06;
+							atlOffset=3.8146973e-06;
 							class CustomAttributes
 							{
 								class Attribute0
@@ -181480,7 +181480,7 @@ class Mission
 					};
 					id=28333;
 					type="Land_Can_V2_F";
-					atlOffset=0.27947235;
+					atlOffset=0.31846237;
 				};
 				class Item305
 				{
@@ -189013,7 +189013,7 @@ class Mission
 					};
 					id=28013;
 					type="Land_Bandage_F";
-					atlOffset=0.99999952;
+					atlOffset=1.0219045;
 				};
 				class Item573
 				{
@@ -189030,7 +189030,7 @@ class Mission
 					};
 					id=28014;
 					type="Land_Bandage_F";
-					atlOffset=0.99999952;
+					atlOffset=1.0219045;
 				};
 				class Item574
 				{
@@ -190005,7 +190005,7 @@ class Mission
 					};
 					id=27958;
 					type="Land_Can_V2_F";
-					atlOffset=1.4499969;
+					atlOffset=1.488987;
 				};
 				class Item631
 				{
@@ -190022,7 +190022,7 @@ class Mission
 					};
 					id=27959;
 					type="Land_Can_V2_F";
-					atlOffset=0.099997044;
+					atlOffset=0.13898706;
 				};
 				class Item632
 				{
@@ -190033,13 +190033,14 @@ class Mission
 						angles[]={0,2.0943949,0};
 					};
 					side="Empty";
+					flags=4;
 					class Attributes
 					{
 						createAsSimpleObject=1;
 					};
 					id=27960;
 					type="Land_Can_V2_F";
-					atlOffset=0.81429672;
+					atlOffset=0.037690163;
 				};
 				class Item633
 				{
@@ -190050,13 +190051,14 @@ class Mission
 						angles[]={0,5.2359877,0};
 					};
 					side="Empty";
+					flags=4;
 					class Attributes
 					{
 						createAsSimpleObject=1;
 					};
 					id=28008;
 					type="Land_Can_V2_F";
-					atlOffset=0.81300688;
+					atlOffset=0.037690639;
 				};
 				class Item634
 				{
@@ -190067,13 +190069,14 @@ class Mission
 						angles[]={0,4.712389,0};
 					};
 					side="Empty";
+					flags=4;
 					class Attributes
 					{
 						createAsSimpleObject=1;
 					};
 					id=28011;
 					type="Land_Can_V2_F";
-					atlOffset=0.81300688;
+					atlOffset=0.037690639;
 				};
 				class Item635
 				{
@@ -195129,7 +195132,7 @@ class Mission
 					};
 					id=27151;
 					type="Land_Bandage_F";
-					atlOffset=0.8772049;
+					atlOffset=0.89910984;
 				};
 				class Item914
 				{
@@ -195146,7 +195149,7 @@ class Mission
 					};
 					id=27173;
 					type="Land_Bandage_F";
-					atlOffset=0.45125198;
+					atlOffset=0.47315693;
 				};
 				class Item915
 				{
@@ -195437,7 +195440,7 @@ class Mission
 					};
 					id=27053;
 					type="Land_Can_V2_F";
-					atlOffset=1.2542992;
+					atlOffset=1.2932892;
 				};
 				class Item932
 				{
@@ -195454,7 +195457,7 @@ class Mission
 					};
 					id=27063;
 					type="Land_Can_V2_F";
-					atlOffset=0.54929924;
+					atlOffset=0.58828926;
 				};
 				class Item933
 				{
@@ -195465,13 +195468,14 @@ class Mission
 						angles[]={0,2.8099802,0};
 					};
 					side="Empty";
+					flags=4;
 					class Attributes
 					{
 						createAsSimpleObject=1;
 					};
 					id=27102;
 					type="Land_Can_V2_F";
-					atlOffset=0.85529947;
+					atlOffset=0.028991222;
 				};
 				class Item934
 				{
@@ -195488,7 +195492,7 @@ class Mission
 					};
 					id=27114;
 					type="Land_Can_V2_F";
-					atlOffset=0.43062353;
+					atlOffset=0.46961355;
 				};
 				class Item935
 				{
@@ -195499,13 +195503,14 @@ class Mission
 						angles[]={0,2.3561945,0};
 					};
 					side="Empty";
+					flags=4;
 					class Attributes
 					{
 						createAsSimpleObject=1;
 					};
 					id=27116;
 					type="Land_Can_V2_F";
-					atlOffset=0.28151894;
+					atlOffset=0.017423153;
 				};
 				class Item936
 				{
@@ -195522,7 +195527,7 @@ class Mission
 					};
 					id=27118;
 					type="Land_Can_V2_F";
-					atlOffset=1.3304234;
+					atlOffset=1.3694134;
 				};
 				class Item937
 				{
@@ -195539,7 +195544,7 @@ class Mission
 					};
 					id=27125;
 					type="Land_Can_V2_F";
-					atlOffset=1.3267837;
+					atlOffset=1.3657737;
 				};
 				class Item938
 				{
@@ -195556,7 +195561,7 @@ class Mission
 					};
 					id=27178;
 					type="Land_Can_V2_F";
-					atlOffset=0.48933887;
+					atlOffset=0.5283289;
 				};
 				class Item939
 				{
@@ -195567,13 +195572,14 @@ class Mission
 						angles[]={0,3.6128323,0};
 					};
 					side="Empty";
+					flags=4;
 					class Attributes
 					{
 						createAsSimpleObject=1;
 					};
 					id=27207;
 					type="Land_Can_V2_F";
-					atlOffset=0.88702345;
+					atlOffset=0.0089879036;
 				};
 				class Item940
 				{
@@ -208291,7 +208297,7 @@ class Mission
 					};
 					id=28604;
 					type="Land_Bandage_F";
-					atlOffset=1.2423029;
+					atlOffset=1.2642093;
 				};
 				class Item1547
 				{
@@ -208308,7 +208314,7 @@ class Mission
 					};
 					id=28605;
 					type="Land_Bandage_F";
-					atlOffset=0.18177605;
+					atlOffset=0.20368195;
 				};
 				class Item1548
 				{
@@ -208325,7 +208331,7 @@ class Mission
 					};
 					id=28763;
 					type="Land_Bandage_F";
-					atlOffset=0.19429398;
+					atlOffset=0.21619463;
 				};
 				class Item1549
 				{
@@ -257083,7 +257089,7 @@ class Mission
 					};
 					id=30747;
 					type="xen_tentcl_big";
-					atlOffset=25.771969;
+					atlOffset=25.772015;
 					class CustomAttributes
 					{
 						class Attribute0
@@ -257222,7 +257228,7 @@ class Mission
 					};
 					id=30753;
 					type="xen_pod";
-					atlOffset=6.7079067;
+					atlOffset=6.7078648;
 					class CustomAttributes
 					{
 						class Attribute0
@@ -257269,7 +257275,7 @@ class Mission
 					};
 					id=30754;
 					type="xen_pod";
-					atlOffset=3.8260002;
+					atlOffset=3.8259964;
 					class CustomAttributes
 					{
 						class Attribute0
@@ -257457,7 +257463,7 @@ class Mission
 					name="azone";
 					type="REBProspect";
 					id=30823;
-					atlOffset=0.00045967102;
+					atlOffset=0.00045585632;
 					class CustomAttributes
 					{
 						class Attribute0
@@ -259024,7 +259030,7 @@ class Mission
 					};
 					id=30859;
 					type="xen_pod";
-					atlOffset=4.0527058;
+					atlOffset=4.0527515;
 					class CustomAttributes
 					{
 						class Attribute0
@@ -266485,7 +266491,7 @@ class Mission
 					};
 					id=35525;
 					type="ClutterCutter_EP1";
-					atlOffset=0.0063858032;
+					atlOffset=0.0063819885;
 				};
 				class Item345
 				{
@@ -267727,7 +267733,7 @@ class Mission
 					};
 					id=32748;
 					type="ModuleParticles_F";
-					atlOffset=37.377365;
+					atlOffset=37.377357;
 					class CustomAttributes
 					{
 						class Attribute0
@@ -361160,7 +361166,6 @@ class Mission
 					flags=2;
 					class Attributes
 					{
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Civil Engineer";
 						isPlayable=1;
 						class Inventory
@@ -361286,7 +361291,6 @@ class Mission
 					side="Civilian";
 					class Attributes
 					{
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Civil Engineer";
 						isPlayable=1;
 						class Inventory
@@ -361412,7 +361416,6 @@ class Mission
 					side="Civilian";
 					class Attributes
 					{
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Civil Engineer";
 						isPlayable=1;
 						class Inventory
@@ -361553,7 +361556,6 @@ class Mission
 					flags=6;
 					class Attributes
 					{
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true];  " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true];  " \n "this setVariable [""WBK_CombineType"","" rebel_"",true]; " \n "this setUnitTrait [""Medic"", true];";
 						description="Civil Medical Worker";
 						isPlayable=1;
 						class Inventory
@@ -361672,7 +361674,6 @@ class Mission
 					flags=4;
 					class Attributes
 					{
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true];  " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true];  " \n "this setVariable [""WBK_CombineType"","" rebel_"",true]; " \n "this setUnitTrait [""Medic"", true];";
 						description="Civil Medical Worker";
 						isPlayable=1;
 						class Inventory
@@ -361790,7 +361791,6 @@ class Mission
 					side="Civilian";
 					class Attributes
 					{
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true];  " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true];  " \n "this setVariable [""WBK_CombineType"","" rebel_"",true]; " \n "this setUnitTrait [""Medic"", true];";
 						description="Civil Medical Worker";
 						isPlayable=1;
 						class Inventory
@@ -361923,7 +361923,6 @@ class Mission
 					flags=6;
 					class Attributes
 					{
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Civil Sanitation Worker";
 						isPlayable=1;
 						class Inventory
@@ -362023,7 +362022,6 @@ class Mission
 					side="Civilian";
 					class Attributes
 					{
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Civil Sanitation Worker";
 						isPlayable=1;
 						class Inventory
@@ -362124,7 +362122,6 @@ class Mission
 					flags=4;
 					class Attributes
 					{
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Civil Sanitation Worker";
 						isPlayable=1;
 						class Inventory
@@ -362240,7 +362237,6 @@ class Mission
 					class Attributes
 					{
 						rank="CORPORAL";
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Citizen";
 						isPlayable=1;
 					};
@@ -362317,7 +362313,6 @@ class Mission
 					class Attributes
 					{
 						rank="CORPORAL";
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Citizen";
 						isPlayable=1;
 					};
@@ -362392,7 +362387,6 @@ class Mission
 					class Attributes
 					{
 						rank="CORPORAL";
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Citizen";
 						isPlayable=1;
 					};
@@ -362483,7 +362477,6 @@ class Mission
 					class Attributes
 					{
 						rank="CORPORAL";
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Citizen";
 						isPlayable=1;
 					};
@@ -362559,7 +362552,6 @@ class Mission
 					class Attributes
 					{
 						rank="CORPORAL";
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Citizen";
 						isPlayable=1;
 					};
@@ -362636,7 +362628,6 @@ class Mission
 					class Attributes
 					{
 						rank="CORPORAL";
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Citizen";
 						isPlayable=1;
 					};
@@ -362727,7 +362718,6 @@ class Mission
 					class Attributes
 					{
 						rank="CORPORAL";
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Citizen";
 						isPlayable=1;
 					};
@@ -362804,7 +362794,6 @@ class Mission
 					class Attributes
 					{
 						rank="CORPORAL";
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Citizen";
 						isPlayable=1;
 					};
@@ -362881,7 +362870,6 @@ class Mission
 					class Attributes
 					{
 						rank="CORPORAL";
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Citizen";
 						isPlayable=1;
 					};
@@ -362971,7 +362959,6 @@ class Mission
 					class Attributes
 					{
 						rank="CORPORAL";
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Citizen";
 						isPlayable=1;
 					};
@@ -363047,7 +363034,6 @@ class Mission
 					class Attributes
 					{
 						rank="CORPORAL";
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Citizen";
 						isPlayable=1;
 					};
@@ -363123,7 +363109,6 @@ class Mission
 					class Attributes
 					{
 						rank="CORPORAL";
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Citizen";
 						isPlayable=1;
 					};
@@ -363212,7 +363197,6 @@ class Mission
 					class Attributes
 					{
 						rank="CORPORAL";
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Citizen";
 						isPlayable=1;
 					};
@@ -363289,7 +363273,6 @@ class Mission
 					class Attributes
 					{
 						rank="CORPORAL";
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Citizen";
 						isPlayer=1;
 						isPlayable=1;
@@ -363367,7 +363350,6 @@ class Mission
 					class Attributes
 					{
 						rank="CORPORAL";
-						init="this setVariable [""WBK_HL_CustomArmour"",0,true]; " \n "this setVariable [""WBK_HL_CustomArmour_MAX"",50,true]; " \n "this setVariable [""WBK_CombineType"","" rebel_"",true];";
 						description="Citizen";
 						isPlayable=1;
 					};

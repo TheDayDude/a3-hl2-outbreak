@@ -313,13 +313,13 @@ publicVariable "RE_LootMilList";
                 };
                 [_spawned, _center] spawn {
                     params ["_spawned","_center"];
-                    private _timeout = time + 900;
+                    private _timeout = time + 600;
                     while {true} do {
                         private _near = allPlayers select {alive _x && _x distance2D _center < 500};
                         if (_near isEqualTo []) then {
                             if (time > _timeout) exitWith {};
                         } else {
-                            _timeout = time + 900;
+                            _timeout = time + 600;
                         };
                         sleep 60;
                     };
