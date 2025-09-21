@@ -1,208 +1,276 @@
-diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf
-index a686a1db6cd828b70575da8c6618ea3a37867899..d5966833c42b9089e1a63521e1795a7b5bb2ba60 100644
---- a/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf
-+++ b/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf
-@@ -247,68 +247,68 @@ MRC_fnc_trackSynth = {
-                 _wp = _grp addWaypoint [getPos _target,0];
-                 _wp setWaypointType "MOVE";
-                 _wp setWaypointSpeed "FULL";
-             } else {
-                 deleteWaypoint _wp;
-                 _grp setCombatMode "RED";
-                 _grp setBehaviour "COMBAT";
-                 waitUntil {
-                     sleep 5;
-                     (!alive _target) || ({alive _x} count units _grp == 0) || ((allPlayers select {alive _x && {_x distance (leader _grp) < 100}}) isEqualTo [])
-                 };
-                 if (!alive _target || {({alive _x} count units _grp == 0)}) exitWith {};
-                 _wp = _grp addWaypoint [getPos _target,0];
-                 _wp setWaypointType "MOVE";
-                 _wp setWaypointSpeed "FULL";
+diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/missionsRebels.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/missionsRebels.sqf
+index 33b100643fd6f4a706b9817a1a52ff007f61aa31..8ef8f02182e0a2df8880c1822f97f35afcce32d7 100644
+--- a/CRC-HL2_EmitaCityRP.Emita_2025/missionsRebels.sqf
++++ b/CRC-HL2_EmitaCityRP.Emita_2025/missionsRebels.sqf
+@@ -451,199 +451,262 @@ case 4: {
+                 nil,1.5,true,true,"",
+                 "side _this == east && captive _target",
+                 4
+             ];
+         };
+         publicVariable "RRU_fnc_addFreeAction";
+     };
+ 
+     if (isNil "RRU_fnc_removeFreeAction") then {
+         RRU_fnc_removeFreeAction = {
+             params ["_u"];
+             if (isNull _u) exitWith {};
+             removeAllActions _u;
+         };
+         publicVariable "RRU_fnc_removeFreeAction";
+     };
+ 
+     if (isNil "RRU_fnc_freeRogueServer") then {
+         RRU_fnc_freeRogueServer = {
+             params ["_rogue","_caller"];
+             if (isNull _rogue || isNull _caller) exitWith {};
+             if (!captive _rogue) exitWith {};
+             _caller playMoveNow "AinvPknlMstpSnonWnonDnon_medic_1";
+             uiSleep 3.5;
+             _caller switchMove "";
+-            _rogue setCaptive false;
+-            [_rogue,""] remoteExec ["switchMove",0,true];
+-            _rogue enableAI "MOVE";
+-            [_rogue] joinSilent (group _caller);
++            private _callerGroup = group _caller;
++            private _roguePos    = getPosATL _rogue;
++            private _rogueDir    = getDir _rogue;
++            private _rogueClass  = typeOf _rogue;
++            private _rogueLoadout = getUnitLoadout _rogue;
++
+             [_rogue] remoteExec ["RRU_fnc_removeFreeAction",0,true];
+ 
++            private _replacement = objNull;
++            if (!isNull _callerGroup) then {
++                _replacement = _callerGroup createUnit [_rogueClass, _roguePos, [], 0, "FORM"];
++            };
++
++            private _vipTarget = _rogue;
++
++            if (!isNull _replacement) then {
++                _replacement setPosATL _roguePos;
++                _replacement setDir _rogueDir;
++                _replacement setUnitLoadout [_rogueLoadout, true];
++                removeHeadgear _replacement;
++                _replacement setCaptive false;
++                _replacement enableAI "MOVE";
++                [_replacement] joinSilent _callerGroup;
++                [_replacement,""] remoteExec ["switchMove",0,true];
++                _replacement setVariable ["rru_state","freed",true];
++                missionNamespace setVariable ["rru_replacementUnit", _replacement, true];
++                missionNamespace setVariable ["rru_originalUnit", objNull, true];
++                _vipTarget = _replacement;
++                [_rogue,""] remoteExec ["switchMove",0,true];
++                deleteVehicle _rogue;
++            } else {
++                _rogue setCaptive false;
++                [_rogue,""] remoteExec ["switchMove",0,true];
++                _rogue enableAI "MOVE";
++                if (!isNull _callerGroup) then { [_rogue] joinSilent _callerGroup; };
++                removeHeadgear _rogue;
++                _rogue setVariable ["rru_state","freed",true];
++                missionNamespace setVariable ["rru_replacementUnit", objNull, true];
++            };
++
+             missionNamespace setVariable ["rru_freed",true,true];
+ 
+             // spawn hunting squad
+             private _huntPos = getMarkerPos "slums_guard";
+             private _huntGrp = createGroup west;
+             for "_i" from 1 to (3 + floor random 3) do {
+                 _huntGrp createUnit [selectRandom ["WBK_Combine_CP_P","WBK_Combine_CP_SMG"], _huntPos, [], 5, "FORM"];
              };
+             _huntGrp setBehaviour "COMBAT";
+             _huntGrp setCombatMode "RED";
+-            [_huntGrp,_rogue] spawn {
++            [_huntGrp,_vipTarget] spawn {
+                 params ["_grp","_vip"];
+                 while {alive _vip && {count units _grp > 0}} do {
+                     _grp move position _vip;
+                     sleep 15;
+                 };
+             };
+             missionNamespace setVariable ["rru_huntGrp",_huntGrp];
          };
-         sleep 5;
+         publicVariable "RRU_fnc_freeRogueServer";
      };
-     {deleteVehicle _x} forEach units _grp;
-     deleteGroup _grp;
- };
  
- MRC_fnc_spawnSynth = {
-     params ["_target","_lvl"];
--    private _spawnMarker = if (_target inArea City18) then {"Nexus"} else {"wasteland_Patrol"};
-+    private _spawnMarker = if (_target inArea City18 || _target inArea slums) then {"Nexus"} else {"wasteland_Patrol"};
-     private _pos = getMarkerPos _spawnMarker;
-     private _type = switch (_lvl) do {
-         case 3: {"WBK_HumanSynth_1"};
-         case 4: {if (random 1 < 0.6) then {"WBK_HumanSynth_1"} else {"WBK_HunterSynth_1"}};
-         case 5: {
-             private _r = random 1;
-             if (_r < 0.5) then {"WBK_HumanSynth_1"} else {if (_r < 0.8) then {"WBK_HunterSynth_1"} else {"WBK_Strider_HL2"}};
+     if (isNil "RRU_fnc_createRescueMarker") then {
+         RRU_fnc_createRescueMarker = {
+             params ["_name","_pos"];
+             if (!hasInterface || { side player != east }) exitWith {};
+             private _m = createMarkerLocal [_name,_pos];
+             _m setMarkerShapeLocal "ICON";
+             _m setMarkerTypeLocal "mil_pickup";
+             _m setMarkerTextLocal "VIP Rescue Point";
+             _m setMarkerColorLocal "ColorGreen";
          };
+         publicVariable "RRU_fnc_createRescueMarker";
      };
-     private _grp = createGroup west;
-     _grp createUnit [_type,_pos,[],0,"FORM"];
-     [_grp,_target] spawn MRC_fnc_trackSynth;
- };
  
- MRC_fnc_spawnAirSupport = {
-     params ["_target","_lvl"];
--    private _spawnMarker = if (_target inArea City18) then {"Nexus"} else {"wasteland_Patrol"};
-+    private _spawnMarker = if (_target inArea City18 || _target inArea slums) then {"Nexus"} else {"wasteland_Patrol"};
-     private _pos = getMarkerPos _spawnMarker;
-     private _type = if (_lvl == 4) then {"HL_CMB_Hunter"} else {selectRandom ["HL_CMB_Gunship","HL_Gunship_01"]};
-     private _grp = createGroup west;
-     private _veh = createVehicle [_type,_pos,[],0,"FLY"];
-     private _pilot = _grp createUnit ["WBK_Combine_CP_SMG",_pos,[],0,"FORM"];
-     _pilot moveInDriver _veh;
-     _veh flyInHeight 200;
-     [_veh,_grp,_target,_pos] spawn {
-         params ["_veh","_grp","_target","_home"];
-         private _radius = 500;
-         for "_i" from 0 to 12 do {
-             private _wpPos = _target getPos [_radius, _i * 45];
-             private _wp = _grp addWaypoint [_wpPos,0];
-             _wp setWaypointType "MOVE";
-             _wp setWaypointSpeed "FULL";
+     if (isNil "RRU_fnc_deleteMarker") then {
+         RRU_fnc_deleteMarker = {
+             params ["_name"];
+             if (!hasInterface || { side player != east }) exitWith {};
+             deleteMarkerLocal _name;
          };
-         private _wpHome = _grp addWaypoint [_home,0];
-         _wpHome setWaypointType "MOVE";
-         waitUntil {sleep 5; !alive _veh || {_veh distance _home < 100}};        
-         if (alive _veh) then {
-             {deleteVehicle _x} forEach crew _veh;
-             deleteVehicle _veh;
-         };
+         publicVariable "RRU_fnc_deleteMarker";
      };
- };
-diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf
-index a686a1db6cd828b70575da8c6618ea3a37867899..d5966833c42b9089e1a63521e1795a7b5bb2ba60 100644
---- a/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf
-+++ b/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf
-@@ -342,68 +342,68 @@ MRC_fnc_spawnBackUp = {
-     private _grp = createGroup west;
-     {
-         private _unit = _grp createUnit [_x,_pos,[],0,"FORM"];
-         if (_x == "WBK_Combine_CP_SMG") then {
-             removeAllWeapons _unit; removeAllItems _unit; removeAllAssignedItems _unit; removeUniform _unit; removeHeadgear _unit;
-             _unit forceAddUniform "U_C18_Uniform_1";
-             _unit addHeadgear "H_SM_OVSMask2";
-             for "_i" from 1 to 4 do {_unit addMagazine "30Rnd_556x45_Stanag_Tracer_Blue";};
-             _unit addWeapon "hlc_rifle_416D10C";
+ 
+     // Gather possible markers
+     private _slumMarkers = allMapMarkers select { toLower _x find "slums_" == 0 };
+     private _rebelMarkers = allMapMarkers select { toLower _x find "rebel_" == 0 };
+     if (_slumMarkers isEqualTo [] || _rebelMarkers isEqualTo []) exitWith {
+         ["[Rebel Mission] Missing slums_ or rebel_ markers — mission skipped."] remoteExec ["systemChat",0];
+     };
+ 
+     private _spawnMarker = selectRandom _slumMarkers;
+     private _spawnPos    = getMarkerPos _spawnMarker;
+ 
+     // Rogue captive
+     private _rogueGrp = createGroup west;
+     private _rogue    = _rogueGrp createUnit ["UU_CP", _spawnPos, [], 0, "NONE"];
+     _rogue setCaptive true;
+     removeHeadgear _rogue;
+     [_rogue,"Acts_ExecutionVictim_Loop"] remoteExec ["switchMove",0,true];
+     _rogue setVariable ["rru_state","captive",true];
++    missionNamespace setVariable ["rru_originalUnit", _rogue, true];
++    missionNamespace setVariable ["rru_replacementUnit", objNull, true];
++    missionNamespace setVariable ["rru_freed", false, true];
+     [_rogue] remoteExec ["RRU_fnc_addFreeAction",0,true];
+ 
+     // Guard squad
+     private _guardGrp = createGroup west;
+     private _guards   = [];
+     for "_i" from 1 to 4 do {
+         private _p = [_spawnPos,8 + random 5, random 360] call BIS_fnc_relPos;
+         private _g = _guardGrp createUnit [selectRandom ["WBK_Combine_HL2_Type","WBK_Combine_CP_SMG"], _p, [], 0, "FORM"];
+         _guards pushBack _g;
+     };
+     _guardGrp setBehaviour "AWARE";
+     _guardGrp setCombatMode "RED";
+     [_guardGrp,_spawnPos,40] call BIS_fnc_taskPatrol;
+ 
+     // Rebel extraction team
+     private _rebelMarker = selectRandom _rebelMarkers;
+     private _rescuePos   = getMarkerPos _rebelMarker;
+     private _rebelGrp    = createGroup east;
+     private _rebels      = [];
+     for "_i" from 1 to 4 do {
+         private _rp = [_rescuePos,5 + random 5, random 360] call BIS_fnc_relPos;
+         private _r  = _rebelGrp createUnit [selectRandom ["WBK_Rebel_Rifleman_1","WBK_Rebel_SMG_2","WBK_Rebel_Rifleman_2"], _rp, [], 0, "FORM"];
+         _rebels pushBack _r;
+     };
+     _rebelGrp setBehaviour "SAFE";
+     _rebelGrp setCombatMode "YELLOW";
+ 
+     private _markerName = format ["vipRescue_%1",diag_tickTime];
+     [_markerName,_rescuePos] remoteExec ["RRU_fnc_createRescueMarker",0,true];
+ 
+     // Task setup
+     private _taskId = format ["task_rescueRogue_%1", diag_tickTime];
+     [east,_taskId,
+         ["Free the rogue CPF officer and deliver him to the rebels.","Rescue Rogue Unit",""],
+         _spawnPos,true
+     ] call BIS_fnc_taskCreate;
+ 
+     // Monitor success/failure
+     [_taskId,_rogue,_guardGrp,_rebelGrp,_guards+_rebels,_rescuePos,_markerName] spawn {
+         params ["_taskId","_rogue","_guardGrp","_rebelGrp","_units","_rescuePos","_markerName"];
+         private _deadline = time + 2700; // 45 minutes
+         private _success = false;
+ 
+         waitUntil {
+             sleep 5;
+-            _success = alive _rogue && !captive _rogue && (_rogue distance2D _rescuePos < 10);
+-            _success || !alive _rogue || time > _deadline
++            private _replacement = missionNamespace getVariable ["rru_replacementUnit", objNull];
++            private _rogueAlive = (!isNull _rogue) && {alive _rogue};
++            private _replacementAlive = (!isNull _replacement) && {alive _replacement};
++            private _rogueSuccess = _rogueAlive && !captive _rogue && (_rogue distance2D _rescuePos < 10);
++            private _replacementSuccess = _replacementAlive && !captive _replacement && (_replacement distance2D _rescuePos < 10);
++            _success = _rogueSuccess || _replacementSuccess;
++            private _bothDead = (!_rogueAlive) && (!_replacementAlive);
++            _success || _bothDead || time > _deadline
+         };
+ 
++        private _replacement = missionNamespace getVariable ["rru_replacementUnit", objNull];
++        private _rogueAlive = (!isNull _rogue) && {alive _rogue};
++        private _replacementAlive = (!isNull _replacement) && {alive _replacement};
++
+         if (_success) then {
+             [_taskId,"SUCCEEDED",true] call BIS_fnc_taskSetState;
+             missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 1, true];
+-            [_rogue] joinSilent _rebelGrp;
++            private _rescuedUnit = objNull;
++            if (_replacementAlive && !captive _replacement && (_replacement distance2D _rescuePos < 10)) then {
++                _rescuedUnit = _replacement;
++            } else {
++                if (_rogueAlive && !captive _rogue && (_rogue distance2D _rescuePos < 10)) then {
++                    _rescuedUnit = _rogue;
++                };
++            };
++            if (!isNull _rescuedUnit) then {
++                [_rescuedUnit] joinSilent _rebelGrp;
++            };
+             [_markerName] remoteExec ["RRU_fnc_deleteMarker",0];
+             private _amt = 4 + floor random 4;
+             {
+                 if (side _x == east && alive _x) then {
+                     for "_i" from 1 to _amt do { _x addItem "VRP_HL_Token_Item"; };
+                 };
+             } forEach allPlayers;
+             [format ["Rogue Unit Extracted! He contributes %1 Tokens to your cause.", _amt]]
+                 remoteExec ["hintSilent", (allPlayers select { side _x == east }) apply { owner _x }];
          } else {
-             removeAllWeapons _unit; removeAllItems _unit; removeAllAssignedItems _unit; removeUniform _unit; removeHeadgear _unit;
-             _unit forceAddUniform "Z_C18_Uniform_1";
-             _unit addHeadgear "H_SM_CMBMask";
-             for "_i" from 1 to 4 do {_unit addMagazine "HLB_HSMG";};
-             _unit addWeapon "WBK_CP_HeavySMG";
+-            if (time > _deadline && alive _rogue && captive _rogue) then { _rogue setDamage 1; };
++            if (time > _deadline) then {
++                if (_rogueAlive) then { _rogue setDamage 1; };
++                if (_replacementAlive) then { _replacement setDamage 1; };
++            };
+             [_taskId,"FAILED",true] call BIS_fnc_taskSetState;
+             missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
+             [_markerName] remoteExec ["RRU_fnc_deleteMarker",0];
          };
-     } forEach ((unitLists select 1) select [0,5]);
-     _target setVariable ["backUpGroup", _grp];
-     [_grp,_target] spawn MRC_fnc_trackBackUp;
- };
  
- MRC_fnc_scheduleBackUp = {
-     params ["_target"];
-     private _lvl = _target getVariable ["wantedLevel",0];
-     if (_lvl == 0) exitWith {};
--    if (!(_target inArea City18)) exitWith {};
-+    if (!(_target inArea City18) && !(_target inArea slums)) exitWith {};
-     private _existing = _target getVariable ["backUpGroup",objNull];
-     if (!isNull _existing && {count units _existing > 0}) exitWith {};
-     if (_target getVariable ["backUpPending",false]) exitWith {};
-     _target setVariable ["backUpPending",true];
-     private _delay = respCity select _lvl;
-     [_target,_lvl,_delay] spawn {
-         params ["_t","_l","_d"];
-         sleep _d;
--        if (_t getVariable ["wantedLevel",0] != _l || { !(_t inArea City18) }) exitWith {_t setVariable ["backUpPending",false];};
-+        if (_t getVariable ["wantedLevel",0] != _l || { !(_t inArea City18) && !(_t inArea slums) }) exitWith {_t setVariable ["backUpPending",false];};
-         [_t,_l] call MRC_fnc_spawnBackUp;
-         _t setVariable ["backUpPending",false];
+         // cleanup after 5 minutes
+         sleep 300;
+         { if (!isNull _x) then { deleteVehicle _x }; } forEach _units;
+         { if (!isNull _x) then { deleteVehicle _x }; } forEach units _guardGrp;
+         deleteGroup _guardGrp;
+         { if (!isNull _x) then { deleteVehicle _x }; } forEach units _rebelGrp;
+         deleteGroup _rebelGrp;
+         private _huntGrp = missionNamespace getVariable ["rru_huntGrp",grpNull];
+         if (!isNull _huntGrp) then {
+             { if (!isNull _x) then { deleteVehicle _x }; } forEach units _huntGrp;
+             deleteGroup _huntGrp;
+         };
+         if (!isNull _rogue) then { deleteVehicle _rogue; };
++        if (!isNull _replacement) then { deleteVehicle _replacement; };
++        missionNamespace setVariable ["rru_replacementUnit", objNull, true];
++        missionNamespace setVariable ["rru_originalUnit", objNull, true];
+         [_taskId] call BIS_fnc_deleteTask;
      };
  };
  
- MRC_fnc_spawnQRF = {
-     params ["_target","_lvl"];
--    private _spawnMarker = if (_target inArea City18) then {"Nexus"} else {"wasteland_Patrol"};
-+    private _spawnMarker = if (_target inArea City18 || _target inArea slums) then {"Nexus"} else {"wasteland_Patrol"};
-     private _pos = getMarkerPos _spawnMarker;
-     private _grp = createGroup west;
-     {
-         private _unit = _grp createUnit [_x,_pos,[],0,"FORM"];
-         if (_lvl == 1) then {
-             if (_x == "WBK_Combine_CP_SMG") then {
-                 removeAllWeapons _unit; removeAllItems _unit; removeAllAssignedItems _unit; removeUniform _unit; removeHeadgear _unit;
-                 _unit forceAddUniform "U_C18_Uniform_1";
-                 _unit addHeadgear "H_SM_OVSMask2";
-                 for "_i" from 1 to 4 do {_unit addMagazine "30Rnd_556x45_Stanag_Tracer_Blue";};
-                 _unit addWeapon "hlc_rifle_416D10C";
-             } else {
-                 removeAllWeapons _unit; removeAllItems _unit; removeAllAssignedItems _unit; removeUniform _unit; removeHeadgear _unit;
-                 _unit forceAddUniform "Z_C18_Uniform_1";
-                 _unit addHeadgear "H_SM_CMBMask";
-                 for "_i" from 1 to 4 do {_unit addMagazine "HLB_HSMG";};
-                 _unit addWeapon "WBK_CP_HeavySMG";
-             };
-         };
-     } forEach (unitLists select _lvl);
+ // === Mission 5: Hack Combine Terminal ===
+ case 5: {
+     if (!isServer) exitWith {};
  
-     private _vehType = transport select _lvl;
-     private _veh = objNull;
-     if (_vehType != "") then {
-         _veh = createVehicle [_vehType,_pos,[],0,"NONE"];
-diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf
-index a686a1db6cd828b70575da8c6618ea3a37867899..d5966833c42b9089e1a63521e1795a7b5bb2ba60 100644
---- a/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf
-+++ b/CRC-HL2_EmitaCityRP.Emita_2025/wantedLevel.sqf
-@@ -439,51 +439,51 @@ MRC_fnc_spawnQRF = {
-                     _x assignAsCargo _veh;
-                     _x moveInCargo _veh;
-                 };
-             } forEach units _grp;
-         };
-     };
- 
-     _target setVariable ["qrfGroup",_grp];
-     _target setVariable ["qrfVehicle",_veh];
- 
-     if (_lvl >= 3) then {[_target,_lvl] call MRC_fnc_spawnSynth;};
-     if (_lvl >= 4) then {[_target,_lvl] call MRC_fnc_spawnAirSupport;};
- 
-     [_grp,_target,_veh] spawn MRC_fnc_trackQRF;
- };
- 
- MRC_fnc_scheduleQRF = {
-     params ["_target"];
-     [_target] call MRC_fnc_scheduleBackUp;
-     private _lvl = _target getVariable ["wantedLevel",0];
-     if (_lvl == 0) exitWith {};
-     private _existing = _target getVariable ["qrfGroup",objNull];
-     if (!isNull _existing && {count units _existing > 0}) exitWith {};
-     if (_target getVariable ["qrfPending",false]) exitWith {};
-     _target setVariable ["qrfPending",true];
--    private _delay = if (_target inArea City18) then {respCity select _lvl} else {respOut select _lvl};
-+    private _delay = if (_target inArea City18 || _target inArea slums) then {respCity select _lvl} else {respOut select _lvl};
-     [_target,_lvl,_delay] spawn {
-         _this params ["_t","_l","_d"];
-         sleep _d;
-         if (_t getVariable ["wantedLevel",0] != _l) exitWith {_t setVariable ["qrfPending",false];};
-         private _grp = _t getVariable ["qrfGroup",objNull];
-         if (!isNull _grp && {count units _grp > 0}) exitWith {_t setVariable ["qrfPending",false];};
-         [_t,_l] call MRC_fnc_spawnQRF;
-         _t setVariable ["qrfPending",false];
-     };
- };
- 
- // === Kill Tracking ===
- [] spawn {
-     while {true} do {
-         {
-             if (!isPlayer _x && {side _x == west} && {isNil {_x getVariable "MRC_killEH"}}) then {
-                 _x setVariable ["OriginalSide", side _x];
-                 private _id = _x addEventHandler ["Killed", {
-                     params ["_dead", "_killer"];
-                     private _deadSide = _dead getVariable ["OriginalSide", side _dead];
-                     private _killerSide = side _killer;
-                     if (!isPlayer _killer) exitWith {};
-                     if (_killerSide == west) exitWith {};
-                     if (_deadSide != west) exitWith {};
-                     if (_killerSide == civilian) then {[_killer] joinSilent createGroup east};
+     // --- Dedicated server-safe hacking actions ---
+     if (isNil "RBL_fnc_addHackActions") then {
+         RBL_fnc_addHackActions = {
+             params ["_term"];
+             if (isNull _term) exitWith {};
+             _term addAction [
+                 "Start Hacking",
+                 {
+                     params ["_target","_caller"];
+                     [_target,_caller] remoteExec ["RBL_fnc_startHackServer",2];
+                 },
+                 nil,1.5,true,true,"",
+                 "side _this == east && {_target getVariable ['hack_state','idle'] == 'idle'}",
+                 4
+             ];
+             _term addAction [
+                 "Resume Hacking",

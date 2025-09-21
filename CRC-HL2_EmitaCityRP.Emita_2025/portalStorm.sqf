@@ -1,3 +1,144 @@
+portalStorm_fnc_cleanupGetAreas = {
+    private _areas = [];
+    {
+        private _area = missionNamespace getVariable [_x, objNull];
+        if (!isNull _area) then { _areas pushBack _area; };
+    } forEach ["City18", "slums"];
+    _areas
+};
+
+portalStorm_fnc_cleanupIsInCity = {
+    params ["_unit", "_areas"];
+    private _inCity = false;
+    {
+        if (_unit inArea _x) exitWith { _inCity = true; };
+    } forEach _areas;
+    _inCity
+};
+
+portalStorm_fnc_cleanupFindTarget = {
+    params ["_grp", "_areas"];
+    private _leader = leader _grp;
+    if (isNull _leader) exitWith { objNull };
+
+    private _target  = objNull;
+    private _minDist = 1e12;
+    {
+        private _unit = _x;
+        if (side _unit == resistance && alive _unit) then {
+            if ([_unit, _areas] call portalStorm_fnc_cleanupIsInCity) then {
+                private _dist = _leader distance _unit;
+                if (isNull _target || { _dist < _minDist }) then {
+                    _target  = _unit;
+                    _minDist = _dist;
+                };
+            };
+        };
+    } forEach allUnits;
+    _target
+};
+
+portalStorm_fnc_cleanupHunt = {
+    params ["_grp", "_homePos"];
+    if (isNull _grp) exitWith {};
+
+    private _areas = call portalStorm_fnc_cleanupGetAreas;
+    if (_areas isEqualTo []) exitWith {
+        { if (!isNull _x) then { deleteVehicle _x; }; } forEach units _grp;
+        deleteGroup _grp;
+    };
+
+    _grp setSpeedMode "FULL";
+    _grp setCombatMode "RED";
+    _grp setBehaviour "COMBAT";
+
+    private _currentWp = [];
+
+    while {({alive _x} count units _grp) > 0} do {
+        private _target = [_grp, _areas] call portalStorm_fnc_cleanupFindTarget;
+        if (isNull _target) exitWith {};
+
+        if (!(_currentWp isEqualTo [])) then {
+            deleteWaypoint _currentWp;
+            _currentWp = [];
+        };
+
+        _grp reveal [_target, 4];
+        _currentWp = _grp addWaypoint [getPos _target, 0];
+        _currentWp setWaypointType "SAD";
+        _currentWp setWaypointSpeed "FULL";
+
+        while {
+            ({alive _x} count units _grp) > 0 &&
+            alive _target &&
+            {[_target, _areas] call portalStorm_fnc_cleanupIsInCity}
+        } do {
+            if (_target distance (waypointPosition _currentWp) > 30) then {
+                deleteWaypoint _currentWp;
+                _currentWp = _grp addWaypoint [getPos _target, 0];
+                _currentWp setWaypointType "SAD";
+                _currentWp setWaypointSpeed "FULL";
+            };
+            sleep 5;
+        };
+
+        if (!(_currentWp isEqualTo [])) then {
+            deleteWaypoint _currentWp;
+            _currentWp = [];
+        };
+
+        if ({alive _x} count units _grp == 0) exitWith {};
+    };
+
+    if ({alive _x} count units _grp > 0) then {
+        private _rtbWp = _grp addWaypoint [_homePos, 0];
+        _rtbWp setWaypointType "MOVE";
+        _rtbWp setWaypointSpeed "FULL";
+        waitUntil {
+            sleep 5;
+            if ({alive _x} count units _grp == 0) exitWith { true };
+            private _leader = leader _grp;
+            if (isNull _leader) exitWith { true };
+            (_leader distance _homePos) < 25
+        };
+    };
+
+    { if (!isNull _x) then { deleteVehicle _x; }; } forEach units _grp;
+    deleteGroup _grp;
+};
+
+portalStorm_fnc_spawnCleanup = {
+    private _homePos = getMarkerPos "Nexus";
+    if (_homePos isEqualTo [0,0,0]) exitWith {};
+
+    private _grp = createGroup west;
+    if (isNull _grp) exitWith {};
+
+    _grp createUnit ["WBK_Combine_Ordinal", _homePos, [], 0, "FORM"];
+
+    private _squad = [
+        "WBK_Combine_Grunt",
+        "WBK_Combine_Grunt",
+        "WBK_Combine_Grunt_White",
+        "WBK_Combine_Grunt_White",
+        "WBK_Combine_HL2_Type_WastelandPatrol",
+        "WBK_Combine_HL2_Type_WastelandPatrol",
+        "WBK_Combine_HL2_Type",
+        "WBK_Combine_HL2_Type_AR"
+    ];
+
+    {
+        _grp createUnit [_x, _homePos, [], 0, "FORM"];
+    } forEach _squad;
+
+    _grp setFormation "WEDGE";
+    _grp setSpeedMode "FULL";
+    _grp setCombatMode "RED";
+    _grp setBehaviour "COMBAT";
+
+    [_grp, _homePos] spawn portalStorm_fnc_cleanupHunt;
+};
+
 portalStorm_fnc_start = {
     portalStormActive = true;
 
@@ -75,5 +216,6 @@ portalStorm_fnc_start = {
 
 
     sleep 160;
+    [] spawn portalStorm_fnc_spawnCleanup;
     portalStormActive = false;
 };

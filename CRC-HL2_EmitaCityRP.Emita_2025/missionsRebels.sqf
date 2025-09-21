@@ -473,11 +473,45 @@ case 4: {
             _caller playMoveNow "AinvPknlMstpSnonWnonDnon_medic_1";
             uiSleep 3.5;
             _caller switchMove "";
-            _rogue setCaptive false;
-            [_rogue,""] remoteExec ["switchMove",0,true];
-            _rogue enableAI "MOVE";
-            [_rogue] joinSilent (group _caller);
+            private _callerGroup = group _caller;
+            private _roguePos    = getPosATL _rogue;
+            private _rogueDir    = getDir _rogue;
+            private _rogueClass  = typeOf _rogue;
+            private _rogueLoadout = getUnitLoadout _rogue;
+
             [_rogue] remoteExec ["RRU_fnc_removeFreeAction",0,true];
+
+            private _replacement = objNull;
+            if (!isNull _callerGroup) then {
+                _replacement = _callerGroup createUnit [_rogueClass, _roguePos, [], 0, "FORM"];
+            };
+
+            private _vipTarget = _rogue;
+
+            if (!isNull _replacement) then {
+                _replacement setPosATL _roguePos;
+                _replacement setDir _rogueDir;
+                _replacement setUnitLoadout [_rogueLoadout, true];
+                removeHeadgear _replacement;
+                _replacement setCaptive false;
+                _replacement enableAI "MOVE";
+                [_replacement] joinSilent _callerGroup;
+                [_replacement,""] remoteExec ["switchMove",0,true];
+                _replacement setVariable ["rru_state","freed",true];
+                missionNamespace setVariable ["rru_replacementUnit", _replacement, true];
+                missionNamespace setVariable ["rru_originalUnit", objNull, true];
+                _vipTarget = _replacement;
+                [_rogue,""] remoteExec ["switchMove",0,true];
+                deleteVehicle _rogue;
+            } else {
+                _rogue setCaptive false;
+                [_rogue,""] remoteExec ["switchMove",0,true];
+                _rogue enableAI "MOVE";
+                if (!isNull _callerGroup) then { [_rogue] joinSilent _callerGroup; };
+                removeHeadgear _rogue;
+                _rogue setVariable ["rru_state","freed",true];
+                missionNamespace setVariable ["rru_replacementUnit", objNull, true];
+            };
 
             missionNamespace setVariable ["rru_freed",true,true];
 
@@ -489,7 +523,7 @@ case 4: {
             };
             _huntGrp setBehaviour "COMBAT";
             _huntGrp setCombatMode "RED";
-            [_huntGrp,_rogue] spawn {
+            [_huntGrp,_vipTarget] spawn {
                 params ["_grp","_vip"];
                 while {alive _vip && {count units _grp > 0}} do {
                     _grp move position _vip;
@@ -540,6 +574,9 @@ case 4: {
     removeHeadgear _rogue;
     [_rogue,"Acts_ExecutionVictim_Loop"] remoteExec ["switchMove",0,true];
     _rogue setVariable ["rru_state","captive",true];
+    missionNamespace setVariable ["rru_originalUnit", _rogue, true];
+    missionNamespace setVariable ["rru_replacementUnit", objNull, true];
+    missionNamespace setVariable ["rru_freed", false, true];
     [_rogue] remoteExec ["RRU_fnc_addFreeAction",0,true];
 
     // Guard squad
@@ -585,14 +622,34 @@ case 4: {
 
         waitUntil {
             sleep 5;
-            _success = alive _rogue && !captive _rogue && (_rogue distance2D _rescuePos < 10);
-            _success || !alive _rogue || time > _deadline
+            private _replacement = missionNamespace getVariable ["rru_replacementUnit", objNull];
+            private _rogueAlive = (!isNull _rogue) && {alive _rogue};
+            private _replacementAlive = (!isNull _replacement) && {alive _replacement};
+            private _rogueSuccess = _rogueAlive && !captive _rogue && (_rogue distance2D _rescuePos < 10);
+            private _replacementSuccess = _replacementAlive && !captive _replacement && (_replacement distance2D _rescuePos < 10);
+            _success = _rogueSuccess || _replacementSuccess;
+            private _bothDead = (!_rogueAlive) && (!_replacementAlive);
+            _success || _bothDead || time > _deadline
         };
+
+        private _replacement = missionNamespace getVariable ["rru_replacementUnit", objNull];
+        private _rogueAlive = (!isNull _rogue) && {alive _rogue};
+        private _replacementAlive = (!isNull _replacement) && {alive _replacement};
 
         if (_success) then {
             [_taskId,"SUCCEEDED",true] call BIS_fnc_taskSetState;
             missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 1, true];
-            [_rogue] joinSilent _rebelGrp;
+            private _rescuedUnit = objNull;
+            if (_replacementAlive && !captive _replacement && (_replacement distance2D _rescuePos < 10)) then {
+                _rescuedUnit = _replacement;
+            } else {
+                if (_rogueAlive && !captive _rogue && (_rogue distance2D _rescuePos < 10)) then {
+                    _rescuedUnit = _rogue;
+                };
+            };
+            if (!isNull _rescuedUnit) then {
+                [_rescuedUnit] joinSilent _rebelGrp;
+            };
             [_markerName] remoteExec ["RRU_fnc_deleteMarker",0];
             private _amt = 4 + floor random 4;
             {
@@ -603,7 +660,10 @@ case 4: {
             [format ["Rogue Unit Extracted! He contributes %1 Tokens to your cause.", _amt]]
                 remoteExec ["hintSilent", (allPlayers select { side _x == east }) apply { owner _x }];
         } else {
-            if (time > _deadline && alive _rogue && captive _rogue) then { _rogue setDamage 1; };
+            if (time > _deadline) then {
+                if (_rogueAlive) then { _rogue setDamage 1; };
+                if (_replacementAlive) then { _replacement setDamage 1; };
+            };
             [_taskId,"FAILED",true] call BIS_fnc_taskSetState;
             missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];
             [_markerName] remoteExec ["RRU_fnc_deleteMarker",0];
@@ -622,6 +682,9 @@ case 4: {
             deleteGroup _huntGrp;
         };
         if (!isNull _rogue) then { deleteVehicle _rogue; };
+        if (!isNull _replacement) then { deleteVehicle _replacement; };
+        missionNamespace setVariable ["rru_replacementUnit", objNull, true];
+        missionNamespace setVariable ["rru_originalUnit", objNull, true];
         [_taskId] call BIS_fnc_deleteTask;
     };
 };
