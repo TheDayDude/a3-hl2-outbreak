@@ -49,7 +49,7 @@ portalStorm_fnc_cleanupHunt = {
     };
 
     _grp setSpeedMode "FULL";
-    _grp setCombatMode "RED";
+    _grp setCombatMode "YELLOW";
     _grp setBehaviour "COMBAT";
 
     private _currentWp = [];
@@ -133,7 +133,7 @@ portalStorm_fnc_spawnCleanup = {
 
     _grp setFormation "WEDGE";
     _grp setSpeedMode "FULL";
-    _grp setCombatMode "RED";
+    _grp setCombatMode "YELLOW";
     _grp setBehaviour "COMBAT";
 
     [_grp, _homePos] spawn portalStorm_fnc_cleanupHunt;
@@ -183,7 +183,7 @@ portalStorm_fnc_start = {
             };
 
             _grp setBehaviour "COMBAT";
-            _grp setCombatMode "RED";
+            _grp setCombatMode "YELLOW";
             [_grp, _spawnPos, 200] call BIS_fnc_taskPatrol;
 
             [[_spawnPos], {

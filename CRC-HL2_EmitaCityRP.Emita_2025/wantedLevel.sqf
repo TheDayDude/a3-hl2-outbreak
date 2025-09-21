@@ -107,7 +107,7 @@ MRC_fnc_trackQRF = {
                 doGetOut _x;
             } forEach units _grp;
             [_grp] orderGetIn false;
-            _grp setCombatMode "RED";
+            _grp setCombatMode "YELLOW";
             _grp setBehaviour "COMBAT";
             deleteWaypoint _wp;
             _onFoot = true;
@@ -115,7 +115,7 @@ MRC_fnc_trackQRF = {
         };
         
         if (!_onFoot && {({vehicle _x != _veh} count units _grp) > 0}) then {
-            _grp setCombatMode "RED";
+            _grp setCombatMode "YELLOW";
             _grp setBehaviour "COMBAT";
             deleteWaypoint _wp;
             _onFoot = true;
@@ -135,7 +135,7 @@ MRC_fnc_trackQRF = {
                             doGetOut _x;
                         } forEach units _grp;
                         [_grp] orderGetIn false;
-                        _grp setCombatMode "RED";
+                        _grp setCombatMode "YELLOW";
                         _grp setBehaviour "COMBAT";
                         deleteWaypoint _wp;
                         _onFoot = true;
@@ -155,7 +155,7 @@ MRC_fnc_trackQRF = {
                         };
                     } forEach units _grp;
                     [_grp] orderGetIn false;
-                    _grp setCombatMode "RED";
+                    _grp setCombatMode "YELLOW";
                     _grp setBehaviour "COMBAT";
                     deleteWaypoint _wp;
                     _onFoot = true;
@@ -249,7 +249,7 @@ MRC_fnc_trackSynth = {
                 _wp setWaypointSpeed "FULL";
             } else {
                 deleteWaypoint _wp;
-                _grp setCombatMode "RED";
+                _grp setCombatMode "YELLOW";
                 _grp setBehaviour "COMBAT";
                 waitUntil {
                     sleep 5;
@@ -315,7 +315,7 @@ MRC_fnc_spawnAirSupport = {
 
 MRC_fnc_trackBackUp = {
     params ["_grp","_target"];
-    _grp setCombatMode "RED";
+    _grp setCombatMode "YELLOW";
     _grp setBehaviour "COMBAT";
     private _wp = _grp addWaypoint [getPos _target,0];
     _wp setWaypointType "MOVE";
