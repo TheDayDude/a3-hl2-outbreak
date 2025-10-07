@@ -46,6 +46,27 @@ if (isNil "MRC_fnc_savePlayerState") then {
                 };
             } forEach (units group _unit);
         };
+        private _vehicleData = [];
+        private _veh = vehicle _unit;
+        if (_veh != _unit && {driver _veh isEqualTo _unit}) then {
+            private _hitData = getAllHitPointsDamage _veh;
+            private _hitNames = [];
+            private _hitDamages = [];
+            if (_hitData isEqualType [] && {count _hitData >= 3}) then {
+                _hitNames = _hitData select 0;
+                _hitDamages = _hitData select 2;
+            };
+            _vehicleData = [
+                typeOf _veh,
+                getPosWorld _veh,
+                vectorDir _veh,
+                vectorUp _veh,
+                damage _veh,
+                _hitNames,
+                _hitDamages,
+                fuel _veh
+            ];
+        };
         profileNamespace setVariable [_key, [
             str side _unit,
             getPosATL _unit,
@@ -60,7 +81,8 @@ if (isNil "MRC_fnc_savePlayerState") then {
             _unit getVariable ["favor", 0],
             _unit getVariable ["antiKills", 0],
             _unit getVariable ["wantedLevel", 0],
-            _squadData
+            _squadData,
+            _vehicleData
         ]];
         saveProfileNamespace;
         ["Autosave Complete."] remoteExec ["systemChat", _unit];
@@ -96,8 +118,10 @@ if (isNil "MRC_fnc_restorePlayerState") then {
                 "_favor",
                 ["_kills",0],
                 ["_wlevel",0],
-                ["_squadData", []]
-            ];            private _side = switch (_sideStr) do {
+                ["_squadData", []],
+                ["_vehicleData", []]
+            ];            
+            private _side = switch (_sideStr) do {
                 case "WEST": {west};
                 case "EAST": {east};
                 case "GUER": {independent};
@@ -145,6 +169,49 @@ if (isNil "MRC_fnc_restorePlayerState") then {
                 } forEach _squadData;
                 if (_ensureLeader && {leader _grp != _unit}) then {
                     _grp selectLeader _unit;
+                };
+            };
+            private _restoredVehicle = objNull;
+            if (_vehicleData isEqualType [] && {_vehicleData isNotEqualTo []}) then {
+                _vehicleData params [
+                    "_vehClass",
+                    "_vehPos",
+                    "_vehDir",
+                    "_vehUp",
+                    ["_vehDamage", 0],
+                    ["_hitNames", []],
+                    ["_hitDamages", []],
+                    ["_vehFuel", 1]
+                ];
+                if (!isNil "_vehClass" && {_vehClass != ""}) then {
+                    _restoredVehicle = createVehicle [_vehClass, [0,0,0], [], 0, "CAN_COLLIDE"];
+                    if (!isNull _restoredVehicle) then {
+                        if (_vehPos isEqualType []) then {
+                            _restoredVehicle setPosWorld _vehPos;
+                        };
+                        if (_vehDir isEqualType [] && {_vehUp isEqualType []}) then {
+                            _restoredVehicle setVectorDirAndUp [_vehDir, _vehUp];
+                        };
+                        _restoredVehicle setDamage _vehDamage;
+                        if (_hitNames isEqualType [] && {_hitDamages isEqualType []}) then {
+                            {
+                                private _hitName = _hitNames param [_forEachIndex, ""];
+                                if (_hitName != "") then {
+                                    _restoredVehicle setHitPointDamage [_hitName, _x];
+                                };
+                            } forEach _hitDamages;
+                        };
+                        _restoredVehicle setFuel _vehFuel;
+                    };
+                };
+            };
+            if (!isNull _restoredVehicle) then {
+                [_unit, _restoredVehicle] spawn {
+                    params ["_unit", "_veh"];
+                    waitUntil {sleep 0.1; alive _unit && {!isNull _veh}};
+                    if (driver _veh != _unit) then {
+                        _unit moveInDriver _veh;
+                    };
                 };
             };
         };
