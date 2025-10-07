@@ -253,27 +253,37 @@ if (isServer) then {
 if (isNil "XEN_fnc_resistanceGlow") then {
     XEN_fnc_resistanceGlow = {
         if (!hasInterface) exitWith {};
-        while {true} do {
-            {
-                private _ps = _x getVariable ["resistanceGlow", objNull];
-                if (side _x == resistance && alive _x) then {
-                    if (isNull _ps) then {
-                        _ps = "#particlesource" createVehicleLocal (getPosATL _x);
-		            	_ps setParticleParams [["\A3\Data_F\ParticleEffects\Universal\Universal",16,12,8,0],"","Billboard",1,2,[0,0,0],[0,0,0],1,0.5,0.5,0.1,[1],[ [0,1,0,0.5] ],[0],1,0,"","",_x];
-		            	_ps setParticleRandom [0,[0.5,0.5,0.5],[0,0,0],0,0,[0,0,0,0],0,0];
-                        _ps setDropInterval 0.5;
-                        _x setVariable ["resistanceGlow", _ps];
+        if (missionNamespace getVariable ["XEN_resistanceGlowActive", false]) exitWith {};
+
+        missionNamespace setVariable ["XEN_resistanceGlowActive", true];
+
+        [] spawn {
+            while {true} do {
+                {
+                    private _ps = _x getVariable ["resistanceGlow", objNull];
+
+                    if (side _x == resistance && alive _x) then {
+                        if (isNull _ps) then {
+                            _ps = "#particlesource" createVehicleLocal (getPosATL _x);
+                            _ps setParticleParams [["\A3\Data_F\ParticleEffects\Universal\Universal",16,12,8,0],"","Billboard",1,2,[0,0,0],[0,0,0],1,0.5,0.5,0.1,[1],[[0,1,0,0.5]],[0],1,0,"","",_x];
+                            _ps setParticleRandom [0,[0.5,0.5,0.5],[0,0,0],0,0,[0,0,0,0],0,0];
+                            _ps setDropInterval 0.5;
+                            _x setVariable ["resistanceGlow", _ps];
+                        };
+                    } else {
+                        if (!isNull _ps) then {
+                            deleteVehicle _ps;
+                            _x setVariable ["resistanceGlow", objNull];
+                        };
                     };
-                } else {
-                    if (!isNull _ps) then {
-                        deleteVehicle _ps;
-                        _x setVariable ["resistanceGlow", objNull];
-                    };
-                };
-            } forEach allPlayers;
-            sleep 5;
+                } forEach allPlayers;
+
+                sleep 5;
+            };
         };
     };
-    [] spawn XEN_fnc_resistanceGlow;
     publicVariable "XEN_fnc_resistanceGlow";
+    if (isServer) then {
+        [] remoteExec ["XEN_fnc_resistanceGlow", 0, true];
+    };
 };

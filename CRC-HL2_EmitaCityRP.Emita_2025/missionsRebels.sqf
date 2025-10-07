@@ -3,6 +3,33 @@ if (!isServer) exitWith {};
 // Pick a random mission ID (1–5 here)
 private _missionIndex = selectRandom [1, 2, 3, 4, 5];
 
+_grantCombineKillBonus = {
+    params [ ["_bonus", 10 + floor random 6] ];
+
+    if (_bonus <= 0) exitWith {};
+
+    {
+        if (side _x == east && alive _x) then {
+            private _current = _x getVariable ["antiKills", 0];
+            private _newTotal = _current + _bonus;
+            _x setVariable ["antiKills", _newTotal, true];
+
+            if (!isNil "MRC_fnc_updateWantedLevel") then {
+                [_x] call MRC_fnc_updateWantedLevel;
+            };
+
+            if (!isNil "MRC_fnc_scheduleQRF") then {
+                [_x] call MRC_fnc_scheduleQRF;
+            };
+
+            if (!isNil "MRC_fnc_scheduleBackUp") then {
+                [_x] call MRC_fnc_scheduleBackUp;
+            };
+        };
+    } forEach allPlayers;
+};
+
+
 switch (_missionIndex) do {
 // === Mission 1: Assassinate Ordinal ===
 case 1: {
@@ -104,8 +131,8 @@ case 1: {
     };
 
     // Success/Fail monitor
-    [_taskId, _ordinal, _spawnedGroups, _spawnedUnits, _props] spawn {
-        params ["_taskId","_ordinal","_groups","_units","_props"];
+    [_taskId, _ordinal, _spawnedGroups, _spawnedUnits, _props, _grantCombineKillBonus] spawn {
+        params ["_taskId","_ordinal","_groups","_units","_props","_grantCombineKillBonus"];
 
         private _deadline = time + 2700;
 
@@ -127,6 +154,7 @@ case 1: {
             } forEach allPlayers;
             [format ["Ordinal Eliminated. You pilfer %1 Tokens.", _amt]]
             remoteExec ["hintSilent", (allPlayers select { side _x == east }) apply { owner _x }];
+            [] call _grantCombineKillBonus;
 			["Protection team alert: evidence of anti-civil activity in this community. Code: assemble, clamp, contain."] remoteExec ["systemChat", 0];
 			["Fanticivilevidence3spkr"] remoteExec ["playSound", 0];
             missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 1, true];
@@ -257,8 +285,8 @@ case 2: {
         getMarkerPos (selectRandom _slumMarkers), true
     ] call BIS_fnc_taskCreate;
 
-    [_taskId, _civs] spawn {
-        params ["_taskId","_civs"];
+    [_taskId, _civs, _grantCombineKillBonus] spawn {
+        params ["_taskId","_civs","_grantCombineKillBonus"];
         private _deadline = time + 2700;
         waitUntil {
             sleep 3;
@@ -272,6 +300,7 @@ case 2: {
         if (_recruited >= 5) then {
             [_taskId, "SUCCEEDED", true] call BIS_fnc_taskSetState;
             ["Enough citizens have joined the cause!"] remoteExec ["systemChat", (allPlayers select { side _x == east }) apply { owner _x }];
+            [] call _grantCombineKillBonus;
             missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 1, true];
         } else {
             [_taskId, "FAILED", true] call BIS_fnc_taskSetState;
@@ -381,8 +410,8 @@ case 3: {
     };
 
     // Monitor success/failure (distance from TRUCK SPAWN)
-    [_taskId, _truck, _truckPos, _groups, _units, _props] spawn {
-        params ["_taskId","_truck","_spawnPos","_groups","_units","_props"];
+    [_taskId, _truck, _truckPos, _groups, _units, _props, _grantCombineKillBonus] spawn {
+        params ["_taskId","_truck","_spawnPos","_groups","_units","_props","_grantCombineKillBonus"];
 
         private _deadline = time + 2700;
         private _success  = false;
@@ -404,6 +433,7 @@ case 3: {
             } forEach allPlayers;
             [format ["Truck stolen! You pilfer %1 Tokens.", _amt]]
                 remoteExec ["hintSilent", (allPlayers select { side _x == east }) apply { owner _x }];
+            [] call _grantCombineKillBonus;
             missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) - 1, true];
 
             // Cleanup conscripts only (keep truck) after 5 minutes
@@ -615,8 +645,8 @@ case 4: {
     ] call BIS_fnc_taskCreate;
 
     // Monitor success/failure
-    [_taskId,_rogue,_guardGrp,_rebelGrp,_guards+_rebels,_rescuePos,_markerName] spawn {
-        params ["_taskId","_rogue","_guardGrp","_rebelGrp","_units","_rescuePos","_markerName"];
+    [_taskId,_rogue,_guardGrp,_rebelGrp,_guards+_rebels,_rescuePos,_markerName,_grantCombineKillBonus] spawn {
+        params ["_taskId","_rogue","_guardGrp","_rebelGrp","_units","_rescuePos","_markerName","_grantCombineKillBonus"];
         private _deadline = time + 2700; // 45 minutes
         private _success = false;
 
@@ -659,6 +689,7 @@ case 4: {
             } forEach allPlayers;
             [format ["Rogue Unit Extracted! He contributes %1 Tokens to your cause.", _amt]]
                 remoteExec ["hintSilent", (allPlayers select { side _x == east }) apply { owner _x }];
+            [] call _grantCombineKillBonus;
         } else {
             if (time > _deadline) then {
                 if (_rogueAlive) then { _rogue setDamage 1; };
@@ -810,8 +841,8 @@ case 5: {
     ] call BIS_fnc_taskCreate;
 
     // monitor mission
-    [_taskId,_terminal,_guardGrp] spawn {
-        params ["_taskId","_terminal","_guardGrp"];
+    [_taskId,_terminal,_guardGrp,_grantCombineKillBonus] spawn {
+        params ["_taskId","_terminal","_guardGrp","_grantCombineKillBonus"];
         private _deadline = time + 2700;
         private _timeLeft = 300;
         private _nextWave = -1;
@@ -936,6 +967,7 @@ case 5: {
             } forEach allPlayers;
             [format ["Terminal hacked. You acquire %1 Tokens.", _amt]]
             remoteExec ["hintSilent", (allPlayers select { side _x == east }) apply { owner _x }];
+            [] call _grantCombineKillBonus;
         } else {
             [_taskId,"FAILED",true] call BIS_fnc_taskSetState;
             missionNamespace setVariable ["Sociostability", (missionNamespace getVariable ["Sociostability",0]) + 1, true];

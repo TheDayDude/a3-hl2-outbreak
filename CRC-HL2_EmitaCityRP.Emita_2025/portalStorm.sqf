@@ -119,10 +119,13 @@ portalStorm_fnc_spawnCleanup = {
     private _squad = [
         "WBK_Combine_Grunt",
         "WBK_Combine_Grunt",
+        "WBK_Combine_Grunt",
+        "WBK_Combine_Grunt",
         "WBK_Combine_Grunt_White",
         "WBK_Combine_Grunt_White",
         "WBK_Combine_HL2_Type_WastelandPatrol",
         "WBK_Combine_HL2_Type_WastelandPatrol",
+        "WBK_Combine_HL2_Type",
         "WBK_Combine_HL2_Type",
         "WBK_Combine_HL2_Type_AR"
     ];

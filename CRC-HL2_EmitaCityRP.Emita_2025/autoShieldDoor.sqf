@@ -1,6 +1,6 @@
 params ["_shield"];
 
-private _radius = 5;     // detection radius in meters
+private _radius = 7;     // detection radius in meters
 
 while {alive _shield} do {
 
