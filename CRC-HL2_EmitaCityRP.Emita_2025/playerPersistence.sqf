@@ -38,6 +38,14 @@ if (isNil "MRC_fnc_savePlayerState") then {
             ["No UID - state not saved"] remoteExec ["hint", _unit];
         };
         private _key = format ["PSTATE_%1", _uid];
+        private _squadData = [];
+        if (!isNull group _unit && {leader (group _unit) isEqualTo _unit}) then {
+            {
+                if (!isNull _x && {_x != _unit} && {!isPlayer _x} && {alive _x}) then {
+                    _squadData pushBack [typeOf _x, getUnitLoadout _x];
+                };
+            } forEach (units group _unit);
+        };
         profileNamespace setVariable [_key, [
             str side _unit,
             getPosATL _unit,
@@ -51,7 +59,8 @@ if (isNil "MRC_fnc_savePlayerState") then {
             _unit getVariable ["CID_Number", nil],
             _unit getVariable ["favor", 0],
             _unit getVariable ["antiKills", 0],
-            _unit getVariable ["wantedLevel", 0]
+            _unit getVariable ["wantedLevel", 0],
+            _squadData
         ]];
         saveProfileNamespace;
         ["Autosave Complete."] remoteExec ["systemChat", _unit];
@@ -73,7 +82,22 @@ if (isNil "MRC_fnc_restorePlayerState") then {
             [_unit] call MRC_fnc_assignCID;
             _unit setVariable ["favor", 0, true];
         } else {
-            _data params ["_sideStr", "_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFake", "_hasCID", "_cid", "_favor", ["_kills",0], ["_wlevel",0]];            private _side = switch (_sideStr) do {
+            _data params [
+                "_sideStr",
+                "_pos",
+                "_loadout",
+                "_combine",
+                "_arm",
+                "_armMax",
+                "_isOTA",
+                "_canFake",
+                "_hasCID",
+                "_cid",
+                "_favor",
+                ["_kills",0],
+                ["_wlevel",0],
+                ["_squadData", []]
+            ];            private _side = switch (_sideStr) do {
                 case "WEST": {west};
                 case "EAST": {east};
                 case "GUER": {independent};
@@ -94,6 +118,35 @@ if (isNil "MRC_fnc_restorePlayerState") then {
             _unit setVariable ["antiKills", _kills, true];
             _unit setVariable ["wantedLevel", _wlevel, true];
             [_unit, _pos, _loadout, _combine, _arm, _armMax, _isOTA, _canFake, _hasCID, _cid] remoteExecCall ["MRC_fnc_applyPlayerState", owner _unit];
+            if (_squadData isNotEqualTo []) then {
+                private _grp = group _unit;
+                if (isNull _grp) then {
+                    _grp = createGroup _side;
+                    [_unit] joinSilent _grp;
+                };
+                {
+                    if (_x != _unit && {!isPlayer _x}) then {
+                        deleteVehicle _x;
+                    };
+                } forEach units _grp;
+                private _ensureLeader = false;
+                {
+                    _x params ["_cls", "_ldout"];
+                    if (!isNil "_cls" && {_cls != ""}) then {
+                        private _spawnPos = if (_pos isEqualType []) then {_pos} else {getPosATL _unit};
+                        private _offset = [random 3 - 1.5, random 3 - 1.5, 0];
+                        private _spawnAt = _spawnPos vectorAdd _offset;
+                        private _ai = _grp createUnit [_cls, _spawnAt, [], 0, "FORM"];
+                        if (!isNull _ai) then {
+                            _ai setUnitLoadout _ldout;
+                            _ensureLeader = true;
+                        };
+                    };
+                } forEach _squadData;
+                if (_ensureLeader && {leader _grp != _unit}) then {
+                    _grp selectLeader _unit;
+                };
+            };
         };
         _unit setVariable ["MRC_stateRestored", true];
         ["Restore complete"] remoteExec ["hint", _unit];

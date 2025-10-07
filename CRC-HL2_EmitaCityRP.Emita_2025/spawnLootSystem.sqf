@@ -56,12 +56,39 @@
         (_validEntries select ((count _validEntries) - 1)) select 0;
     };
 
+    private _addLootClass = {
+        params ["_box", "_class", "_count"];
+        if (_count <= 0) exitWith {};
+
+        private _weaponCfg = configFile >> "CfgWeapons" >> _class;
+        if (isClass _weaponCfg) then {
+            private _weaponType = getNumber (_weaponCfg >> "type");
+            if (_weaponType in [1, 2, 4]) then {
+                _box addWeaponCargoGlobal [_class, _count];
+            } else {
+                _box addItemCargoGlobal [_class, _count];
+            };
+        } else {
+            private _magCfg = configFile >> "CfgMagazines" >> _class;
+            if (isClass _magCfg) then {
+                _box addMagazineCargoGlobal [_class, _count];
+            } else {
+                private _backpackCfg = configFile >> "CfgVehicles" >> _class;
+                if (isClass _backpackCfg && {getNumber (_backpackCfg >> "isBackpack") > 0}) then {
+                    _box addBackpackCargoGlobal [_class, _count];
+                } else {
+                    _box addItemCargoGlobal [_class, _count];
+                };
+            };
+        };
+    };
+
     private _spawnPrimaryMagazines = {
         params ["_box", "_magazines"];
         if (_magazines isEqualTo []) exitWith {};
         private _magazine = selectRandom _magazines;
         private _count = 2 + floor random 4; // 2-5 magazines of the same type
-        _box addMagazineCargoGlobal [_magazine, _count];
+        [_box, _magazine, _count] call _addLootClass;
     };
 
     private _spawnSecondaryMagazines = {
@@ -70,7 +97,7 @@
         private _magazine = selectRandom _magazines;
         private _count = floor random 4; // 0-3 magazines of the same type
         if (_count <= 0) exitWith {};
-        _box addMagazineCargoGlobal [_magazine, _count];
+        [_box, _magazine, _count] call _addLootClass;
     };
 
     private _spawnAttachments = {
@@ -84,7 +111,7 @@
             private _index = floor random (count _available);
             private _attachment = _available deleteAt _index;
             if (isNil "_attachment") exitWith {};
-            _box addItemCargoGlobal [_attachment, 1];
+            [_box, _attachment, 1] call _addLootClass;
             if (_available isEqualTo []) exitWith {};
         };
     };
@@ -139,7 +166,9 @@
                         };
 
                         private _crateClass = selectRandom _containers;
-                        private _box = _crateClass createVehicle _pos;
+                        // Raise spawn position slightly so crates settle without clipping into the ground.
+                        private _spawnPos = [_pos select 0, _pos select 1, (_pos select 2) + 1];
+                        private _box = _crateClass createVehicle _spawnPos;
 
                         clearItemCargoGlobal _box;
                         clearWeaponCargoGlobal _box;
@@ -157,22 +186,7 @@
                                     ["_attachments", []]
                                 ];
 
-                                private _itemCfg = configFile >> "CfgWeapons" >> _itemClass;
-                                if (isClass _itemCfg) then {
-                                    _box addWeaponCargoGlobal [_itemClass, 1];
-                                } else {
-                                    private _magCfg = configFile >> "CfgMagazines" >> _itemClass;
-                                    if (isClass _magCfg) then {
-                                        _box addMagazineCargoGlobal [_itemClass, 1];
-                                    } else {
-                                        private _backpackCfg = configFile >> "CfgVehicles" >> _itemClass;
-                                        if (isClass _backpackCfg && {getNumber (_backpackCfg >> "isBackpack") > 0}) then {
-                                            _box addBackpackCargoGlobal [_itemClass, 1];
-                                        } else {
-                                            _box addItemCargoGlobal [_itemClass, 1];
-                                        };
-                                    };
-                                };
+                                [_box, _itemClass, 1] call _addLootClass;
 
                                 [_box, _primaryMagazines] call _spawnPrimaryMagazines;
                                 [_box, _secondaryMagazines] call _spawnSecondaryMagazines;
