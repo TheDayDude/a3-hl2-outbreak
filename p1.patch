@@ -1,26 +1,8 @@
 diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf
-index f8b363cca4720eb0ab6b4ebe4575bdd4a9e4aaa5..026b4571e609bc2c63b770613c13978ab0205f2e 100644
+index 67c5171e76cc6c4792f9c48e655f00c9f369df70..391b3ea8f6ee97ee66e8db54af8da513bd1953ce 100644
 --- a/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf
 +++ b/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf
-@@ -16,98 +16,131 @@ if (isNil "MRC_fnc_applyPlayerState") then {
-             _unit setVariable ["WBK_CombineType", _combine, true];
-             _unit setVariable ["WBK_HL_CustomArmour", _arm, true];
-             _unit setVariable ["WBK_HL_CustomArmour_MAX", _armMax, true];
-             _unit setVariable ["isOTA", _isOTA, true];
-             _unit setVariable ["CanBuyFakeID", _canFake, true];
-             _unit setVariable ["HasCID", _hasCID, true];
-             _unit setVariable ["CID_Number", _cid, true];
-             sleep 1;
-             hint "State restore complete";
-         };
-     };
-     publicVariable "MRC_fnc_applyPlayerState";
- };
- 
- if (isNil "MRC_fnc_savePlayerState") then {
-     MRC_fnc_savePlayerState = {
-         params ["_unit"];
-         if !(_unit getVariable ["MRC_stateRestored", false]) exitWith {
+@@ -34,59 +34,91 @@ if (isNil "MRC_fnc_savePlayerState") then {
              ["State not restored yet - skipping save"] remoteExec ["hint", _unit];
          };
          private _uid = getPlayerUID _unit;
@@ -28,15 +10,68 @@ index f8b363cca4720eb0ab6b4ebe4575bdd4a9e4aaa5..026b4571e609bc2c63b770613c13978a
              ["No UID - state not saved"] remoteExec ["hint", _unit];
          };
          private _key = format ["PSTATE_%1", _uid];
-+        private _squadmates = [];
-+        if ((leader group _unit) isEqualTo _unit) then {
-+            {
-+                if (!isPlayer _x && {alive _x} && {_x != _unit}) then {
-+                    _squadmates pushBack [typeOf _x, getUnitLoadout _x];
-+                };
-+            } forEach units group _unit;
-+        };
-+
+         private _squadData = [];
+         if (!isNull group _unit && {leader (group _unit) isEqualTo _unit}) then {
+             {
+                 if (!isNull _x && {_x != _unit} && {!isPlayer _x} && {alive _x}) then {
+                     _squadData pushBack [typeOf _x, getUnitLoadout _x];
+                 };
+             } forEach (units group _unit);
+         };
+         private _vehicleData = [];
+         private _veh = vehicle _unit;
+         if (_veh != _unit && {driver _veh isEqualTo _unit}) then {
+             private _hitData = getAllHitPointsDamage _veh;
+             private _hitNames = [];
+             private _hitDamages = [];
+             if (_hitData isEqualType [] && {count _hitData >= 3}) then {
+                 _hitNames = _hitData select 0;
+                 _hitDamages = _hitData select 2;
+             };
++            private _itemCargo = getItemCargo _veh;
++            private _magCargo = getMagazineCargo _veh;
++            private _weaponCargo = getWeaponCargo _veh;
++            private _backpackCargo = getBackpackCargo _veh;
++            private _aceCargo = [];
++            if (!isNil "ace_cargo_fnc_loadItem") then {
++                {
++                    if (_x isEqualType "") then {
++                        _aceCargo pushBack ["virtual", _x];
++                    } else {
++                        if (!isNull _x) then {
++                            private _aceItemData = [
++                                "object",
++                                typeOf _x,
++                                _x getVariable ["ace_cargo_customName", ""],
++                                [
++                                    getItemCargo _x,
++                                    getMagazineCargo _x,
++                                    getWeaponCargo _x,
++                                    getBackpackCargo _x
++                                ]
++                            ];
++                            _aceCargo pushBack _aceItemData;
++                        };
++                    };
++                } forEach (_veh getVariable ["ace_cargo_loaded", []]);
++            };
+             _vehicleData = [
+                 typeOf _veh,
+                 getPosWorld _veh,
+                 vectorDir _veh,
+                 vectorUp _veh,
+                 damage _veh,
+                 _hitNames,
+                 _hitDamages,
+-                fuel _veh
++                fuel _veh,
++                _itemCargo,
++                _magCargo,
++                _weaponCargo,
++                _backpackCargo,
++                _aceCargo
+             ];
+         };
          profileNamespace setVariable [_key, [
              str side _unit,
              getPosATL _unit,
@@ -50,9 +85,9 @@ index f8b363cca4720eb0ab6b4ebe4575bdd4a9e4aaa5..026b4571e609bc2c63b770613c13978a
              _unit getVariable ["CID_Number", nil],
              _unit getVariable ["favor", 0],
              _unit getVariable ["antiKills", 0],
--            _unit getVariable ["wantedLevel", 0]
-+            _unit getVariable ["wantedLevel", 0],
-+            _squadmates
+             _unit getVariable ["wantedLevel", 0],
+             _squadData,
+             _vehicleData
          ]];
          saveProfileNamespace;
          ["Autosave Complete."] remoteExec ["systemChat", _unit];
@@ -60,65 +95,206 @@ index f8b363cca4720eb0ab6b4ebe4575bdd4a9e4aaa5..026b4571e609bc2c63b770613c13978a
  };
  
  if (isNil "MRC_fnc_restorePlayerState") then {
-     MRC_fnc_restorePlayerState = {
-         params ["_unit"];
-         ["Restoring state"] remoteExec ["hint", _unit];
-         private _uid = getPlayerUID _unit;
-         if (_uid == "") exitWith {
-             ["No UID - restore aborted"] remoteExec ["hint", _unit];
-         };
-         private _key = format ["PSTATE_%1", _uid];
-         private _data = profileNamespace getVariable [_key, []];
-         if (_data isEqualTo []) then {
-             ["No saved state found"] remoteExec ["hint", _unit];
-             [_unit] call MRC_fnc_assignCID;
-             _unit setVariable ["favor", 0, true];
-         } else {
--            _data params ["_sideStr", "_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFake", "_hasCID", "_cid", "_favor", ["_kills",0], ["_wlevel",0]];            private _side = switch (_sideStr) do {
-+            _data params ["_sideStr", "_pos", "_loadout", "_combine", "_arm", "_armMax", "_isOTA", "_canFake", "_hasCID", "_cid", "_favor", ["_kills",0], ["_wlevel",0], ["_savedSquad", []]];
-+            private _side = switch (_sideStr) do {
-                 case "WEST": {west};
-                 case "EAST": {east};
-                 case "GUER": {independent};
-                 case "CIV": {civilian};
-                 default {civilian};
+diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf
+index 67c5171e76cc6c4792f9c48e655f00c9f369df70..391b3ea8f6ee97ee66e8db54af8da513bd1953ce 100644
+--- a/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf
++++ b/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf
+@@ -159,71 +191,188 @@ if (isNil "MRC_fnc_restorePlayerState") then {
+                     if (!isNil "_cls" && {_cls != ""}) then {
+                         private _spawnPos = if (_pos isEqualType []) then {_pos} else {getPosATL _unit};
+                         private _offset = [random 3 - 1.5, random 3 - 1.5, 0];
+                         private _spawnAt = _spawnPos vectorAdd _offset;
+                         private _ai = _grp createUnit [_cls, _spawnAt, [], 0, "FORM"];
+                         if (!isNull _ai) then {
+                             _ai setUnitLoadout _ldout;
+                             _ensureLeader = true;
+                         };
+                     };
+                 } forEach _squadData;
+                 if (_ensureLeader && {leader _grp != _unit}) then {
+                     _grp selectLeader _unit;
+                 };
              };
-             if (side _unit != _side) then {
-                 ["Switching side"] remoteExec ["hint", _unit];
-                 [_unit] joinSilent createGroup _side;
+             private _restoredVehicle = objNull;
+             if (_vehicleData isEqualType [] && {_vehicleData isNotEqualTo []}) then {
+                 _vehicleData params [
+                     "_vehClass",
+                     "_vehPos",
+                     "_vehDir",
+                     "_vehUp",
+                     ["_vehDamage", 0],
+                     ["_hitNames", []],
+                     ["_hitDamages", []],
+-                    ["_vehFuel", 1]
+-                ];
+-                if (!isNil "_vehClass" && {_vehClass != ""}) then {
+-                    _restoredVehicle = createVehicle [_vehClass, [0,0,0], [], 0, "CAN_COLLIDE"];
+-                    if (!isNull _restoredVehicle) then {
+-                        if (_vehPos isEqualType []) then {
+-                            _restoredVehicle setPosWorld _vehPos;
+-                        };
+-                        if (_vehDir isEqualType [] && {_vehUp isEqualType []}) then {
+-                            _restoredVehicle setVectorDirAndUp [_vehDir, _vehUp];
+-                        };
+-                        _restoredVehicle setDamage _vehDamage;
+-                        if (_hitNames isEqualType [] && {_hitDamages isEqualType []}) then {
+-                            {
+-                                private _hitName = _hitNames param [_forEachIndex, ""];
+-                                if (_hitName != "") then {
+-                                    _restoredVehicle setHitPointDamage [_hitName, _x];
++                ["_vehFuel", 1],
++                ["_vehItemCargo", []],
++                ["_vehMagCargo", []],
++                ["_vehWeaponCargo", []],
++                ["_vehBackpackCargo", []],
++                ["_vehAceCargo", []]
++            ];
++            if (!isNil "_vehClass" && {_vehClass != ""}) then {
++                _restoredVehicle = createVehicle [_vehClass, [0,0,0], [], 0, "CAN_COLLIDE"];
++                if (!isNull _restoredVehicle) then {
++                    if (_vehPos isEqualType []) then {
++                        _restoredVehicle setPosWorld _vehPos;
++                    };
++                    if (_vehDir isEqualType [] && {_vehUp isEqualType []}) then {
++                        _restoredVehicle setVectorDirAndUp [_vehDir, _vehUp];
++                    };
++                    _restoredVehicle setDamage _vehDamage;
++                    if (_hitNames isEqualType [] && {_hitDamages isEqualType []}) then {
++                        {
++                            private _hitName = _hitNames param [_forEachIndex, ""];
++                            if (_hitName != "") then {
++                                _restoredVehicle setHitPointDamage [_hitName, _x];
++                            };
++                        } forEach _hitDamages;
++                    };
++                    _restoredVehicle setFuel _vehFuel;
++                    if (_vehItemCargo isEqualType [] && {_vehItemCargo isNotEqualTo []}) then {
++                        clearItemCargoGlobal _restoredVehicle;
++                        _vehItemCargo params ["_vehItems", "_vehItemCounts"];
++                        {
++                            private _count = _vehItemCounts param [_forEachIndex, 0];
++                            if (_x != "" && {_count > 0}) then {
++                                _restoredVehicle addItemCargoGlobal [_x, _count];
++                            };
++                        } forEach _vehItems;
++                    };
++                    if (_vehMagCargo isEqualType [] && {_vehMagCargo isNotEqualTo []}) then {
++                        clearMagazineCargoGlobal _restoredVehicle;
++                        _vehMagCargo params ["_vehMags", "_vehMagCounts"];
++                        {
++                            private _count = _vehMagCounts param [_forEachIndex, 0];
++                            if (_x != "" && {_count > 0}) then {
++                                _restoredVehicle addMagazineCargoGlobal [_x, _count];
++                            };
++                        } forEach _vehMags;
++                    };
++                    if (_vehWeaponCargo isEqualType [] && {_vehWeaponCargo isNotEqualTo []}) then {
++                        clearWeaponCargoGlobal _restoredVehicle;
++                        _vehWeaponCargo params ["_vehWeapons", "_vehWeaponCounts"];
++                        {
++                            private _count = _vehWeaponCounts param [_forEachIndex, 0];
++                            if (_x != "" && {_count > 0}) then {
++                                _restoredVehicle addWeaponCargoGlobal [_x, _count];
++                            };
++                        } forEach _vehWeapons;
++                    };
++                    if (_vehBackpackCargo isEqualType [] && {_vehBackpackCargo isNotEqualTo []}) then {
++                        clearBackpackCargoGlobal _restoredVehicle;
++                        _vehBackpackCargo params ["_vehBackpacks", "_vehBackpackCounts"];
++                        {
++                            private _count = _vehBackpackCounts param [_forEachIndex, 0];
++                            if (_x != "" && {_count > 0}) then {
++                                _restoredVehicle addBackpackCargoGlobal [_x, _count];
++                            };
++                        } forEach _vehBackpacks;
++                    };
++                    if (!isNil "ace_cargo_fnc_loadItem" && {_vehAceCargo isEqualType [] && {_vehAceCargo isNotEqualTo []}}) then {
++                        {
++                            private _cargoType = _x param [0, ""];
++                            switch (_cargoType) do {
++                                case "virtual": {
++                                    private _className = _x param [1, ""];
++                                    if (_className != "") then {
++                                        [_className, _restoredVehicle, true] call ace_cargo_fnc_loadItem;
++                                    };
+                                 };
+-                            } forEach _hitDamages;
+-                        };
+-                        _restoredVehicle setFuel _vehFuel;
++                                case "object": {
++                                    private _className = _x param [1, ""];
++                                    if (_className != "") then {
++                                        private _customName = _x param [2, ""];
++                                        private _cargoInventory = _x param [3, []];
++                                        private _cargoObject = createVehicle [_className, [0,0,0], [], 0, "CAN_COLLIDE"];
++                                        if (!isNull _cargoObject) then {
++                                            if (_customName != "") then {
++                                                _cargoObject setVariable ["ace_cargo_customName", _customName, true];
++                                            };
++                                            if (_cargoInventory isEqualType [] && {count _cargoInventory == 4}) then {
++                                                _cargoInventory params ["_cargoItems", "_cargoMags", "_cargoWeapons", "_cargoBackpacks"];
++                                                if (_cargoItems isEqualType [] && {_cargoItems isNotEqualTo []}) then {
++                                                    clearItemCargoGlobal _cargoObject;
++                                                    _cargoItems params ["_cargoItemClasses", "_cargoItemCounts"];
++                                                    {
++                                                        private _count = _cargoItemCounts param [_forEachIndex, 0];
++                                                        if (_x != "" && {_count > 0}) then {
++                                                            _cargoObject addItemCargoGlobal [_x, _count];
++                                                        };
++                                                    } forEach _cargoItemClasses;
++                                                };
++                                                if (_cargoMags isEqualType [] && {_cargoMags isNotEqualTo []}) then {
++                                                    clearMagazineCargoGlobal _cargoObject;
++                                                    _cargoMags params ["_cargoMagClasses", "_cargoMagCounts"];
++                                                    {
++                                                        private _count = _cargoMagCounts param [_forEachIndex, 0];
++                                                        if (_x != "" && {_count > 0}) then {
++                                                            _cargoObject addMagazineCargoGlobal [_x, _count];
++                                                        };
++                                                    } forEach _cargoMagClasses;
++                                                };
++                                                if (_cargoWeapons isEqualType [] && {_cargoWeapons isNotEqualTo []}) then {
++                                                    clearWeaponCargoGlobal _cargoObject;
++                                                    _cargoWeapons params ["_cargoWeaponClasses", "_cargoWeaponCounts"];
++                                                    {
++                                                        private _count = _cargoWeaponCounts param [_forEachIndex, 0];
++                                                        if (_x != "" && {_count > 0}) then {
++                                                            _cargoObject addWeaponCargoGlobal [_x, _count];
++                                                        };
++                                                    } forEach _cargoWeaponClasses;
++                                                };
++                                                if (_cargoBackpacks isEqualType [] && {_cargoBackpacks isNotEqualTo []}) then {
++                                                    clearBackpackCargoGlobal _cargoObject;
++                                                    _cargoBackpacks params ["_cargoBackpackClasses", "_cargoBackpackCounts"];
++                                                    {
++                                                        private _count = _cargoBackpackCounts param [_forEachIndex, 0];
++                                                        if (_x != "" && {_count > 0}) then {
++                                                            _cargoObject addBackpackCargoGlobal [_x, _count];
++                                                        };
++                                                    } forEach _cargoBackpackClasses;
++                                                };
++                                            };
++                                            private _loaded = [_cargoObject, _restoredVehicle, true] call ace_cargo_fnc_loadItem;
++                                            if (!_loaded) then {
++                                                deleteVehicle _cargoObject;
++                                            };
++                                        };
++                                    };
++                                };
++                            };
++                        } forEach _vehAceCargo;
+                     };
+                 };
              };
-             ["Applying saved data"] remoteExec ["hint", _unit];
-             _unit setVariable ["HasCID", _hasCID, true];
-             _unit setVariable ["CID_Number", _cid, true];
-             _unit setVariable ["WBK_CombineType", _combine, true];
-             _unit setVariable ["WBK_HL_CustomArmour", _arm, true];
-             _unit setVariable ["WBK_HL_CustomArmour_MAX", _armMax, true];
-             _unit setVariable ["favor", _favor, true];
-             _unit setVariable ["antiKills", _kills, true];
-             _unit setVariable ["wantedLevel", _wlevel, true];
-             [_unit, _pos, _loadout, _combine, _arm, _armMax, _isOTA, _canFake, _hasCID, _cid] remoteExecCall ["MRC_fnc_applyPlayerState", owner _unit];
-+
-+            if !(_savedSquad isEqualTo []) then {
-+                [_unit, _savedSquad] spawn {
-+                    params ["_unit", "_savedSquad"];
-+                    // Allow the player's side switch and group assignment to settle before spawning squadmates
-+                    sleep 1;
-+                    private _grp = group _unit;
-+                    if (isNull _grp) exitWith {};
-+                    {
-+                        if (!isPlayer _x && {_x != _unit}) then {
-+                            deleteVehicle _x;
-+                        };
-+                    } forEach units _grp;
-+                    {
-+                        _x params ["_className", "_loadout"];
-+                        private _spawnPos = _unit modelToWorld [2 + (_forEachIndex mod 3), 2 + floor (_forEachIndex / 3), 0];
-+                        private _newUnit = _grp createUnit [_className, _spawnPos, [], 0, "FORM"];
-+                        _newUnit setUnitLoadout _loadout;
-+                    } forEach _savedSquad;
-+                    selectLeader _unit;
-+                };
-+            };
+             if (!isNull _restoredVehicle) then {
+                 [_unit, _restoredVehicle] spawn {
+                     params ["_unit", "_veh"];
+                     waitUntil {sleep 0.1; alive _unit && {!isNull _veh}};
+                     if (driver _veh != _unit) then {
+                         _unit moveInDriver _veh;
+                     };
+                 };
+             };
          };
          _unit setVariable ["MRC_stateRestored", true];
          ["Restore complete"] remoteExec ["hint", _unit];
@@ -132,7 +308,3 @@ index f8b363cca4720eb0ab6b4ebe4575bdd4a9e4aaa5..026b4571e609bc2c63b770613c13978a
      while {true} do {
          {
              [_x] call MRC_fnc_savePlayerState;
-         } forEach allPlayers;
-         sleep 120;
-     };
- };

@@ -67,16 +67,177 @@ class CfgSFX
 
 class CfgVehicles
 {
-	class XenTele
-	{
-		sound = "XenTele";
-	};
-	class judgement
-	{
-		sound = "judgement";
-	};
-		class Void
-	{
-		sound = "Void";
-	};
+        class XenTele
+        {
+                sound = "XenTele";
+        };
+        class judgement
+        {
+                sound = "judgement";
+        };
+                class Void
+        {
+                sound = "Void";
+        };
+};
+
+class RscText
+{
+        access = 0;
+        idc = -1;
+        type = 0;
+        style = 0;
+        linespacing = 1;
+        colorBackground[] = {0, 0, 0, 0};
+        colorText[] = {1, 1, 1, 1};
+        text = "";
+        shadow = 1;
+        font = "PuristaMedium";
+        SizeEx = 0.04;
+        fixedWidth = 0;
+};
+
+class RscFrame
+{
+        type = 0;
+        idc = -1;
+        style = 64;
+        shadow = 2;
+        colorBackground[] = {0, 0, 0, 0};
+        colorText[] = {1, 1, 1, 1};
+        font = "PuristaMedium";
+        sizeEx = 0.03;
+        text = "";
+};
+
+class RscButton
+{
+        access = 0;
+        idc = -1;
+        type = 1;
+        text = "";
+        colorText[] = {1, 1, 1, 1};
+        colorDisabled[] = {0.5, 0.5, 0.5, 1};
+        colorBackground[] = {0.2, 0.2, 0.2, 1};
+        colorBackgroundDisabled[] = {0.9, 0.9, 0.9, 1};
+        colorBackgroundActive[] = {0.3, 0.3, 0.3, 1};
+        colorFocused[] = {0.3, 0.3, 0.3, 1};
+        colorShadow[] = {0, 0, 0, 0};
+        colorBorder[] = {0, 0, 0, 1};
+        soundEnter[] = {"", 0.09, 1};
+        soundPush[] = {"", 0.0, 0};
+        soundClick[] = {"", 0.07, 1};
+        soundEscape[] = {"", 0.09, 1};
+        style = 2;
+        x = 0;
+        y = 0;
+        w = 0.095589;
+        h = 0.039216;
+        shadow = 2;
+        font = "PuristaMedium";
+        sizeEx = 0.035;
+        offsetX = 0.003;
+        offsetY = 0.003;
+        offsetPressedX = 0.002;
+        offsetPressedY = 0.002;
+        borderSize = 0;
+};
+
+class HL2_CommandMenu
+{
+        idd = 9000;
+        movingEnable = 0;
+        enableSimulation = 1;
+        onLoad = "uiNamespace setVariable ['HL2_CommandMenu', _this select 0];";
+        onUnload = "uiNamespace setVariable ['HL2_CommandMenu', displayNull];";
+
+        class controlsBackground
+        {
+                class Background: RscText
+                {
+                        colorBackground[] = {0, 0, 0, 0.8};
+                        x = 0.35;
+                        y = 0.25;
+                        w = 0.3;
+                        h = 0.34;
+                };
+                class Frame: RscFrame
+                {
+                        x = 0.35;
+                        y = 0.25;
+                        w = 0.3;
+                        h = 0.34;
+                };
+        };
+
+        class controls
+        {
+                class Title: RscText
+                {
+                        idc = 9001;
+                        text = "Field Support";
+                        colorBackground[] = {0.1, 0.4, 0.6, 0.9};
+                        style = 2;
+                        x = 0.35;
+                        y = 0.25;
+                        w = 0.3;
+                        h = 0.04;
+                        SizeEx = 0.045;
+                };
+
+                class RequestMission: RscButton
+                {
+                        idc = 9100;
+                        text = "Request Mission";
+                        x = 0.365;
+                        y = 0.31;
+                        w = 0.27;
+                        h = 0.045;
+                        action = "[] call HL2_fnc_requestMission;";
+                };
+
+                class RallySquad: RscButton
+                {
+                        idc = 9101;
+                        text = "Rally Squad (5 Tokens)";
+                        x = 0.365;
+                        y = 0.365;
+                        w = 0.27;
+                        h = 0.045;
+                        action = "[] call HL2_fnc_rallySquad;";
+                };
+
+                class RequestReinforcements: RscButton
+                {
+                        idc = 9102;
+                        text = "Request Reinforcements (10 Tokens)";
+                        x = 0.365;
+                        y = 0.42;
+                        w = 0.27;
+                        h = 0.045;
+                        action = "[] call HL2_fnc_requestReinforcements;";
+                };
+
+                class RequestRecon: RscButton
+                {
+                        idc = 9103;
+                        text = "Request Recon (5 Tokens)";
+                        x = 0.365;
+                        y = 0.475;
+                        w = 0.27;
+                        h = 0.045;
+                        action = "[] call HL2_fnc_requestRecon;";
+                };
+
+                class Close: RscButton
+                {
+                        idc = 9104;
+                        text = "Close";
+                        x = 0.365;
+                        y = 0.53;
+                        w = 0.27;
+                        h = 0.045;
+                        action = "closeDialog 0;";
+                };
+        };
 };

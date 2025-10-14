@@ -278,7 +278,191 @@ TAG_fnc_requestCombineMission = {
 
 };
 
+HL2_fnc_spawnReinforcements = {
+    params ["_requester", "_initialPos"];
 
+    if (!isServer) exitWith {};
+    if (isNull _requester) exitWith {};
+
+    private _side = side _requester;
+    if !(_side in [west, east]) exitWith {};
+
+    private _spawnPos = [_initialPos, 2000, 5000, 5, 0, 20, 0] call BIS_fnc_findSafePos;
+    if (_spawnPos isEqualTo []) then {
+        _spawnPos = [_initialPos, 2000 + random 2000, random 360] call BIS_fnc_relPos;
+    };
+
+    private _vehicleClass = if (_side isEqualTo west) then { "B_MRAP_01_F" } else { "O_G_Offroad_01_F" };
+    private _driverClass = if (_side isEqualTo west) then { "B_Soldier_F" } else { "O_G_Soldier_F" };
+    private _passengerClasses = if (_side isEqualTo west) then {
+        ["B_Soldier_GL_F", "B_Soldier_AR_F", "B_medic_F"]
+    } else {
+        ["O_G_Soldier_GL_F", "O_G_Soldier_AR_F", "O_G_medic_F"]
+    };
+
+    private _group = createGroup _side;
+    private _vehicle = createVehicle [_vehicleClass, _spawnPos, [], 0, "NONE"];
+    _vehicle setDir random 360;
+    _vehicle setVehicleLock "UNLOCKED";
+
+    private _driver = _group createUnit [_driverClass, _spawnPos, [], 0, "FORM"];
+    _driver assignAsDriver _vehicle;
+    _driver moveInDriver _vehicle;
+
+    {
+        private _unit = _group createUnit [_x, _spawnPos, [], 0, "FORM"];
+        _unit assignAsCargo _vehicle;
+        _unit moveInCargo _vehicle;
+    } forEach _passengerClasses;
+
+    _group setBehaviour "AWARE";
+    _group setCombatMode "YELLOW";
+    _group setSpeedMode "NORMAL";
+
+    [_group, _vehicle, _requester] spawn {
+        params ["_grp", "_veh", "_req"];
+
+        private _reached = false;
+        while { alive _veh && {!isNull _req} && { alive _req } } do {
+            private _dest = getPosATL _req;
+            { _x doMove _dest; } forEach units _grp;
+            _veh doMove _dest;
+
+            if ((_veh distance2D _dest) < 120) exitWith { _reached = true; };
+            sleep 5;
+        };
+
+        if (!alive _veh) exitWith {
+            ["Reinforcements were lost before reaching you."] remoteExec ["systemChat", _req];
+        };
+
+        if (isNull _req || { !alive _req }) exitWith {};
+        if (!_reached) exitWith {};
+
+        {
+            unassignVehicle _x;
+            doGetOut _x;
+        } forEach units _grp;
+
+        waitUntil {
+            sleep 1;
+            ({ vehicle _x == _x } count units _grp) == { alive _x } count units _grp
+        };
+
+        {
+            if (alive _x) then {
+                [_x] joinSilent (group _req);
+            };
+        } forEach units _grp;
+
+        deleteVehicle _veh;
+        deleteGroup _grp;
+        ["Reinforcements have joined your squad."] remoteExec ["systemChat", _req];
+    };
+};
+publicVariable "HL2_fnc_spawnReinforcements";
+
+
+HL2_fnc_launchRecon = {
+    params ["_requester", "_initialPos"];
+
+    if (!isServer) exitWith {};
+    if (isNull _requester) exitWith {};
+
+    private _side = side _requester;
+    if !(_side in [west, east]) exitWith {};
+
+    private _spawnPos = [_initialPos, 2000, 5000, 0, 0, 50, 0] call BIS_fnc_findSafePos;
+    if (_spawnPos isEqualTo []) then {
+        _spawnPos = [_initialPos, 2000 + random 2000, random 360] call BIS_fnc_relPos;
+    };
+
+    private _heliClass = if (_side isEqualTo west) then { "B_Heli_Light_01_F" } else { "O_Heli_Light_02_unarmed_F" };
+    private _pilotClass = if (_side isEqualTo west) then { "B_Helipilot_F" } else { "O_Helipilot_F" };
+
+    private _grp = createGroup _side;
+    private _heli = createVehicle [_heliClass, _spawnPos, [], 0, "FLY"];
+    _heli setPosASL [(_spawnPos select 0), (_spawnPos select 1), 120];
+    _heli setDir random 360;
+    _heli flyInHeight 120;
+
+    private _pilot = _grp createUnit [_pilotClass, _spawnPos, [], 0, "FORM"];
+    _pilot assignAsDriver _heli;
+    _pilot moveInDriver _heli;
+
+    _grp setBehaviour "CARELESS";
+    _grp setSpeedMode "LIMITED";
+
+    [_grp, _heli, _requester] spawn {
+        params ["_grp", "_heli", "_req"];
+
+        private _cleanup = {
+            params ["_grpC", "_heliC"];
+            if (!isNull _heliC) then {
+                { deleteVehicle _x; } forEach crew _heliC;
+                deleteVehicle _heliC;
+            };
+            if (!isNull _grpC) then {
+                deleteGroup _grpC;
+            };
+        };
+
+        private _timeout = time + 300;
+        private _reached = false;
+        while { time < _timeout && { alive _heli } && { !isNull _req } && { alive _req } } do {
+            private _dest = getPosATL _req;
+            _grp move _dest;
+            _heli move _dest;
+
+            if ((_heli distance2D _dest) < 200) exitWith { _reached = true; };
+            sleep 3;
+        };
+
+        if (!alive _heli) exitWith {
+            ["Recon flight lost before reaching the target area."] remoteExec ["systemChat", _req];
+            [_grp, _heli] call _cleanup;
+        };
+
+        if (isNull _req || { !alive _req }) exitWith {
+            [_grp, _heli] call _cleanup;
+        };
+
+        if (!_reached) exitWith {
+            [_grp, _heli] call _cleanup;
+        };
+
+        sleep 5;
+
+        private _scanPos = getPosATL _req;
+        private _sideReq = side _req;
+        private _enemies = allUnits select {
+            alive _x && {_x distance2D _scanPos <= 2000} && { side _x getFriend _sideReq < 0.6 }
+        };
+
+        if (_enemies isEqualTo []) then {
+            ["Recon flight reports no hostiles within 2 km."] remoteExec ["systemChat", _req];
+        } else {
+            {
+                private _pos = getPosATL _x;
+                private _dist = round (_pos distance2D _scanPos);
+                private _dir = round ([_scanPos, _pos] call BIS_fnc_dirTo);
+                private _name = if (isPlayer _x) then { name _x } else { getText (configFile >> "CfgVehicles" >> typeOf _x >> "displayName") };
+                [format ["Recon spots %1 at %2 m, bearing %3°.", _name, _dist, _dir]] remoteExec ["systemChat", _req];
+            } forEach _enemies;
+        };
+
+        private _exitPos = [_scanPos, 1500, random 360] call BIS_fnc_relPos;
+        _grp move _exitPos;
+        _heli move _exitPos;
+
+        sleep 30;
+
+        [_grp, _heli] call _cleanup;
+    };
+
+    ["Recon flight dispatched."] remoteExec ["systemChat", _requester];
+};
+publicVariable "HL2_fnc_launchRecon";
 
 
 // === Dynamic Civ Mission: Assemble & Deliver Rations ===

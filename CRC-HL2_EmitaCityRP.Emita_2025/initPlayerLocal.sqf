@@ -44,6 +44,8 @@ if (isNil "fnc_applyBlur") then {
     };
 };
 
+[] call compile preprocessFileLineNumbers "playerCommandMenu.sqf";
+
 [] spawn {
     waitUntil {sleep 1; !isNull player};
     hint "Requesting saved state";
