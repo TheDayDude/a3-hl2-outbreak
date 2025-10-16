@@ -1,310 +1,675 @@
-diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf
-index 67c5171e76cc6c4792f9c48e655f00c9f369df70..391b3ea8f6ee97ee66e8db54af8da513bd1953ce 100644
---- a/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf
-+++ b/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf
-@@ -34,59 +34,91 @@ if (isNil "MRC_fnc_savePlayerState") then {
-             ["State not restored yet - skipping save"] remoteExec ["hint", _unit];
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/playerCommandMenu.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/playerCommandMenu.sqf
+index 4b6db6eb283da602d9ee03f31fb8aeec3f0f8558..6c7b2064c008908d1f0fb2f6c88175ec720dedb0 100644
+--- a/CRC-HL2_EmitaCityRP.Emita_2025/playerCommandMenu.sqf
++++ b/CRC-HL2_EmitaCityRP.Emita_2025/playerCommandMenu.sqf
+@@ -1,206 +1,519 @@
+ if (!hasInterface) exitWith {};
+ if (missionNamespace getVariable ["HL2_CommandMenu_Configured", false]) exitWith {};
+ missionNamespace setVariable ["HL2_CommandMenu_Configured", true];
+ 
+-HL2_fnc_updateCommandMenu = {
+-    if (!hasInterface) exitWith {};
++private _tokenClass = "VRP_HL_Token_Item";
++private _buttonIds = [9200, 9201, 9202, 9203, 9204, 9205, 9206, 9207];
++
++private _themes = createHashMapFromArray [
++    [west,       createHashMapFromArray [["background", [0.05, 0.11, 0.32, 0.94]], ["buttonText", [0, 0, 0, 1]], ["buttonBackground", [1, 1, 1, 0.95]], ["buttonDisabled", [0.3, 0.3, 0.3, 0.6]]]],
++    [east,       createHashMapFromArray [["background", [0.35, 0.16, 0.02, 0.94]], ["buttonText", [0.7, 0, 0, 1]], ["buttonBackground", [1, 1, 1, 0.95]], ["buttonDisabled", [0.3, 0.3, 0.3, 0.6]]]],
++    [civilian,   createHashMapFromArray [["background", [0.2, 0.0, 0.33, 0.94]], ["buttonText", [0, 0, 0, 1]], ["buttonBackground", [1, 1, 1, 0.95]], ["buttonDisabled", [0.3, 0.3, 0.3, 0.6]]]],
++    [independent,createHashMapFromArray [["background", [0.03, 0.18, 0.07, 0.94]], ["buttonText", [0, 0, 0, 1]], ["buttonBackground", [0.8, 1, 0.8, 0.95]], ["buttonDisabled", [0.3, 0.3, 0.3, 0.6]]]]
++];
++
++private _titles = createHashMapFromArray [
++    [west, "Civil Protection Force"],
++    [east, "Rebel Radio Online"],
++    [civilian, "Civil Worker's Union Public Information Channel"],
++    [independent, "The                Beckons"]
++];
++
++private _subtitles = createHashMapFromArray [
++    [west, [
++        "UU.CPF Network Connection: Stable. Unit Biometric Credentials: Accepted.",
++        "Reminder: Mission failure will result in permanent off-world assignment.",
++        "Reminder: 100 sterilized credits qualifies non-mechanical reproduction simulation.",
++        "Reminder: Memory replacement is the first step toward rank privileges.",
++        "Reminder: Protection Team member: your family cohesion is preserved."
++    ]],
++    [east, [
++        "Need Firepower? Outlander Outfitters has you covered.",
++        "Resist to Exist. LambdaNet Lives.",
++        "Visit Odessa. We have cabbages.",
++        "This isn't your grandma's radio station.",
++        "Is this thing on?"
++    ]],
++    [civilian, [
++        "Strength. Unity. Obedience.",
++        "Join the CWU Today!",
++        "Citizen Reminder: Visit your local CWU Office to volunteer for Infestation Control duty!",
++        "Citizen Reminder: a civilized society demands swift and targeted oversight.",
++        "Citizen Reminder: inaction is conspiracy."
++    ]],
++    [independent, [
++        "The Veil Breathes Still.",
++        "All Paths Spiral Inward.",
++        "It Waits Beneath the Pulse.",
++        "Your Echo Is Not Alone.",
++        "The Maw Remembers Us."
++    ]]
++];
++
++missionNamespace setVariable ["HL2_CommandMenu_Themes", _themes];
++missionNamespace setVariable ["HL2_CommandMenu_Titles", _titles];
++missionNamespace setVariable ["HL2_CommandMenu_Subtitles", _subtitles];
++missionNamespace setVariable ["HL2_CommandMenu_ButtonIds", _buttonIds];
++missionNamespace setVariable ["HL2_CommandMenu_TokenClass", _tokenClass];
++
++HL2_fnc_commandMenuGetTheme = {
++    params ["_side"];
++    private _themes = missionNamespace getVariable ["HL2_CommandMenu_Themes", createHashMap];
++    private _theme = _themes getOrDefault [_side, objNull];
++    if (isNil "_theme" || { _theme isEqualTo objNull }) then {
++        _theme = createHashMapFromArray [["background", [0,0,0,0.9]], ["buttonText", [1,1,1,1]], ["buttonBackground", [0.2,0.2,0.2,1]], ["buttonDisabled", [0.2,0.2,0.2,0.4]]];
++    };
++    _theme
++};
++
++HL2_fnc_commandMenuPickSubtitle = {
++    params ["_side"];
++    private _subs = missionNamespace getVariable ["HL2_CommandMenu_Subtitles", createHashMap];
++    private _pool = _subs getOrDefault [_side, []];
++    if (_pool isEqualTo []) exitWith { "" };
++    selectRandom _pool
++};
++
++HL2_fnc_attemptPurchase = {
++    params ["_cost"];
++    if (_cost <= 0) exitWith { true };
++
++    private _tokenClass = missionNamespace getVariable ["HL2_CommandMenu_TokenClass", "VRP_HL_Token_Item"];
++    private _have = { _x == _tokenClass } count (items player);
++    private _bank = player getVariable ["bankTokens", 0];
++
++    if ((_have + _bank) < _cost) exitWith {
++        hint format ["You need %1 tokens. Inventory: %2. Bank: %3.", _cost, _have, _bank];
++        false
++    };
++
++    private _fromInventory = _have min _cost;
++    private _fromBank = _cost - _fromInventory;
++
++    for "_i" from 1 to _fromInventory do {
++        player removeItem _tokenClass;
++    };
++
++    if (_fromBank > 0) then {
++        ["SPEND", _fromBank, player] remoteExecCall ["MRC_fnc_bankServer", 2];
++    };
++
++    true
++};
++
++HL2_fnc_commandMenuOnButton = {
++    params ["_control"];
++    private _action = _control getVariable ["HL2_CommandMenu_Action", {}];
++    private _context = _control getVariable ["HL2_CommandMenu_Context", createHashMap];
++    private _data = _control getVariable ["HL2_CommandMenu_Data", nil];
++    if (!(_action isEqualType {})) exitWith {};
++    [_control, _context, _data] call _action;
++};
++
++HL2_fnc_commandMenuSetButtons = {
++    params ["_display", "_menuId", "_menuContext", "_buttons", "_theme"];
++
++    private _buttonIds = missionNamespace getVariable ["HL2_CommandMenu_ButtonIds", []];
++
++    {
++        private _control = _display displayCtrl _x;
++        _control ctrlShow false;
++        _control ctrlSetText "";
++        _control ctrlEnable false;
++        _control ctrlSetTooltip "";
++        _control ctrlSetBackgroundColor [0,0,0,0.6];
++        _control ctrlSetTextColor [1,1,1,1];
++        _control ctrlRemoveAllEventHandlers "ButtonClick";
++    } forEach _buttonIds;
++
++    private _textColor = _theme getOrDefault ["buttonText", [1,1,1,1]];
++    private _bgColor = _theme getOrDefault ["buttonBackground", [0.2,0.2,0.2,0.9]];
++    private _disabledColor = _theme getOrDefault ["buttonDisabled", [0.2,0.2,0.2,0.5]];
++
++    {
++        private _index = _forEachIndex;
++        if (_index >= count _buttonIds) exitWith {};
++        private _idc = _buttonIds select _index;
++        private _control = _display displayCtrl _idc;
++
++        private _label = "";
++        private _action = { params ["_control", "_context", "_data"]; };
++        private _condition = { true };
++        private _tooltip = "";
++        private _data = nil;
++
++        if (_x isEqualType []) then {
++            private _entry = _x;
++            if ((count _entry) > 0) then { _label = _entry select 0; };
++            if ((count _entry) > 1) then { _action = _entry select 1; };
++            if ((count _entry) > 2) then { _condition = _entry select 2; };
++            if ((count _entry) > 3) then { _tooltip = _entry select 3; };
++            if ((count _entry) > 4) then { _data = _entry select 4; };
++        };
++
++        private _enabled = true;
++        if (_condition isEqualType {}) then {
++            _enabled = [_menuContext, _data] call _condition;
++        } else {
++            _enabled = _condition;
++        };
++
++        _control ctrlSetText _label;
++        _control ctrlSetTextColor (_enabled then { _textColor } else { [0.5,0.5,0.5,0.8] });
++        _control ctrlSetBackgroundColor (_enabled then { _bgColor } else { _disabledColor });
++        _control ctrlEnable _enabled;
++        _control ctrlShow true;
++        _control ctrlSetTooltip _tooltip;
++        _control setVariable ["HL2_CommandMenu_Action", _action];
++        _control setVariable ["HL2_CommandMenu_Context", _menuContext];
++        _control setVariable ["HL2_CommandMenu_Data", _data];
++        _control ctrlRemoveAllEventHandlers "ButtonClick";
++        _control ctrlAddEventHandler ["ButtonClick", "_this select 0 call HL2_fnc_commandMenuOnButton;"];
++    } forEach _buttons;
++};
++
++HL2_fnc_commandMenuRender = {
++    params ["_menuId", "_context"];
+     disableSerialization;
+ 
+     private _display = findDisplay 9000;
+     if (isNull _display) exitWith {};
+ 
+-    private _tokenClass = "VRP_HL_Token_Item";
+-    private _tokens = { _x == _tokenClass } count (items player);
+-    private _side = side player;
+-    private _group = group player;
+-    private _mates = [];
+-    if (!isNull _group) then {
+-        _mates = (units _group) select { _x != player && alive _x };
+-    };
+-    private _isLeader = (!isNull _group) && { leader _group isEqualTo player };
+-
+-    private _btnMission = _display displayCtrl 9100;
+-    private _missionLabel = "";
+-    private _missionEnabled = true;
+-    switch (_side) do {
+-        case west: { _missionLabel = "Combine"; };
+-        case east: { _missionLabel = "Rebel"; };
+-        case civilian: { _missionLabel = "Civilian"; };
+-        case independent: { _missionLabel = "Independent"; };
+-        default {
+-            _missionEnabled = false;
++    private _side = _context getOrDefault ["side", sideUnknown];
++    private _theme = [_side] call HL2_fnc_commandMenuGetTheme;
++    private _titles = missionNamespace getVariable ["HL2_CommandMenu_Titles", createHashMap];
++    private _title = _titles getOrDefault [_side, "Field Support"];
++    private _subtitle = "";
++    private _infoText = "";
++    private _buttons = [];
++
++    private _builder = missionNamespace getVariable ["HL2_CommandMenu_Builder", {}];
++    private _result = [_menuId, _context] call _builder;
++
++    if (_result isEqualType createHashMap) then {
++        _title = _result getOrDefault ["title", _title];
++        _subtitle = _result getOrDefault ["subtitle", ""];
++        if (_subtitle isEqualTo "" && { _result getOrDefault ["useRandomSubtitle", false] }) then {
++            _subtitle = [_side] call HL2_fnc_commandMenuPickSubtitle;
          };
-         private _uid = getPlayerUID _unit;
-         if (_uid == "") exitWith {
-             ["No UID - state not saved"] remoteExec ["hint", _unit];
-         };
-         private _key = format ["PSTATE_%1", _uid];
-         private _squadData = [];
-         if (!isNull group _unit && {leader (group _unit) isEqualTo _unit}) then {
-             {
-                 if (!isNull _x && {_x != _unit} && {!isPlayer _x} && {alive _x}) then {
-                     _squadData pushBack [typeOf _x, getUnitLoadout _x];
-                 };
-             } forEach (units group _unit);
-         };
-         private _vehicleData = [];
-         private _veh = vehicle _unit;
-         if (_veh != _unit && {driver _veh isEqualTo _unit}) then {
-             private _hitData = getAllHitPointsDamage _veh;
-             private _hitNames = [];
-             private _hitDamages = [];
-             if (_hitData isEqualType [] && {count _hitData >= 3}) then {
-                 _hitNames = _hitData select 0;
-                 _hitDamages = _hitData select 2;
-             };
-+            private _itemCargo = getItemCargo _veh;
-+            private _magCargo = getMagazineCargo _veh;
-+            private _weaponCargo = getWeaponCargo _veh;
-+            private _backpackCargo = getBackpackCargo _veh;
-+            private _aceCargo = [];
-+            if (!isNil "ace_cargo_fnc_loadItem") then {
-+                {
-+                    if (_x isEqualType "") then {
-+                        _aceCargo pushBack ["virtual", _x];
-+                    } else {
-+                        if (!isNull _x) then {
-+                            private _aceItemData = [
-+                                "object",
-+                                typeOf _x,
-+                                _x getVariable ["ace_cargo_customName", ""],
-+                                [
-+                                    getItemCargo _x,
-+                                    getMagazineCargo _x,
-+                                    getWeaponCargo _x,
-+                                    getBackpackCargo _x
-+                                ]
-+                            ];
-+                            _aceCargo pushBack _aceItemData;
-+                        };
-+                    };
-+                } forEach (_veh getVariable ["ace_cargo_loaded", []]);
-+            };
-             _vehicleData = [
-                 typeOf _veh,
-                 getPosWorld _veh,
-                 vectorDir _veh,
-                 vectorUp _veh,
-                 damage _veh,
-                 _hitNames,
-                 _hitDamages,
--                fuel _veh
-+                fuel _veh,
-+                _itemCargo,
-+                _magCargo,
-+                _weaponCargo,
-+                _backpackCargo,
-+                _aceCargo
-             ];
-         };
-         profileNamespace setVariable [_key, [
-             str side _unit,
-             getPosATL _unit,
-             getUnitLoadout _unit,
-             _unit getVariable ["WBK_CombineType", ""],
-             _unit getVariable ["WBK_HL_CustomArmour", 0],
-             _unit getVariable ["WBK_HL_CustomArmour_MAX", 0],
-             _unit getVariable ["isOTA", false],
-             _unit getVariable ["CanBuyFakeID", false],
-             _unit getVariable ["HasCID", false],
-             _unit getVariable ["CID_Number", nil],
-             _unit getVariable ["favor", 0],
-             _unit getVariable ["antiKills", 0],
-             _unit getVariable ["wantedLevel", 0],
-             _squadData,
-             _vehicleData
-         ]];
-         saveProfileNamespace;
-         ["Autosave Complete."] remoteExec ["systemChat", _unit];
+-    };
+-    if (_missionLabel isEqualTo "") then { _missionEnabled = false; };
+-    _btnMission ctrlEnable _missionEnabled;
+-    private _missionTooltip = if (_missionEnabled) then {
+-        format ["Request a %1 mission for your faction.", _missionLabel]
++        if (_subtitle isEqualTo "" && { _menuId find "main" >= 0 }) then {
++            _subtitle = [_side] call HL2_fnc_commandMenuPickSubtitle;
++        };
++        _infoText = _result getOrDefault ["info", ""];
++        _buttons = _result getOrDefault ["buttons", []];
+     } else {
+-        "Your faction cannot request missions."
+-    };
+-    _btnMission ctrlSetTooltip _missionTooltip;
+-
+-    private _btnRally = _display displayCtrl 9101;
+-    private _canRally = _isLeader && {_tokens >= 5} && {count _mates > 0};
+-    _btnRally ctrlEnable _canRally;
+-    private _rallyReasons = [];
+-    if (!_isLeader) then { _rallyReasons pushBack "Only group leaders can rally the squad."; };
+-    if (_tokens < 5) then { _rallyReasons pushBack "Requires 5 tokens."; };
+-    if (count _mates == 0) then { _rallyReasons pushBack "No squadmates available."; };
+-    if (_rallyReasons isEqualTo []) then {
+-        _rallyReasons pushBack "Teleport your squadmates to your position for 5 tokens.";
+-    };
+-    _btnRally ctrlSetTooltip (_rallyReasons joinString "\n");
+-
+-    private _btnReinforce = _display displayCtrl 9102;
+-    private _reinforceAllowedSide = _side in [west, east];
+-    private _canReinforce = _reinforceAllowedSide && {_tokens >= 10};
+-    _btnReinforce ctrlEnable _canReinforce;
+-    private _reinforceTips = [];
+-    if (!_reinforceAllowedSide) then {
+-        _reinforceTips pushBack "Only Combine or Rebel forces may request reinforcements.";
+-    };
+-    if (_tokens < 10) then {
+-        _reinforceTips pushBack "Requires 10 tokens.";
+-    };
+-    if (_reinforceTips isEqualTo []) then {
+-        _reinforceTips pushBack "Call in a friendly squad that will join your group.";
++        _buttons = [];
+     };
+-    _btnReinforce ctrlSetTooltip (_reinforceTips joinString "\n");
+-
+-    private _btnRecon = _display displayCtrl 9103;
+-    private _reconAllowedSide = _side in [west, east];
+-    private _canRecon = _reconAllowedSide && {_tokens >= 5};
+-    _btnRecon ctrlEnable _canRecon;
+-    private _reconTips = [];
+-    if (!_reconAllowedSide) then {
+-        _reconTips pushBack "Only Combine or Rebel forces may request recon flights.";
+-    };
+-    if (_tokens < 5) then {
+-        _reconTips pushBack "Requires 5 tokens.";
+-    };
+-    if (_reconTips isEqualTo []) then {
+-        _reconTips pushBack "Dispatch a scout helicopter to mark enemies within 2 km.";
++
++    private _background = _display displayCtrl 9004;
++    if (!isNull _background) then {
++        _background ctrlSetBackgroundColor (_theme getOrDefault ["background", [0,0,0,0.9]]);
+     };
+-    _btnRecon ctrlSetTooltip (_reconTips joinString "\n");
+-};
+ 
+-HL2_fnc_openCommandMenu = {
+-    if (!hasInterface) exitWith {};
+-    if (!isNull findDisplay 9000) exitWith {};
++    private _titleCtrl = _display displayCtrl 9001;
++    _titleCtrl ctrlSetText _title;
+ 
+-    createDialog "HL2_CommandMenu";
+-    [] call HL2_fnc_updateCommandMenu;
++    private _subtitleCtrl = _display displayCtrl 9002;
++    private _subtitleText = if (_subtitle isEqualTo "") then { "" } else { format ["<t align='center'>%1</t>", _subtitle] };
++    _subtitleCtrl ctrlSetStructuredText parseText _subtitleText;
+ 
+-    [] spawn {
+-        waitUntil { isNull findDisplay 9000 };
+-        [] call HL2_fnc_updateCommandMenu;
++    private _tokenCount = { _x == (missionNamespace getVariable ["HL2_CommandMenu_TokenClass", "VRP_HL_Token_Item"]) } count (items player);
++    private _bankCount = player getVariable ["bankTokens", 0];
++    private _infoFinal = if (_infoText isEqualTo "") then {
++        format ["<t align='center'>Tokens: %1 | Bank: %2</t>", _tokenCount, _bankCount]
++    } else {
++        format ["<t align='center'>Tokens: %1 | Bank: %2</t><br/><t size='0.9' align='center'>%3</t>", _tokenCount, _bankCount, _infoText]
+     };
++    private _infoCtrl = _display displayCtrl 9003;
++    _infoCtrl ctrlSetStructuredText parseText _infoFinal;
+ 
+-    [] spawn {
+-        while { !isNull findDisplay 9000 } do {
+-            uiSleep 0.5;
+-            [] call HL2_fnc_updateCommandMenu;
+-        };
++    [_display, _menuId, _context, _buttons, _theme] call HL2_fnc_commandMenuSetButtons;
++};
++
++HL2_fnc_commandMenuPush = {
++    params ["_menuId", "_context"];
++    private _stack = missionNamespace getVariable ["HL2_CommandMenu_Stack", []];
++    _stack pushBack [_menuId, _context];
++    missionNamespace setVariable ["HL2_CommandMenu_Stack", _stack];
++    [_menuId, _context] call HL2_fnc_commandMenuRender;
++};
++
++HL2_fnc_commandMenuPop = {
++    private _stack = missionNamespace getVariable ["HL2_CommandMenu_Stack", []];
++    if (_stack isEqualTo []) exitWith { closeDialog 0; };
++    _stack deleteAt ((count _stack) - 1);
++    missionNamespace setVariable ["HL2_CommandMenu_Stack", _stack];
++    if (_stack isEqualTo []) then {
++        closeDialog 0;
++    } else {
++        private _entry = _stack select ((count _stack) - 1);
++        [_entry select 0, _entry select 1] call HL2_fnc_commandMenuRender;
      };
  };
  
- if (isNil "MRC_fnc_restorePlayerState") then {
-diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf
-index 67c5171e76cc6c4792f9c48e655f00c9f369df70..391b3ea8f6ee97ee66e8db54af8da513bd1953ce 100644
---- a/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf
-+++ b/CRC-HL2_EmitaCityRP.Emita_2025/playerPersistence.sqf
-@@ -159,71 +191,188 @@ if (isNil "MRC_fnc_restorePlayerState") then {
-                     if (!isNil "_cls" && {_cls != ""}) then {
-                         private _spawnPos = if (_pos isEqualType []) then {_pos} else {getPosATL _unit};
-                         private _offset = [random 3 - 1.5, random 3 - 1.5, 0];
-                         private _spawnAt = _spawnPos vectorAdd _offset;
-                         private _ai = _grp createUnit [_cls, _spawnAt, [], 0, "FORM"];
-                         if (!isNull _ai) then {
-                             _ai setUnitLoadout _ldout;
-                             _ensureLeader = true;
-                         };
-                     };
-                 } forEach _squadData;
-                 if (_ensureLeader && {leader _grp != _unit}) then {
-                     _grp selectLeader _unit;
-                 };
-             };
-             private _restoredVehicle = objNull;
-             if (_vehicleData isEqualType [] && {_vehicleData isNotEqualTo []}) then {
-                 _vehicleData params [
-                     "_vehClass",
-                     "_vehPos",
-                     "_vehDir",
-                     "_vehUp",
-                     ["_vehDamage", 0],
-                     ["_hitNames", []],
-                     ["_hitDamages", []],
--                    ["_vehFuel", 1]
--                ];
--                if (!isNil "_vehClass" && {_vehClass != ""}) then {
--                    _restoredVehicle = createVehicle [_vehClass, [0,0,0], [], 0, "CAN_COLLIDE"];
--                    if (!isNull _restoredVehicle) then {
--                        if (_vehPos isEqualType []) then {
--                            _restoredVehicle setPosWorld _vehPos;
--                        };
--                        if (_vehDir isEqualType [] && {_vehUp isEqualType []}) then {
--                            _restoredVehicle setVectorDirAndUp [_vehDir, _vehUp];
--                        };
--                        _restoredVehicle setDamage _vehDamage;
--                        if (_hitNames isEqualType [] && {_hitDamages isEqualType []}) then {
--                            {
--                                private _hitName = _hitNames param [_forEachIndex, ""];
--                                if (_hitName != "") then {
--                                    _restoredVehicle setHitPointDamage [_hitName, _x];
-+                ["_vehFuel", 1],
-+                ["_vehItemCargo", []],
-+                ["_vehMagCargo", []],
-+                ["_vehWeaponCargo", []],
-+                ["_vehBackpackCargo", []],
-+                ["_vehAceCargo", []]
-+            ];
-+            if (!isNil "_vehClass" && {_vehClass != ""}) then {
-+                _restoredVehicle = createVehicle [_vehClass, [0,0,0], [], 0, "CAN_COLLIDE"];
-+                if (!isNull _restoredVehicle) then {
-+                    if (_vehPos isEqualType []) then {
-+                        _restoredVehicle setPosWorld _vehPos;
-+                    };
-+                    if (_vehDir isEqualType [] && {_vehUp isEqualType []}) then {
-+                        _restoredVehicle setVectorDirAndUp [_vehDir, _vehUp];
-+                    };
-+                    _restoredVehicle setDamage _vehDamage;
-+                    if (_hitNames isEqualType [] && {_hitDamages isEqualType []}) then {
-+                        {
-+                            private _hitName = _hitNames param [_forEachIndex, ""];
-+                            if (_hitName != "") then {
-+                                _restoredVehicle setHitPointDamage [_hitName, _x];
-+                            };
-+                        } forEach _hitDamages;
-+                    };
-+                    _restoredVehicle setFuel _vehFuel;
-+                    if (_vehItemCargo isEqualType [] && {_vehItemCargo isNotEqualTo []}) then {
-+                        clearItemCargoGlobal _restoredVehicle;
-+                        _vehItemCargo params ["_vehItems", "_vehItemCounts"];
-+                        {
-+                            private _count = _vehItemCounts param [_forEachIndex, 0];
-+                            if (_x != "" && {_count > 0}) then {
-+                                _restoredVehicle addItemCargoGlobal [_x, _count];
-+                            };
-+                        } forEach _vehItems;
-+                    };
-+                    if (_vehMagCargo isEqualType [] && {_vehMagCargo isNotEqualTo []}) then {
-+                        clearMagazineCargoGlobal _restoredVehicle;
-+                        _vehMagCargo params ["_vehMags", "_vehMagCounts"];
-+                        {
-+                            private _count = _vehMagCounts param [_forEachIndex, 0];
-+                            if (_x != "" && {_count > 0}) then {
-+                                _restoredVehicle addMagazineCargoGlobal [_x, _count];
-+                            };
-+                        } forEach _vehMags;
-+                    };
-+                    if (_vehWeaponCargo isEqualType [] && {_vehWeaponCargo isNotEqualTo []}) then {
-+                        clearWeaponCargoGlobal _restoredVehicle;
-+                        _vehWeaponCargo params ["_vehWeapons", "_vehWeaponCounts"];
-+                        {
-+                            private _count = _vehWeaponCounts param [_forEachIndex, 0];
-+                            if (_x != "" && {_count > 0}) then {
-+                                _restoredVehicle addWeaponCargoGlobal [_x, _count];
-+                            };
-+                        } forEach _vehWeapons;
-+                    };
-+                    if (_vehBackpackCargo isEqualType [] && {_vehBackpackCargo isNotEqualTo []}) then {
-+                        clearBackpackCargoGlobal _restoredVehicle;
-+                        _vehBackpackCargo params ["_vehBackpacks", "_vehBackpackCounts"];
-+                        {
-+                            private _count = _vehBackpackCounts param [_forEachIndex, 0];
-+                            if (_x != "" && {_count > 0}) then {
-+                                _restoredVehicle addBackpackCargoGlobal [_x, _count];
-+                            };
-+                        } forEach _vehBackpacks;
-+                    };
-+                    if (!isNil "ace_cargo_fnc_loadItem" && {_vehAceCargo isEqualType [] && {_vehAceCargo isNotEqualTo []}}) then {
-+                        {
-+                            private _cargoType = _x param [0, ""];
-+                            switch (_cargoType) do {
-+                                case "virtual": {
-+                                    private _className = _x param [1, ""];
-+                                    if (_className != "") then {
-+                                        [_className, _restoredVehicle, true] call ace_cargo_fnc_loadItem;
-+                                    };
-                                 };
--                            } forEach _hitDamages;
--                        };
--                        _restoredVehicle setFuel _vehFuel;
-+                                case "object": {
-+                                    private _className = _x param [1, ""];
-+                                    if (_className != "") then {
-+                                        private _customName = _x param [2, ""];
-+                                        private _cargoInventory = _x param [3, []];
-+                                        private _cargoObject = createVehicle [_className, [0,0,0], [], 0, "CAN_COLLIDE"];
-+                                        if (!isNull _cargoObject) then {
-+                                            if (_customName != "") then {
-+                                                _cargoObject setVariable ["ace_cargo_customName", _customName, true];
-+                                            };
-+                                            if (_cargoInventory isEqualType [] && {count _cargoInventory == 4}) then {
-+                                                _cargoInventory params ["_cargoItems", "_cargoMags", "_cargoWeapons", "_cargoBackpacks"];
-+                                                if (_cargoItems isEqualType [] && {_cargoItems isNotEqualTo []}) then {
-+                                                    clearItemCargoGlobal _cargoObject;
-+                                                    _cargoItems params ["_cargoItemClasses", "_cargoItemCounts"];
-+                                                    {
-+                                                        private _count = _cargoItemCounts param [_forEachIndex, 0];
-+                                                        if (_x != "" && {_count > 0}) then {
-+                                                            _cargoObject addItemCargoGlobal [_x, _count];
-+                                                        };
-+                                                    } forEach _cargoItemClasses;
-+                                                };
-+                                                if (_cargoMags isEqualType [] && {_cargoMags isNotEqualTo []}) then {
-+                                                    clearMagazineCargoGlobal _cargoObject;
-+                                                    _cargoMags params ["_cargoMagClasses", "_cargoMagCounts"];
-+                                                    {
-+                                                        private _count = _cargoMagCounts param [_forEachIndex, 0];
-+                                                        if (_x != "" && {_count > 0}) then {
-+                                                            _cargoObject addMagazineCargoGlobal [_x, _count];
-+                                                        };
-+                                                    } forEach _cargoMagClasses;
-+                                                };
-+                                                if (_cargoWeapons isEqualType [] && {_cargoWeapons isNotEqualTo []}) then {
-+                                                    clearWeaponCargoGlobal _cargoObject;
-+                                                    _cargoWeapons params ["_cargoWeaponClasses", "_cargoWeaponCounts"];
-+                                                    {
-+                                                        private _count = _cargoWeaponCounts param [_forEachIndex, 0];
-+                                                        if (_x != "" && {_count > 0}) then {
-+                                                            _cargoObject addWeaponCargoGlobal [_x, _count];
-+                                                        };
-+                                                    } forEach _cargoWeaponClasses;
-+                                                };
-+                                                if (_cargoBackpacks isEqualType [] && {_cargoBackpacks isNotEqualTo []}) then {
-+                                                    clearBackpackCargoGlobal _cargoObject;
-+                                                    _cargoBackpacks params ["_cargoBackpackClasses", "_cargoBackpackCounts"];
-+                                                    {
-+                                                        private _count = _cargoBackpackCounts param [_forEachIndex, 0];
-+                                                        if (_x != "" && {_count > 0}) then {
-+                                                            _cargoObject addBackpackCargoGlobal [_x, _count];
-+                                                        };
-+                                                    } forEach _cargoBackpackClasses;
-+                                                };
-+                                            };
-+                                            private _loaded = [_cargoObject, _restoredVehicle, true] call ace_cargo_fnc_loadItem;
-+                                            if (!_loaded) then {
-+                                                deleteVehicle _cargoObject;
-+                                            };
-+                                        };
-+                                    };
-+                                };
-+                            };
-+                        } forEach _vehAceCargo;
-                     };
-                 };
-             };
-             if (!isNull _restoredVehicle) then {
-                 [_unit, _restoredVehicle] spawn {
-                     params ["_unit", "_veh"];
-                     waitUntil {sleep 0.1; alive _unit && {!isNull _veh}};
-                     if (driver _veh != _unit) then {
-                         _unit moveInDriver _veh;
-                     };
-                 };
-             };
-         };
-         _unit setVariable ["MRC_stateRestored", true];
-         ["Restore complete"] remoteExec ["hint", _unit];
+-HL2_fnc_requestMission = {
+-    if (!hasInterface) exitWith {};
+-    private _side = side player;
+-    private _targetFunc = switch (_side) do {
++HL2_fnc_commandMenuRefresh = {
++    private _stack = missionNamespace getVariable ["HL2_CommandMenu_Stack", []];
++    if (_stack isEqualTo []) exitWith {};
++    private _entry = _stack select ((count _stack) - 1);
++    [_entry select 0, _entry select 1] call HL2_fnc_commandMenuRender;
++};
++
++HL2_fnc_requestFactionMission = {
++    params ["_side"];
++    private _func = switch (_side) do {
+         case west: { "TAG_fnc_requestCombineMission" };
+         case east: { "TAG_fnc_requestRebelsMission" };
+         case civilian: { "TAG_fnc_requestCivMission" };
+-        case independent: { "TAG_fnc_requestCivMission" };
++        case independent: { "TAG_fnc_requestCultMission" };
+         default { "" };
      };
-     publicVariable "MRC_fnc_restorePlayerState";
+-    if (_targetFunc isEqualTo "") exitWith {
+-        hint "No mission requests are available for your faction.";
++    if (_func isEqualTo "") exitWith {
++        hint "No mission requests available for your faction.";
+     };
+-    [player] remoteExecCall [_targetFunc, 2];
+-    hintSilent "Mission request sent.";
++    [player] remoteExecCall [_func, 2];
+ };
+ 
+-HL2_fnc_rallySquad = {
+-    if (!hasInterface) exitWith {};
+-    private _tokenClass = "VRP_HL_Token_Item";
+-    private _cost = 5;
+-    private _group = group player;
+-    if (isNull _group) exitWith { hint "You are not in a group."; };
+-    if !(leader _group isEqualTo player) exitWith { hint "Only group leaders can rally the squad."; };
+-
+-    private _mates = (units _group) select { _x != player && alive _x };
+-    if (_mates isEqualTo []) exitWith { hint "No squadmates available."; };
+-
+-    private _tokens = { _x == _tokenClass } count (items player);
+-    if (_tokens < _cost) exitWith { hint format ["You need %1 tokens to rally the squad.", _cost]; };
++HL2_fnc_commandMenuBuild = {
++    params ["_menuId", "_context"];
++    private _side = _context getOrDefault ["side", side player];
++    private _result = createHashMap;
++    _result set ["title", (missionNamespace getVariable ["HL2_CommandMenu_Titles", createHashMap]) getOrDefault [_side, "Field Support"]];
++    _result set ["useRandomSubtitle", true];
+ 
+-    for "_i" from 1 to _cost do { player removeItem _tokenClass; };
++    switch (_menuId) do {
++        case "west_main": {
++            _result set ["buttons", [
++                ["Request Mission", {
++                    params ["_control", "_ctx", "_data"];
++                    [(_ctx getOrDefault ["side", west])] call HL2_fnc_requestFactionMission;
++                    hintSilent "Mission request transmitted.";
++                }, { true }, "Transmit a directive request to Overwatch."],
++                ["Support Menu", {
++                    params ["_control", "_ctx", "_data"];
++                    ["west_support", _ctx] call HL2_fnc_commandMenuPush;
++                }, { true }, "Access tactical requisitions."],
++                ["Exit", { closeDialog 0; }, { true }]
++            ]];
++        };
++        case "west_support": {
++            _result set ["useRandomSubtitle", false];
++            _result set ["subtitle", "Union tactical support interface online."];
++            _result set ["buttons", [
++                ["Back", { [] call HL2_fnc_commandMenuPop; }, { true }],
++                ["Request Backup", {
++                    params ["_control", "_ctx", "_data"];
++                    ["west_reinforce", _ctx] call HL2_fnc_commandMenuPush;
++                }, { true }, "Radio in a supporting squad."],
++                ["Exit", { closeDialog 0; }, { true }]
++            ]];
++        };
++        case "west_reinforce": {
++            _result set ["useRandomSubtitle", false];
++            _result set ["subtitle", "Select reinforcement package."];
++            private _squads = [
++                ["Patrol Squad (10 Tokens)", "patrol", 10, "Patrol CP detachment."],
++                ["Conscript Squad (12 Tokens)", "conscript", 12, "Conscript fireteam with medical support."],
++                ["Riot Squad (15 Tokens)", "riot", 15, "Riot team equipped for suppression."],
++                ["Demo Squad (17 Tokens)", "demo", 17, "Demolition specialists with AA launchers."],
++                ["Overwatch Deployment (20 Tokens)", "overwatch", 20, "High-priority Overwatch unit."]
++            ];
++            private _buttons = [["Cancel", { [] call HL2_fnc_commandMenuPop; }, { true }]];
++            {
++                _x params ["_label", "_id", "_cost", "_tip"];
++                private _entry = [
++                    _label,
++                    {
++                        params ["_control", "_ctx", "_data"];
++                        _data params ["_squadId", "_cost"];
++                        if ([ _cost ] call HL2_fnc_attemptPurchase) then {
++                            private _next = createHashMapFromArray [["side", _ctx getOrDefault ["side", west]], ["squad", _squadId], ["cost", _cost]];
++                            ["west_insertion", _next] call HL2_fnc_commandMenuPush;
++                            hintSilent "Reinforcement authorization accepted.";
++                        };
++                        [] call HL2_fnc_commandMenuRefresh;
++                    },
++                    { params ["_ctx", "_data"]; true },
++                    _tip,
++                    [_id, _cost]
++                ];
++                _buttons pushBack _entry;
++            } forEach _squads;
++            _result set ["buttons", _buttons];
++        };
++        case "west_insertion": {
++            _result set ["useRandomSubtitle", false];
++            _result set ["subtitle", "Select insertion method."];
++            private _buttons = [
++                ["Land Insertion", {
++                    params ["_control", "_ctx", "_data"];
++                    [_ctx, "land"] call HL2_fnc_sendReinforcementRequest;
++                }, { params ["_ctx", "_data"]; true }, "Deploy via armored transport."],
++                ["Air Insertion", {
++                    params ["_control", "_ctx", "_data"];
++                    [_ctx, "air"] call HL2_fnc_sendReinforcementRequest;
++                }, { params ["_ctx", "_data"]; true }, "Deploy via helicopter."],
++                ["Sea Insertion", {
++                    params ["_control", "_ctx", "_data"];
++                    [_ctx, "sea"] call HL2_fnc_sendReinforcementRequest;
++                }, { params ["_ctx", "_data"]; true }, "Deploy via RHIB."],
++                ["Cancel", { [] call HL2_fnc_commandMenuPop; }, { true }]
++            ];
++            _result set ["buttons", _buttons];
++        };
++        case "east_main": {
++            _result set ["buttons", [
++                ["Request Mission", {
++                    params ["_control", "_ctx", "_data"];
++                    [(_ctx getOrDefault ["side", east])] call HL2_fnc_requestFactionMission;
++                    hintSilent "Mission request sent over LambdaNet.";
++                }],
++                ["Support Menu", {
++                    params ["_control", "_ctx", "_data"];
++                    ["east_support", _ctx] call HL2_fnc_commandMenuPush;
++                }],
++                ["Exit", { closeDialog 0; }]
++            ]];
++        };
++        case "east_support": {
++            _result set ["useRandomSubtitle", false];
++            _result set ["subtitle", "Call in what you need." ];
++            _result set ["buttons", [
++                ["Back", { [] call HL2_fnc_commandMenuPop; }, { true }],
++                ["Request Reinforcements", {
++                    params ["_control", "_ctx", "_data"];
++                    ["east_reinforce", _ctx] call HL2_fnc_commandMenuPush;
++                }, { true }, "Signal friendly cells."],
++                ["Exit", { closeDialog 0; }]
++            ]];
++        };
++        case "east_reinforce": {
++            _result set ["useRandomSubtitle", false];
++            _result set ["subtitle", "Select the cell you're rallying." ];
++            private _squads = [
++                ["Militia Squad (12 Tokens)", "militia", 12, "Mixed militia with medic."],
++                ["Sniper Squad (13 Tokens)", "sniper", 13, "Dedicated marksmen."],
++                ["AT Squad (15 Tokens)", "at", 15, "Rocket squad ready for armor."],
++                ["AA Squad (18 Tokens)", "aa", 18, "Surface-to-air team."],
++                ["Elite Lambda Squad (20 Tokens)", "lambda", 20, "Top-tier Lambda operatives." ]
++            ];
++            private _buttons = [["Cancel", { [] call HL2_fnc_commandMenuPop; }, { true }]];
++            {
++                _x params ["_label", "_id", "_cost", "_tip"];
++                private _entry = [
++                    _label,
++                    {
++                        params ["_control", "_ctx", "_data"];
++                        _data params ["_squadId", "_cost"];
++                        if ([ _cost ] call HL2_fnc_attemptPurchase) then {
++                            private _next = createHashMapFromArray [["side", _ctx getOrDefault ["side", east]], ["squad", _squadId], ["cost", _cost]];
++                            ["east_insertion", _next] call HL2_fnc_commandMenuPush;
++                            hintSilent "Resistance reinforcements inbound.";
++                        };
++                        [] call HL2_fnc_commandMenuRefresh;
++                    },
++                    { params ["_ctx", "_data"]; true },
++                    _tip,
++                    [_id, _cost]
++                ];
++                _buttons pushBack _entry;
++            } forEach _squads;
++            _result set ["buttons", _buttons];
++        };
++        case "east_insertion": {
++            _result set ["useRandomSubtitle", false];
++            _result set ["subtitle", "Pick their approach route." ];
++            private _buttons = [
++                ["Land Insertion", {
++                    params ["_control", "_ctx", "_data"];
++                    [_ctx, "land"] call HL2_fnc_sendReinforcementRequest;
++                }],
++                ["Air Insertion", {
++                    params ["_control", "_ctx", "_data"];
++                    [_ctx, "air"] call HL2_fnc_sendReinforcementRequest;
++                }],
++                ["Sea Insertion", {
++                    params ["_control", "_ctx", "_data"];
++                    [_ctx, "sea"] call HL2_fnc_sendReinforcementRequest;
++                }],
++                ["Cancel", { [] call HL2_fnc_commandMenuPop; }, { true }]
++            ];
++            _result set ["buttons", _buttons];
++        };
++        case "civ_main": {
++            _result set ["buttons", [
++                ["Request Mission", {
++                    params ["_control", "_ctx", "_data"];
++                    [civilian] call HL2_fnc_requestFactionMission;
++                    hintSilent "CWU assignment request submitted.";
++                }],
++                ["Exit", { closeDialog 0; }]
++            ]];
++        };
++        case "ind_main": {
++            _result set ["buttons", [
++                ["Request Mission", {
++                    params ["_control", "_ctx", "_data"];
++                    [independent] call HL2_fnc_requestFactionMission;
++                    hintSilent "The whisper grows louder.";
++                }],
++                ["Exit", { closeDialog 0; }]
++            ]];
++        };
++        default {
++            _result set ["buttons", [["Exit", { closeDialog 0; }]]];
++        };
++    };
+ 
+-    private _leaderPos = getPosATL player;
+-    {
+-        private _targetPos = [player, 3 + random 2, random 360] call BIS_fnc_relPos;
+-        if ((count _targetPos) < 3) then { _targetPos pushBack 0; };
+-        _targetPos set [2, _leaderPos select 2];
+-        [_x, _targetPos] remoteExec ["setPosATL", _x];
+-    } forEach _mates;
+-
+-    [format ["%1 called a rally. Forming up!", name player]] remoteExec ["systemChat", units _group];
+-    [] call HL2_fnc_updateCommandMenu;
++    _result
+ };
++missionNamespace setVariable ["HL2_CommandMenu_Builder", HL2_fnc_commandMenuBuild];
+ 
+-HL2_fnc_requestReinforcements = {
+-    if (!hasInterface) exitWith {};
+-    private _side = side player;
+-    if !(_side in [west, east]) exitWith { hint "Only Combine or Rebel forces may request reinforcements."; };
+-
+-    private _tokenClass = "VRP_HL_Token_Item";
+-    private _cost = 10;
+-    private _tokens = { _x == _tokenClass } count (items player);
+-    if (_tokens < _cost) exitWith { hint format ["You need %1 tokens to request reinforcements.", _cost]; };
+-
+-    for "_i" from 1 to _cost do { player removeItem _tokenClass; };
+-
+-    [player, getPosATL player] remoteExec ["HL2_fnc_spawnReinforcements", 2];
+-    hintSilent "Reinforcements inbound.";
+-    [] call HL2_fnc_updateCommandMenu;
++HL2_fnc_sendReinforcementRequest = {
++    params ["_context", "_method"];
++    private _side = _context getOrDefault ["side", sideUnknown];
++    private _squad = _context getOrDefault ["squad", ""];
++    if (_squad isEqualTo "") exitWith {};
++    [player, _side, _squad, _method] remoteExecCall ["HL2_fnc_dispatchReinforcements", 2];
++    hintSilent "Insertion data transmitted.";
++    [] call HL2_fnc_commandMenuPop;
+ };
+ 
+-HL2_fnc_requestRecon = {
++HL2_fnc_openCommandMenu = {
+     if (!hasInterface) exitWith {};
+-    private _side = side player;
+-    if !(_side in [west, east]) exitWith { hint "Only Combine or Rebel forces may request recon flights."; };
+-
+-    private _tokenClass = "VRP_HL_Token_Item";
+-    private _cost = 5;
+-    private _tokens = { _x == _tokenClass } count (items player);
+-    if (_tokens < _cost) exitWith { hint format ["You need %1 tokens to request recon.", _cost]; };
++    if (!isNull findDisplay 9000) exitWith {};
+ 
+-    for "_i" from 1 to _cost do { player removeItem _tokenClass; };
++    createDialog "HL2_CommandMenu";
++    missionNamespace setVariable ["HL2_CommandMenu_Stack", []];
+ 
+-    [player, getPosATL player] remoteExec ["HL2_fnc_launchRecon", 2];
+-    hintSilent "Recon flight inbound.";
+-    [] call HL2_fnc_updateCommandMenu;
++    private _side = side player;
++    private _menuId = switch (_side) do {
++        case west: { "west_main" };
++        case east: { "east_main" };
++        case civilian: { "civ_main" };
++        case independent: { "ind_main" };
++        default { "ind_main" };
++    };
++    private _context = createHashMapFromArray [["side", _side]];
++    [_menuId, _context] call HL2_fnc_commandMenuPush;
  };
  
  [] spawn {
-     // Allow time for players to request and receive their state before the first save
-     sleep 30;
-     while {true} do {
-         {
-             [_x] call MRC_fnc_savePlayerState;
+     waitUntil { !isNull player };
+     waitUntil { !isNull findDisplay 46 };
+     if (isNil { missionNamespace getVariable "HL2_CommandMenu_KeyEH" }) then {
+         private _eh = (findDisplay 46) displayAddEventHandler ["KeyDown", {
+             params ["_display", "_key", "_shift", "_ctrl", "_alt"];
+             if (_key isEqualTo 21 && { !_shift && !_ctrl && !_alt }) then {
+                 if (isNull findDisplay 9000) then {
+                     [] call HL2_fnc_openCommandMenu;
+                 } else {
+                     closeDialog 0;
+                 };
+                 true
+             } else {
+                 false
+             };
+         }];
+         missionNamespace setVariable ["HL2_CommandMenu_KeyEH", _eh];
+     };
+-};
+\ No newline at end of file
++}; 
+EOF
+)
