@@ -155,18 +155,20 @@ class HL2_CommandMenu
         {
                 class Background: RscText
                 {
-                        colorBackground[] = {0, 0, 0, 0.8};
-                        x = 0.35;
-                        y = 0.25;
-                        w = 0.3;
-                        h = 0.34;
+                        idc = 9005;
+                        colorBackground[] = {0, 0, 0, 0.85};
+                        x = 0.32;
+                        y = 0.18;
+                        w = 0.36;
+                        h = 0.52;
                 };
                 class Frame: RscFrame
                 {
-                        x = 0.35;
-                        y = 0.25;
-                        w = 0.3;
-                        h = 0.34;
+                        idc = 9006;
+                        x = 0.32;
+                        y = 0.18;
+                        w = 0.36;
+                        h = 0.52;
                 };
         };
 
@@ -175,69 +177,95 @@ class HL2_CommandMenu
                 class Title: RscText
                 {
                         idc = 9001;
-                        text = "Field Support";
-                        colorBackground[] = {0.1, 0.4, 0.6, 0.9};
+                        text = "";
+                        colorBackground[] = {0.1, 0.4, 0.6, 0.95};
+                        colorText[] = {1, 1, 1, 1};
                         style = 2;
-                        x = 0.35;
-                        y = 0.25;
-                        w = 0.3;
-                        h = 0.04;
-                        SizeEx = 0.045;
+                        x = 0.32;
+                        y = 0.18;
+                        w = 0.36;
+                        h = 0.05;
+                        SizeEx = 0.05;
                 };
 
-                class RequestMission: RscButton
+                class Subtitle: RscText
+                {
+                        idc = 9002;
+                        text = "";
+                        style = 2;
+                        lineSpacing = 1;
+                        x = 0.32;
+                        y = 0.235;
+                        w = 0.36;
+                        h = 0.06;
+                        SizeEx = 0.035;
+                        colorText[] = {1, 1, 1, 0.9};
+                };
+
+                class Button1: RscButton
                 {
                         idc = 9100;
-                        text = "Request Mission";
-                        x = 0.365;
-                        y = 0.31;
-                        w = 0.27;
-                        h = 0.045;
-                        action = "[] call HL2_fnc_requestMission;";
+                        text = "";
+                        x = 0.335;
+                        y = 0.305;
+                        w = 0.33;
+                        h = 0.055;
+                        action = "";
                 };
 
-                class RallySquad: RscButton
+                class Button2: RscButton
                 {
                         idc = 9101;
-                        text = "Rally Squad (5 Tokens)";
-                        x = 0.365;
+                        text = "";
+                        x = 0.335;
                         y = 0.365;
-                        w = 0.27;
-                        h = 0.045;
-                        action = "[] call HL2_fnc_rallySquad;";
+                        w = 0.33;
+                        h = 0.055;
+                        action = "";
                 };
 
-                class RequestReinforcements: RscButton
+                class Button3: RscButton
                 {
                         idc = 9102;
-                        text = "Request Reinforcements (10 Tokens)";
-                        x = 0.365;
-                        y = 0.42;
-                        w = 0.27;
-                        h = 0.045;
-                        action = "[] call HL2_fnc_requestReinforcements;";
+                        text = "";
+                        x = 0.335;
+                        y = 0.425;
+                        w = 0.33;
+                        h = 0.055;
+                        action = "";
                 };
 
-                class RequestRecon: RscButton
+                class Button4: RscButton
                 {
                         idc = 9103;
-                        text = "Request Recon (5 Tokens)";
-                        x = 0.365;
-                        y = 0.475;
-                        w = 0.27;
-                        h = 0.045;
-                        action = "[] call HL2_fnc_requestRecon;";
+                        text = "";
+                        x = 0.335;
+                        y = 0.485;
+                        w = 0.33;
+                        h = 0.055;
+                        action = "";
                 };
 
-                class Close: RscButton
+                class Button5: RscButton
                 {
                         idc = 9104;
-                        text = "Close";
-                        x = 0.365;
-                        y = 0.53;
-                        w = 0.27;
-                        h = 0.045;
-                        action = "closeDialog 0;";
+                        text = "";
+                        x = 0.335;
+                        y = 0.545;
+                        w = 0.33;
+                        h = 0.055;
+                        action = "";
+                };
+
+                class Button6: RscButton
+                {
+                        idc = 9105;
+                        text = "";
+                        x = 0.335;
+                        y = 0.605;
+                        w = 0.33;
+                        h = 0.055;
+                        action = "";
                 };
         };
 };
