@@ -79,7 +79,7 @@ _configs set [west, createHashMapFromArray [
         "Reminder: Mission failure will result in permanent off-world assignment.",
         "Reminder: 100 sterilized credits qualifies non-mechanical reproduction simulation.",
         "Reminder: Memory replacement is the first step toward rank privileges.",
-        "Reminder: Protection Team member: your family cohesion is preserved."
+        "Protection Team member: your family cohesion is preserved."
     ]],
     ["theme", createHashMapFromArray [
         ["background", [0.02, 0.07, 0.18, 0.95]],
@@ -117,7 +117,7 @@ _configs set [civilian, createHashMapFromArray [
     ["subtitleOptions", [
         "Strength. Unity. Obedience.",
         "Join the CWU Today!",
-        "Citizen Reminder: Visit your local CWU Office to volunteer for Infestation Control duty!",
+        "Visit your local CWU Office to volunteer for Infestation Control duty!",
         "Citizen Reminder: a civilized society demands swift and targeted oversight.",
         "Citizen Reminder: inaction is conspiracy."
     ]],
