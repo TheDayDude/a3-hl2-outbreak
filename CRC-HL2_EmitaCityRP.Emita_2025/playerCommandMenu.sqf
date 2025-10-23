@@ -4,28 +4,74 @@ missionNamespace setVariable ["HL2_CommandMenu_Configured", true];
 
 private _configs = createHashMap;
 
+private _bankMenu = [
+    ["Back", "pop", nil, "Return to the previous menu."],
+    ["Give 1 Token", "hint", "Token dispensers are currently offline pending banking overhaul."],
+    ["Give 5 Tokens", "hint", "Token dispensers are currently offline pending banking overhaul."],
+    ["Give 10 Tokens", "hint", "Token dispensers are currently offline pending banking overhaul."],
+    ["Give 20 Tokens", "hint", "Token dispensers are currently offline pending banking overhaul."],
+    ["Give 100 Tokens", "hint", "Token dispensers are currently offline pending banking overhaul."]
+];
+
 private _westMenus = createHashMapFromArray [
     ["main", [
         ["Request Mission", "code", { [] call HL2_fnc_requestMission; }, "Request a mission assignment from the Combine command network."],
         ["Support Menu", "push", "support", "Open tactical support requisition options."],
-        ["Give Tokens to Player", "hint", "Credit disbursement terminal offline. Await further orders.", "Gives Tokens to Player you are looking at."],
+        ["Give Tokens to Player", "push", "banking", "Access token disbursement options."],
         ["Manage Outpost", "hint", "Outpost management console is currently under maintenance.", "Placeholder action for testing."],
         ["Garage Vehicle", "hint", "Motor pool automation is currently offline.", "Placeholder action for testing."],
         ["Exit", "close", nil, "Close the command interface."]
     ]],
+    ["banking", _bankMenu],
     ["support", [
         ["Back", "pop", nil, "Return to the main menu."],
         ["Request Backup", "push", "backup", "Radio for additional Protection Team units."],
-        ["Request Strike", "hint", "Strike support requisition is not yet available.", "Placeholder action for testing."],
-        ["Request Recon", "hint", "Recon flight scheduling is not yet available.", "Placeholder action for testing."]
+        ["Request Strike", "push", "strike", "Request a strike package from command."],
+        ["Request Recon", "hint", "Recon flight scheduling is not yet available.", "Placeholder action for testing."],
+        ["Synth Deployment", "push", "synth", "Requisition specialized synth assets."]
     ]],
     ["backup", [
-        ["Dummy Button 1", "hint", "Backup channel test option 1 acknowledged.", "Placeholder action for testing."],
-        ["Dummy Button 2", "hint", "Backup channel test option 2 acknowledged.", "Placeholder action for testing."],
-        ["Dummy Button 3", "hint", "Backup channel test option 3 acknowledged.", "Placeholder action for testing."],
-        ["Dummy Button 4", "hint", "Backup channel test option 4 acknowledged.", "Placeholder action for testing."],
-        ["Dummy Button 5", "hint", "Backup channel test option 5 acknowledged.", "Placeholder action for testing."],
-        ["Back", "pop", nil, "Return to the support menu."]
+        ["Back", "pop", nil, "Return to the support menu."],
+        ["Protection Squad", "code", {
+            missionNamespace setVariable ["HL2_CommandMenu_CombineBackupSelection", "Protection Squad"];
+            ["insertion"] call HL2_fnc_commandMenuPush;
+        }, "Deploy a Protection Team via insertion."],
+        ["Conscript Squad", "code", {
+            missionNamespace setVariable ["HL2_CommandMenu_CombineBackupSelection", "Conscript Squad"];
+            ["insertion"] call HL2_fnc_commandMenuPush;
+        }, "Deploy a Conscript squad via insertion."],
+        ["Riot Squad", "code", {
+            missionNamespace setVariable ["HL2_CommandMenu_CombineBackupSelection", "Riot Squad"];
+            ["insertion"] call HL2_fnc_commandMenuPush;
+        }, "Deploy a Riot squad via insertion."],
+        ["AT/AA Squad", "code", {
+            missionNamespace setVariable ["HL2_CommandMenu_CombineBackupSelection", "AT/AA Squad"];
+            ["insertion"] call HL2_fnc_commandMenuPush;
+        }, "Deploy an anti-armor/anti-air squad via insertion."],
+        ["Overwatch", "code", {
+            missionNamespace setVariable ["HL2_CommandMenu_CombineBackupSelection", "Overwatch"];
+            ["insertion"] call HL2_fnc_commandMenuPush;
+        }, "Request an Overwatch unit for insertion."]
+    ]],
+    ["insertion", [
+        ["Back", "pop", nil, "Return to squad selection."],
+        ["Land", "hint", "Insertion routing pending tactical approval."],
+        ["Sea", "hint", "Insertion routing pending tactical approval."],
+        ["Air", "hint", "Insertion routing pending tactical approval."]
+    ]],
+    ["strike", [
+        ["Back", "pop", nil, "Return to the support menu."],
+        ["Plasma Mortar", "hint", "Strike package not yet available. Await further instructions."],
+        ["Biotic Cannister", "hint", "Strike package not yet available. Await further instructions."],
+        ["Illumination Mortar", "hint", "Strike package not yet available. Await further instructions."],
+        ["Smoke Mortar", "hint", "Strike package not yet available. Await further instructions."],
+        ["Gunship Strike", "hint", "Strike package not yet available. Await further instructions."]
+    ]],
+    ["synth", [
+        ["Back", "pop", nil, "Return to the support menu."],
+        ["Elite Synth Squad", "hint", "Synth deployment authorization pending."],
+        ["Hunter Pack", "hint", "Synth deployment authorization pending."],
+        ["Strider", "hint", "Synth deployment authorization pending."]
     ]]
 ];
 
@@ -33,24 +79,54 @@ private _eastMenus = createHashMapFromArray [
     ["main", [
         ["Request Mission", "code", { [] call HL2_fnc_requestMission; }, "Request a mission briefing from the resistance network."],
         ["Support Menu", "push", "support", "Open the guerrilla support board."],
-        ["Give Tokens to Player", "hint", "Sorry, the donation drive hasn't cleared yet.", "Gives Tokens to Player you are looking at."],
+        ["Give Tokens to Player", "push", "banking", "Share tokens with a comrade."],
         ["Manage Outpost", "hint", "Outpost coordination terminal under construction.", "Placeholder action for testing."],
         ["Garage Vehicle", "hint", "Safehouse garage controls are being rewired.", "Placeholder action for testing."],
         ["Exit", "close", nil, "Close the command interface."]
     ]],
+    ["banking", _bankMenu],
     ["support", [
         ["Back", "pop", nil, "Return to the main menu."],
         ["Request Backup", "push", "backup", "Raise local cells for reinforcements."],
-        ["Request Strike", "hint", "Strike package unavailable. Keep fighting.", "Placeholder action for testing."],
+        ["Request Strike", "push", "strike", "Call in a resistance strike package."],
         ["Request Recon", "hint", "Recon drone deployment coming soon.", "Placeholder action for testing."]
     ]],
     ["backup", [
-        ["Dummy Button 1", "hint", "Backup placeholder 1: radio check.", "Placeholder action for testing."],
-        ["Dummy Button 2", "hint", "Backup placeholder 2: radio check.", "Placeholder action for testing."],
-        ["Dummy Button 3", "hint", "Backup placeholder 3: radio check.", "Placeholder action for testing."],
-        ["Dummy Button 4", "hint", "Backup placeholder 4: radio check.", "Placeholder action for testing."],
-        ["Dummy Button 5", "hint", "Backup placeholder 5: radio check.", "Placeholder action for testing."],
-        ["Back", "pop", nil, "Return to the support menu."]
+        ["Back", "pop", nil, "Return to the support menu."],
+        ["Militia Squad", "code", {
+            missionNamespace setVariable ["HL2_CommandMenu_RebelBackupSelection", "Militia Squad"];
+            ["insertion"] call HL2_fnc_commandMenuPush;
+        }, "Assemble a militia squad for insertion."],
+        ["Sniper Squad", "code", {
+            missionNamespace setVariable ["HL2_CommandMenu_RebelBackupSelection", "Sniper Squad"];
+            ["insertion"] call HL2_fnc_commandMenuPush;
+        }, "Assemble a sniper team for insertion."],
+        ["AT Squad", "code", {
+            missionNamespace setVariable ["HL2_CommandMenu_RebelBackupSelection", "AT Squad"];
+            ["insertion"] call HL2_fnc_commandMenuPush;
+        }, "Assemble an anti-armor squad for insertion."],
+        ["AA Squad", "code", {
+            missionNamespace setVariable ["HL2_CommandMenu_RebelBackupSelection", "AA Squad"];
+            ["insertion"] call HL2_fnc_commandMenuPush;
+        }, "Assemble an anti-air squad for insertion."],
+        ["Lambda Squad", "code", {
+            missionNamespace setVariable ["HL2_CommandMenu_RebelBackupSelection", "Lambda Squad"];
+            ["insertion"] call HL2_fnc_commandMenuPush;
+        }, "Assemble a Lambda squad for insertion."]
+    ]],
+    ["insertion", [
+        ["Back", "pop", nil, "Return to squad selection."],
+        ["Land", "hint", "Insertion routes are being scouted."],
+        ["Sea", "hint", "Insertion routes are being scouted."],
+        ["Air", "hint", "Insertion routes are being scouted."]
+    ]],
+    ["strike", [
+        ["Back", "pop", nil, "Return to the support menu."],
+        ["Mortar Strike", "hint", "Strike support is still being coordinated."],
+        ["Illumination Strike", "hint", "Strike support is still being coordinated."],
+        ["Smoke Strike", "hint", "Strike support is still being coordinated."],
+        ["Helicopter Strafe", "hint", "Strike support is still being coordinated."],
+        ["Tactical Xen Portal", "hint", "Strike support is still being coordinated."]
     ]]
 ];
 
@@ -58,18 +134,20 @@ private _civilMenus = createHashMapFromArray [
     ["main", [
         ["Request Mission", "code", { [] call HL2_fnc_requestMission; }, "Request a sanctioned task from the CWU dispatch office."],
         ["Manage Home", "hint", "Residential management services are being audited.", "Placeholder action for testing."],
-        ["Give Tokens to Player", "hint", "Payroll window is currently closed.", "Gives Tokens to Player you are looking at."],
+        ["Give Tokens to Player", "push", "banking", "Access token disbursement options."],
         ["Exit", "close", nil, "Close the command interface."]
-    ]]
+    ]],
+    ["banking", _bankMenu]
 ];
 
 private _independentMenus = createHashMapFromArray [
     ["main", [
         ["Request Mission", "code", { [] call HL2_fnc_requestMission; }, "Seek new guidance from the abyssal network."],
         ["Manage Coven", "hint", "The coven stirs, but the ledger is unfinished.", "Placeholder action for testing."],
-        ["Give Tokens to Player", "hint", "The tithe has not been collected yet.", "Gives Tokens to Player you are looking at."],
+        ["Give Tokens to Player", "push", "banking", "Share tithe among the faithful."],
         ["Exit", "close", nil, "Close the command interface."]
-    ]]
+    ]],
+    ["banking", _bankMenu]
 ];
 
 _configs set [west, createHashMapFromArray [
