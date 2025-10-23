@@ -8,7 +8,7 @@ private _westMenus = createHashMapFromArray [
     ["main", [
         ["Request Mission", "code", { [] call HL2_fnc_requestMission; }, "Request a mission assignment from the Combine command network."],
         ["Support Menu", "push", "support", "Open tactical support requisition options."],
-        ["Give Player Money", "hint", "Credit disbursement terminal offline. Await further orders.", "Placeholder action for testing."],
+        ["Banking Menu", "hint", "Credit disbursement terminal offline. Await further orders.", "Placeholder action for testing."],
         ["Manage Outpost", "hint", "Outpost management console is currently under maintenance.", "Placeholder action for testing."],
         ["Garage Vehicle", "hint", "Motor pool automation is currently offline.", "Placeholder action for testing."],
         ["Exit", "close", nil, "Close the command interface."]
@@ -33,7 +33,7 @@ private _eastMenus = createHashMapFromArray [
     ["main", [
         ["Request Mission", "code", { [] call HL2_fnc_requestMission; }, "Request a mission briefing from the resistance network."],
         ["Support Menu", "push", "support", "Open the guerrilla support board."],
-        ["Give Player Money", "hint", "Sorry, the donation drive hasn't cleared yet.", "Placeholder action for testing."],
+        ["Banking Menu", "hint", "Sorry, the donation drive hasn't cleared yet.", "Placeholder action for testing."],
         ["Manage Outpost", "hint", "Outpost coordination terminal under construction.", "Placeholder action for testing."],
         ["Garage Vehicle", "hint", "Safehouse garage controls are being rewired.", "Placeholder action for testing."],
         ["Exit", "close", nil, "Close the command interface."]
@@ -58,7 +58,7 @@ private _civilMenus = createHashMapFromArray [
     ["main", [
         ["Request Mission", "code", { [] call HL2_fnc_requestMission; }, "Request a sanctioned task from the CWU dispatch office."],
         ["Manage Home", "hint", "Residential management services are being audited.", "Placeholder action for testing."],
-        ["Give Player Money", "hint", "Payroll window is currently closed.", "Placeholder action for testing."],
+        ["Banking Menu", "hint", "Payroll window is currently closed.", "Placeholder action for testing."],
         ["Exit", "close", nil, "Close the command interface."]
     ]]
 ];
@@ -67,7 +67,7 @@ private _independentMenus = createHashMapFromArray [
     ["main", [
         ["Request Mission", "code", { [] call HL2_fnc_requestMission; }, "Seek new guidance from the abyssal network."],
         ["Manage Coven", "hint", "The coven stirs, but the ledger is unfinished.", "Placeholder action for testing."],
-        ["Give Player Money", "hint", "The tithe has not been collected yet.", "Placeholder action for testing."],
+        ["Banking Menu", "hint", "The tithe has not been collected yet.", "Placeholder action for testing."],
         ["Exit", "close", nil, "Close the command interface."]
     ]]
 ];
