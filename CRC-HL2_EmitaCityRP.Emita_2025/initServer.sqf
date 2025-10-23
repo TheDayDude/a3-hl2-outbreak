@@ -85,6 +85,110 @@ if (isNil "MRC_fnc_assignCID") then {
     publicVariable "MRC_fnc_assignCID";
 };
 
+if (isNil "HL2_fnc_serverAdjustCitizenScore") then {
+    HL2_fnc_serverAdjustCitizenScore = {
+        params ["_target", "_source", "_category"];
+        if (!isServer) exitWith {};
+        if (isNull _target || {!isPlayer _target}) exitWith {};
+
+        private _cid = _target getVariable ["CID_Number", nil];
+        if (isNil "_cid") exitWith {
+            if (!isNull _source) then {
+                ["Target does not have a registered CID."] remoteExecCall ["hintSilent", owner _source];
+            };
+        };
+
+        if !(_category in ["LOYALTY", "MAL"]) exitWith {};
+
+        private _map = if (_category == "LOYALTY") then {
+            CID_Loyalty
+        } else {
+            CID_Malcompliance
+        };
+
+        private _current = _map getOrDefault [_cid, 0];
+        private _newValue = _current + 1;
+        _map set [_cid, _newValue];
+
+        switch (_category) do {
+            case "LOYALTY": { CID_Loyalty = _map; publicVariable "CID_Loyalty"; };
+            case "MAL": { CID_Malcompliance = _map; publicVariable "CID_Malcompliance"; };
+        };
+
+        private _typeName = if (_category == "LOYALTY") then { "Loyalty" } else { "Malcompliance" };
+        private _targetName = name _target;
+
+        if (!isNull _source) then {
+            [format ["%1 now has %2 %3 Point(s).", _targetName, _newValue, _typeName]] remoteExecCall ["hintSilent", owner _source];
+        };
+
+        [format ["You received a %1 Point from %2.", _typeName, if (isNull _source) then {"an administrator"} else {name _source}]] remoteExecCall ["hintSilent", owner _target];
+    };
+    publicVariable "HL2_fnc_serverAdjustCitizenScore";
+};
+
+if (isNil "HL2_fnc_serverAwardLoyaltyPoint") then {
+    HL2_fnc_serverAwardLoyaltyPoint = {
+        params ["_target", "_source"];
+        if (!isServer) exitWith {};
+        [_target, _source, "LOYALTY"] call HL2_fnc_serverAdjustCitizenScore;
+    };
+    publicVariable "HL2_fnc_serverAwardLoyaltyPoint";
+};
+
+if (isNil "HL2_fnc_serverAwardMalcompliancePoint") then {
+    HL2_fnc_serverAwardMalcompliancePoint = {
+        params ["_target", "_source"];
+        if (!isServer) exitWith {};
+        [_target, _source, "MAL"] call HL2_fnc_serverAdjustCitizenScore;
+    };
+    publicVariable "HL2_fnc_serverAwardMalcompliancePoint";
+};
+
+if (isNil "HL2_fnc_serverShowCivilRegistry") then {
+    HL2_fnc_serverShowCivilRegistry = {
+        params ["_requester"];
+        if (!isServer) exitWith {};
+        if (isNull _requester || {!isPlayer _requester}) exitWith {};
+
+        private _lines = [];
+        {
+            if (!isPlayer _x) then { continue };
+
+            private _cid = _x getVariable ["CID_Number", "-"];
+            private _prefix = switch (side _x) do {
+                case civilian: { "CIT" };
+                case west: { "UNIT" };
+                case independent: { "???" };
+                case east: { "MAL" };
+                default { "???" };
+            };
+            private _fullCID = format ["%1-%2", _prefix, _cid];
+
+            private _loyalty = if (!isNil "CID_Loyalty") then { CID_Loyalty getOrDefault [_cid, 0] } else { 0 };
+            private _mal = if (!isNil "CID_Malcompliance") then { CID_Malcompliance getOrDefault [_cid, 0] } else { 0 };
+            private _acl = _x getVariable ["wantedLevel", 0];
+            private _status = if (_acl > 0) then {
+                format ["Anticitizen %1", _acl]
+            } else {
+                format ["MP %1", _mal]
+            };
+
+            private _line = format ["%1 (%2) | LP: %3 | %4", name _x, _fullCID, _loyalty, _status];
+            _lines pushBack _line;
+        } forEach allPlayers;
+
+        private _message = if (_lines isEqualTo []) then {
+            "Civil Registry\nNo registered citizens detected."
+        } else {
+            format ["Civil Registry\n%1", _lines joinString "\n"]
+        };
+
+        [_message] remoteExecCall ["hintSilent", owner _requester];
+    };
+    publicVariable "HL2_fnc_serverShowCivilRegistry";
+};
+
 private _savedDate = profileNamespace getVariable ["SavedDate", []];
 if !(_savedDate isEqualTo []) then {
     setDate _savedDate;

@@ -4,7 +4,7 @@ missionNamespace setVariable ["HL2_CommandMenu_Configured", true];
 
 private _configs = createHashMap;
 
-private _bankMenu = [
+private _donationMenu = [
     ["Back", "pop", nil, "Return to the previous menu."],
     ["Give 1 Token", "hint", "Token dispensers are currently offline pending banking overhaul."],
     ["Give 5 Tokens", "hint", "Token dispensers are currently offline pending banking overhaul."],
@@ -17,12 +17,19 @@ private _westMenus = createHashMapFromArray [
     ["main", [
         ["Request Mission", "code", { [] call HL2_fnc_requestMission; }, "Request a mission assignment from the Combine command network."],
         ["Support Menu", "push", "support", "Open tactical support requisition options."],
-        ["Give Tokens to Player", "push", "banking", "Access token disbursement options."],
+        ["Civil Actions", "push", "civilActions", "Open civil administration utilities."],
         ["Manage Outpost", "hint", "Outpost management console is currently under maintenance.", "Placeholder action for testing."],
         ["Garage Vehicle", "hint", "Motor pool automation is currently offline.", "Placeholder action for testing."],
         ["Exit", "close", nil, "Close the command interface."]
     ]],
-    ["banking", _bankMenu],
+    ["donations", _donationMenu],
+    ["civilActions", [
+        ["Back", "pop", nil, "Return to the main menu."],
+        ["Donate Tokens to Player", "push", "donations", "Reward a Loyal citizen with a donation of your payroll."],
+        ["Access Civil Registry", "code", { [] call HL2_fnc_openCivilRegistry; }, "Review the current CID registry."],
+        ["Award Loyalty Point", "code", { [] call HL2_fnc_awardLoyaltyPoint; }, "Grant the focused citizen a Loyalty Point."],
+        ["Award Malcompliance Point", "code", { [] call HL2_fnc_awardMalcompliancePoint; }, "Issue a Malcompliance Point to the focused citizen."]
+    ]],
     ["support", [
         ["Back", "pop", nil, "Return to the main menu."],
         ["Request Backup", "push", "backup", "Radio for additional Protection Team units."],
@@ -79,12 +86,12 @@ private _eastMenus = createHashMapFromArray [
     ["main", [
         ["Request Mission", "code", { [] call HL2_fnc_requestMission; }, "Request a mission briefing from the resistance network."],
         ["Support Menu", "push", "support", "Open the guerrilla support board."],
-        ["Give Tokens to Player", "push", "banking", "Share tokens with a comrade."],
+        ["Donate Tokens to Player", "push", "donations", "Share tokens with a comrade."],
         ["Manage Outpost", "hint", "Outpost coordination terminal under construction.", "Placeholder action for testing."],
         ["Garage Vehicle", "hint", "Safehouse garage controls are being rewired.", "Placeholder action for testing."],
         ["Exit", "close", nil, "Close the command interface."]
     ]],
-    ["banking", _bankMenu],
+    ["donations", _donationMenu],
     ["support", [
         ["Back", "pop", nil, "Return to the main menu."],
         ["Request Backup", "push", "backup", "Raise local cells for reinforcements."],
@@ -134,20 +141,20 @@ private _civilMenus = createHashMapFromArray [
     ["main", [
         ["Request Mission", "code", { [] call HL2_fnc_requestMission; }, "Request a sanctioned task from the CWU dispatch office."],
         ["Manage Home", "hint", "Residential management services are being audited.", "Placeholder action for testing."],
-        ["Give Tokens to Player", "push", "banking", "Access token disbursement options."],
+        ["Donate Tokens to Player", "push", "donations", "Access token disbursement options."],
         ["Exit", "close", nil, "Close the command interface."]
     ]],
-    ["banking", _bankMenu]
+    ["donations", _donationMenu]
 ];
 
 private _independentMenus = createHashMapFromArray [
     ["main", [
         ["Request Mission", "code", { [] call HL2_fnc_requestMission; }, "Seek new guidance from the abyssal network."],
         ["Manage Coven", "hint", "The coven stirs, but the ledger is unfinished.", "Placeholder action for testing."],
-        ["Give Tokens to Player", "push", "banking", "Share tithe among the faithful."],
+        ["Donate Tokens to Player", "push", "donations", "Share tithe among the faithful."],
         ["Exit", "close", nil, "Close the command interface."]
     ]],
-    ["banking", _bankMenu]
+    ["donations", _donationMenu]
 ];
 
 _configs set [west, createHashMapFromArray [
@@ -396,6 +403,48 @@ HL2_fnc_openCommandMenu = {
     };
 
     [] call HL2_fnc_commandMenuRender;
+};
+
+HL2_fnc_openCivilRegistry = {
+    if (!hasInterface) exitWith {};
+    [player] remoteExecCall ["HL2_fnc_serverShowCivilRegistry", 2];
+};
+
+HL2_fnc_awardCitizenPoint = {
+    params ["_category"];
+    if (!hasInterface) exitWith {};
+
+    private _target = cursorTarget;
+    if (isNull _target || {!isPlayer _target}) exitWith {
+        hint "You must be looking at a registered citizen.";
+    };
+
+    private _cid = _target getVariable ["CID_Number", -1];
+    if (_cid isEqualTo -1) exitWith {
+        hint "The focused individual does not have an assigned CID.";
+    };
+
+    if ((player distance _target) > 10) exitWith {
+        hint "Move closer to the citizen before issuing points.";
+    };
+
+    private _fncName = switch (_category) do {
+        case "LOYALTY": { "HL2_fnc_serverAwardLoyaltyPoint" };
+        case "MAL": { "HL2_fnc_serverAwardMalcompliancePoint" };
+        default { "" };
+    };
+
+    if (_fncName isEqualTo "") exitWith {};
+
+    [_target, player] remoteExecCall [_fncName, 2];
+};
+
+HL2_fnc_awardLoyaltyPoint = {
+    ["LOYALTY"] call HL2_fnc_awardCitizenPoint;
+};
+
+HL2_fnc_awardMalcompliancePoint = {
+    ["MAL"] call HL2_fnc_awardCitizenPoint;
 };
 
 HL2_fnc_requestMission = {

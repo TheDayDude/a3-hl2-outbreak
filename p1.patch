@@ -1,201 +1,159 @@
-diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/playerCommandMenu.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/playerCommandMenu.sqf
-index ad1f4b20d426398f21740ac3603a817d44b717cf..009adb28873b1b77cf5b15915d42434d0e51dd8a 100644
---- a/CRC-HL2_EmitaCityRP.Emita_2025/playerCommandMenu.sqf
-+++ b/CRC-HL2_EmitaCityRP.Emita_2025/playerCommandMenu.sqf
-@@ -1,97 +1,175 @@
- if (!hasInterface) exitWith {};
- if (missionNamespace getVariable ["HL2_CommandMenu_Configured", false]) exitWith {};
- missionNamespace setVariable ["HL2_CommandMenu_Configured", true];
+diff --git a/CRC-HL2_EmitaCityRP.Emita_2025/initServer.sqf b/CRC-HL2_EmitaCityRP.Emita_2025/initServer.sqf
+index be44caa818d9dadd5ae88f2c4fa3bb7b80b44f29..0dde193808f6f8eb94e665ec2b4b96328342cc32 100644
+--- a/CRC-HL2_EmitaCityRP.Emita_2025/initServer.sqf
++++ b/CRC-HL2_EmitaCityRP.Emita_2025/initServer.sqf
+@@ -63,50 +63,154 @@ if (isNil "MRC_fnc_generateCID") then {
+     publicVariable "MRC_fnc_generateCID";
+ };
  
- private _configs = createHashMap;
+ if (isNil "MRC_fnc_assignCID") then {
+     MRC_fnc_assignCID = {
+         params ["_unit"];
+         private _old = _unit getVariable ["CID_Number", nil];
+         if (!isNil "_old") then {
+             CID_Loyalty deleteAt _old;
+             CID_Malcompliance deleteAt _old;
+             if !(isNil "Global_CID_Registry") then {
+                 Global_CID_Registry = Global_CID_Registry - [_old];
+                 publicVariable "Global_CID_Registry";
+             };
+         };
+         private _new = call MRC_fnc_generateCID;
+         _unit setVariable ["CID_Number", _new, true];
+         _unit setVariable ["HasCID", true, false];
+         CID_Loyalty set [_new, 0];
+         CID_Malcompliance set [_new, 0];
+         _new
+     };
+     publicVariable "MRC_fnc_assignCID";
+ };
  
-+private _bankMenu = [
-+    ["Back", "pop", nil, "Return to the previous menu."],
-+    ["Give 1 Token", "hint", "Token dispensers are currently offline pending banking overhaul."],
-+    ["Give 5 Tokens", "hint", "Token dispensers are currently offline pending banking overhaul."],
-+    ["Give 10 Tokens", "hint", "Token dispensers are currently offline pending banking overhaul."],
-+    ["Give 20 Tokens", "hint", "Token dispensers are currently offline pending banking overhaul."],
-+    ["Give 100 Tokens", "hint", "Token dispensers are currently offline pending banking overhaul."]
-+];
++if (isNil "HL2_fnc_serverAdjustCitizenScore") then {
++    HL2_fnc_serverAdjustCitizenScore = {
++        params ["_target", "_source", "_category"];
++        if (!isServer) exitWith {};
++        if (isNull _target || {!isPlayer _target}) exitWith {};
 +
- private _westMenus = createHashMapFromArray [
-     ["main", [
-         ["Request Mission", "code", { [] call HL2_fnc_requestMission; }, "Request a mission assignment from the Combine command network."],
-         ["Support Menu", "push", "support", "Open tactical support requisition options."],
--        ["Give Tokens to Player", "hint", "Credit disbursement terminal offline. Await further orders.", "Gives Tokens to Player you are looking at."],
-+        ["Give Tokens to Player", "push", "banking", "Access token disbursement options."],
-         ["Manage Outpost", "hint", "Outpost management console is currently under maintenance.", "Placeholder action for testing."],
-         ["Garage Vehicle", "hint", "Motor pool automation is currently offline.", "Placeholder action for testing."],
-         ["Exit", "close", nil, "Close the command interface."]
-     ]],
-+    ["banking", _bankMenu],
-     ["support", [
-         ["Back", "pop", nil, "Return to the main menu."],
-         ["Request Backup", "push", "backup", "Radio for additional Protection Team units."],
--        ["Request Strike", "hint", "Strike support requisition is not yet available.", "Placeholder action for testing."],
--        ["Request Recon", "hint", "Recon flight scheduling is not yet available.", "Placeholder action for testing."]
-+        ["Request Strike", "push", "strike", "Request a strike package from command."],
-+        ["Request Recon", "hint", "Recon flight scheduling is not yet available.", "Placeholder action for testing."],
-+        ["Synth Deployment", "push", "synth", "Requisition specialized synth assets."]
-     ]],
-     ["backup", [
--        ["Dummy Button 1", "hint", "Backup channel test option 1 acknowledged.", "Placeholder action for testing."],
--        ["Dummy Button 2", "hint", "Backup channel test option 2 acknowledged.", "Placeholder action for testing."],
--        ["Dummy Button 3", "hint", "Backup channel test option 3 acknowledged.", "Placeholder action for testing."],
--        ["Dummy Button 4", "hint", "Backup channel test option 4 acknowledged.", "Placeholder action for testing."],
--        ["Dummy Button 5", "hint", "Backup channel test option 5 acknowledged.", "Placeholder action for testing."],
--        ["Back", "pop", nil, "Return to the support menu."]
-+        ["Back", "pop", nil, "Return to the support menu."],
-+        ["Protection Squad", "code", {
-+            missionNamespace setVariable ["HL2_CommandMenu_CombineBackupSelection", "Protection Squad"];
-+            ["insertion"] call HL2_fnc_commandMenuPush;
-+        }, "Deploy a Protection Team via insertion."],
-+        ["Conscript Squad", "code", {
-+            missionNamespace setVariable ["HL2_CommandMenu_CombineBackupSelection", "Conscript Squad"];
-+            ["insertion"] call HL2_fnc_commandMenuPush;
-+        }, "Deploy a Conscript squad via insertion."],
-+        ["Riot Squad", "code", {
-+            missionNamespace setVariable ["HL2_CommandMenu_CombineBackupSelection", "Riot Squad"];
-+            ["insertion"] call HL2_fnc_commandMenuPush;
-+        }, "Deploy a Riot squad via insertion."],
-+        ["AT/AA Squad", "code", {
-+            missionNamespace setVariable ["HL2_CommandMenu_CombineBackupSelection", "AT/AA Squad"];
-+            ["insertion"] call HL2_fnc_commandMenuPush;
-+        }, "Deploy an anti-armor/anti-air squad via insertion."],
-+        ["Overwatch", "code", {
-+            missionNamespace setVariable ["HL2_CommandMenu_CombineBackupSelection", "Overwatch"];
-+            ["insertion"] call HL2_fnc_commandMenuPush;
-+        }, "Request an Overwatch unit for insertion."]
-+    ]],
-+    ["insertion", [
-+        ["Back", "pop", nil, "Return to squad selection."],
-+        ["Land", "hint", "Insertion routing pending tactical approval."],
-+        ["Sea", "hint", "Insertion routing pending tactical approval."],
-+        ["Air", "hint", "Insertion routing pending tactical approval."]
-+    ]],
-+    ["strike", [
-+        ["Back", "pop", nil, "Return to the support menu."],
-+        ["Plasma Mortar", "hint", "Strike package not yet available. Await further instructions."],
-+        ["Biotic Cannister", "hint", "Strike package not yet available. Await further instructions."],
-+        ["Illumination Mortar", "hint", "Strike package not yet available. Await further instructions."],
-+        ["Smoke Mortar", "hint", "Strike package not yet available. Await further instructions."],
-+        ["Gunship Strike", "hint", "Strike package not yet available. Await further instructions."]
-+    ]],
-+    ["synth", [
-+        ["Back", "pop", nil, "Return to the support menu."],
-+        ["Elite Synth Squad", "hint", "Synth deployment authorization pending."],
-+        ["Hunter Pack", "hint", "Synth deployment authorization pending."],
-+        ["Strider", "hint", "Synth deployment authorization pending."]
-     ]]
++        private _cid = _target getVariable ["CID_Number", nil];
++        if (isNil "_cid") exitWith {
++            if (!isNull _source) then {
++                ["Target does not have a registered CID."] remoteExecCall ["hintSilent", owner _source];
++            };
++        };
++
++        if !(_category in ["LOYALTY", "MAL"]) exitWith {};
++
++        private _map = if (_category == "LOYALTY") then {
++            CID_Loyalty
++        } else {
++            CID_Malcompliance
++        };
++
++        private _current = _map getOrDefault [_cid, 0];
++        private _newValue = _current + 1;
++        _map set [_cid, _newValue];
++
++        switch (_category) do {
++            case "LOYALTY": { CID_Loyalty = _map; publicVariable "CID_Loyalty"; };
++            case "MAL": { CID_Malcompliance = _map; publicVariable "CID_Malcompliance"; };
++        };
++
++        private _typeName = if (_category == "LOYALTY") then { "Loyalty" } else { "Malcompliance" };
++        private _targetName = name _target;
++
++        if (!isNull _source) then {
++            [format ["%1 now has %2 %3 Point(s).", _targetName, _newValue, _typeName]] remoteExecCall ["hintSilent", owner _source];
++        };
++
++        [format ["You received a %1 Point from %2.", _typeName, if (isNull _source) then {"an administrator"} else {name _source}]] remoteExecCall ["hintSilent", owner _target];
++    };
++    publicVariable "HL2_fnc_serverAdjustCitizenScore";
++};
++
++if (isNil "HL2_fnc_serverAwardLoyaltyPoint") then {
++    HL2_fnc_serverAwardLoyaltyPoint = {
++        params ["_target", "_source"];
++        if (!isServer) exitWith {};
++        [_target, _source, "LOYALTY"] call HL2_fnc_serverAdjustCitizenScore;
++    };
++    publicVariable "HL2_fnc_serverAwardLoyaltyPoint";
++};
++
++if (isNil "HL2_fnc_serverAwardMalcompliancePoint") then {
++    HL2_fnc_serverAwardMalcompliancePoint = {
++        params ["_target", "_source"];
++        if (!isServer) exitWith {};
++        [_target, _source, "MAL"] call HL2_fnc_serverAdjustCitizenScore;
++    };
++    publicVariable "HL2_fnc_serverAwardMalcompliancePoint";
++};
++
++if (isNil "HL2_fnc_serverShowCivilRegistry") then {
++    HL2_fnc_serverShowCivilRegistry = {
++        params ["_requester"];
++        if (!isServer) exitWith {};
++        if (isNull _requester || {!isPlayer _requester}) exitWith {};
++
++        private _lines = [];
++        {
++            if (!isPlayer _x) then { continue };
++
++            private _cid = _x getVariable ["CID_Number", "-"];
++            private _prefix = switch (side _x) do {
++                case civilian: { "CIT" };
++                case west: { "UNIT" };
++                case independent: { "???" };
++                case east: { "MAL" };
++                default { "???" };
++            };
++            private _fullCID = format ["%1-%2", _prefix, _cid];
++
++            private _loyalty = if (!isNil "CID_Loyalty") then { CID_Loyalty getOrDefault [_cid, 0] } else { 0 };
++            private _mal = if (!isNil "CID_Malcompliance") then { CID_Malcompliance getOrDefault [_cid, 0] } else { 0 };
++            private _acl = _x getVariable ["wantedLevel", 0];
++            private _status = if (_acl > 0) then {
++                format ["Anticitizen Level %1", _acl]
++            } else {
++                format ["Malcompliance %1", _mal]
++            };
++
++            private _line = format ["%1 (%2) | Loyalty %3 | %4", name _x, _fullCID, _loyalty, _status];
++            _lines pushBack _line;
++        } forEach allPlayers;
++
++        private _message = if (_lines isEqualTo []) then {
++            "Civil Registry\nNo registered citizens detected."
++        } else {
++            format ["Civil Registry\n%1", _lines joinString "\n"]
++        };
++
++        [_message] remoteExecCall ["hintSilent", owner _requester];
++    };
++    publicVariable "HL2_fnc_serverShowCivilRegistry";
++};
++
+ private _savedDate = profileNamespace getVariable ["SavedDate", []];
+ if !(_savedDate isEqualTo []) then {
+     setDate _savedDate;
+ };
+ 
+ private _defaults = [
+     ["RationStock", 10],
+     ["Biomass", 5],
+     ["PlasmaLevel", 5],
+     ["Infestation", 50],
+     ["Sociostability", 50],
+     ["PortalStormTimer", 0]
  ];
  
- private _eastMenus = createHashMapFromArray [
-     ["main", [
-         ["Request Mission", "code", { [] call HL2_fnc_requestMission; }, "Request a mission briefing from the resistance network."],
-         ["Support Menu", "push", "support", "Open the guerrilla support board."],
--        ["Give Tokens to Player", "hint", "Sorry, the donation drive hasn't cleared yet.", "Gives Tokens to Player you are looking at."],
-+        ["Give Tokens to Player", "push", "banking", "Share tokens with a comrade."],
-         ["Manage Outpost", "hint", "Outpost coordination terminal under construction.", "Placeholder action for testing."],
-         ["Garage Vehicle", "hint", "Safehouse garage controls are being rewired.", "Placeholder action for testing."],
-         ["Exit", "close", nil, "Close the command interface."]
-     ]],
-+    ["banking", _bankMenu],
-     ["support", [
-         ["Back", "pop", nil, "Return to the main menu."],
-         ["Request Backup", "push", "backup", "Raise local cells for reinforcements."],
--        ["Request Strike", "hint", "Strike package unavailable. Keep fighting.", "Placeholder action for testing."],
-+        ["Request Strike", "push", "strike", "Call in a resistance strike package."],
-         ["Request Recon", "hint", "Recon drone deployment coming soon.", "Placeholder action for testing."]
-     ]],
-     ["backup", [
--        ["Dummy Button 1", "hint", "Backup placeholder 1: radio check.", "Placeholder action for testing."],
--        ["Dummy Button 2", "hint", "Backup placeholder 2: radio check.", "Placeholder action for testing."],
--        ["Dummy Button 3", "hint", "Backup placeholder 3: radio check.", "Placeholder action for testing."],
--        ["Dummy Button 4", "hint", "Backup placeholder 4: radio check.", "Placeholder action for testing."],
--        ["Dummy Button 5", "hint", "Backup placeholder 5: radio check.", "Placeholder action for testing."],
--        ["Back", "pop", nil, "Return to the support menu."]
-+        ["Back", "pop", nil, "Return to the support menu."],
-+        ["Militia Squad", "code", {
-+            missionNamespace setVariable ["HL2_CommandMenu_RebelBackupSelection", "Militia Squad"];
-+            ["insertion"] call HL2_fnc_commandMenuPush;
-+        }, "Assemble a militia squad for insertion."],
-+        ["Sniper Squad", "code", {
-+            missionNamespace setVariable ["HL2_CommandMenu_RebelBackupSelection", "Sniper Squad"];
-+            ["insertion"] call HL2_fnc_commandMenuPush;
-+        }, "Assemble a sniper team for insertion."],
-+        ["AT Squad", "code", {
-+            missionNamespace setVariable ["HL2_CommandMenu_RebelBackupSelection", "AT Squad"];
-+            ["insertion"] call HL2_fnc_commandMenuPush;
-+        }, "Assemble an anti-armor squad for insertion."],
-+        ["AA Squad", "code", {
-+            missionNamespace setVariable ["HL2_CommandMenu_RebelBackupSelection", "AA Squad"];
-+            ["insertion"] call HL2_fnc_commandMenuPush;
-+        }, "Assemble an anti-air squad for insertion."],
-+        ["Lambda Squad", "code", {
-+            missionNamespace setVariable ["HL2_CommandMenu_RebelBackupSelection", "Lambda Squad"];
-+            ["insertion"] call HL2_fnc_commandMenuPush;
-+        }, "Assemble a Lambda squad for insertion."]
-+    ]],
-+    ["insertion", [
-+        ["Back", "pop", nil, "Return to squad selection."],
-+        ["Land", "hint", "Insertion routes are being scouted."],
-+        ["Sea", "hint", "Insertion routes are being scouted."],
-+        ["Air", "hint", "Insertion routes are being scouted."]
-+    ]],
-+    ["strike", [
-+        ["Back", "pop", nil, "Return to the support menu."],
-+        ["Mortar Strike", "hint", "Strike support is still being coordinated."],
-+        ["Illumination Strike", "hint", "Strike support is still being coordinated."],
-+        ["Smoke Strike", "hint", "Strike support is still being coordinated."],
-+        ["Helicopter Strafe", "hint", "Strike support is still being coordinated."],
-+        ["Tactical Xen Portal", "hint", "Strike support is still being coordinated."]
-     ]]
- ];
+ {
+     missionNamespace setVariable [
+         _x select 0,
+         profileNamespace getVariable [_x select 0, _x select 1],
+         true
+     ];
+ } forEach _defaults;
  
- private _civilMenus = createHashMapFromArray [
-     ["main", [
-         ["Request Mission", "code", { [] call HL2_fnc_requestMission; }, "Request a sanctioned task from the CWU dispatch office."],
-         ["Manage Home", "hint", "Residential management services are being audited.", "Placeholder action for testing."],
--        ["Give Tokens to Player", "hint", "Payroll window is currently closed.", "Gives Tokens to Player you are looking at."],
-+        ["Give Tokens to Player", "push", "banking", "Access token disbursement options."],
-         ["Exit", "close", nil, "Close the command interface."]
--    ]]
-+    ]],
-+    ["banking", _bankMenu]
- ];
- 
- private _independentMenus = createHashMapFromArray [
-     ["main", [
-         ["Request Mission", "code", { [] call HL2_fnc_requestMission; }, "Seek new guidance from the abyssal network."],
-         ["Manage Coven", "hint", "The coven stirs, but the ledger is unfinished.", "Placeholder action for testing."],
--        ["Give Tokens to Player", "hint", "The tithe has not been collected yet.", "Gives Tokens to Player you are looking at."],
-+        ["Give Tokens to Player", "push", "banking", "Share tithe among the faithful."],
-         ["Exit", "close", nil, "Close the command interface."]
--    ]]
-+    ]],
-+    ["banking", _bankMenu]
- ];
- 
- _configs set [west, createHashMapFromArray [
-     ["title", "Civil Protection Force"],
-     ["subtitleOptions", [
-         "UU.CPF Network Connection: Stable. Unit Biometric Credentials: Accepted.",
-         "Reminder: Mission failure will result in permanent off-world assignment.",
-         "Reminder: 100 sterilized credits qualifies non-mechanical reproduction simulation.",
-         "Reminder: Memory replacement is the first step toward rank privileges.",
-         "Protection Team member: your family cohesion is preserved."
-     ]],
-     ["theme", createHashMapFromArray [
-         ["background", [0.02, 0.07, 0.18, 0.95]],
-         ["titleBackground", [0.01, 0.04, 0.12, 0.95]],
-         ["titleText", [1, 1, 1, 1]],
-         ["subtitleText", [1, 1, 1, 0.9]],
-         ["buttonBackground", [1, 1, 1, 0.95]],
-         ["buttonText", [0, 0, 0, 1]]
-     ]],
-     ["menus", _westMenus]
- ]];
- 
- _configs set [east, createHashMapFromArray [
-     ["title", "Rebel Radio Online"],
-     ["subtitleOptions", [
+ // === Persistence save loop ===
+ [] spawn {
+     while {true} do {
